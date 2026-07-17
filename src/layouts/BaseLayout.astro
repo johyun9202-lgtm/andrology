@@ -1,0 +1,32 @@
+---
+import { site } from '../config/site.js'
+import hospital from '../data/hospital.json'
+import Header from '../components/Header.astro'
+import Footer from '../components/Footer.astro'
+import '../styles/global.css'
+
+// title: 섹션명만 넘기면 "병원명 | 섹션명" 형태로 자동 생성됩니다.
+const { title, description = hospital.description } = Astro.props
+const pageTitle = title ? `${hospital.name} | ${title}` : hospital.name
+const canonical = new URL(Astro.url.pathname, site.siteUrl)
+---
+
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+  </head>
+  <body>
+    <Header />
+    <main>
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

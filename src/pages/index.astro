@@ -1,0 +1,37 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Hero from '../components/Hero.astro'
+import ServiceCard from '../components/ServiceCard.astro'
+import FaqList from '../components/FaqList.astro'
+import ContactBox from '../components/ContactBox.astro'
+import hospital from '../data/hospital.json'
+
+const faqPreview = hospital.faq.slice(0, 3)
+---
+
+<BaseLayout description={hospital.description}>
+  <Hero />
+
+  <section class="section">
+    <h2>병원 소개</h2>
+    <p>{hospital.description}</p>
+    <p>대표원장: {hospital.doctor}</p>
+  </section>
+
+  <section class="section">
+    <h2>진료과목</h2>
+    <div class="card-grid">
+      {hospital.services.map((service) => <ServiceCard service={service} />)}
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>자주 묻는 질문</h2>
+    <FaqList items={faqPreview} />
+    <p><a href="/faq">FAQ 전체 보기 →</a></p>
+  </section>
+
+  <section class="section">
+    <ContactBox />
+  </section>
+</BaseLayout>

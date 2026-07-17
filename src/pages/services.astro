@@ -1,0 +1,13 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import PageTitle from '../components/PageTitle.astro'
+import ServiceCard from '../components/ServiceCard.astro'
+import hospital from '../data/hospital.json'
+---
+
+<BaseLayout title="진료안내" description={`${hospital.name} 진료과목 안내`}>
+  <PageTitle title="진료안내" />
+  <div class="card-grid">
+    {hospital.services.map((service) => <ServiceCard service={service} />)}
+  </div>
+</BaseLayout>

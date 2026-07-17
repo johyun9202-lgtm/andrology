@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import PageTitle from '../components/PageTitle.astro'
+import ContactBox from '../components/ContactBox.astro'
+import hospital from '../data/hospital.json'
+---
+
+<BaseLayout title="상담문의" description={`${hospital.name} 상담 및 오시는 길 안내`}>
+  <PageTitle title="상담문의" />
+  <ContactBox />
+</BaseLayout>

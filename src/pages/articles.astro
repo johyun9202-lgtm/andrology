@@ -1,0 +1,20 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import PageTitle from '../components/PageTitle.astro'
+import hospital from '../data/hospital.json'
+---
+
+<BaseLayout title="아티클" description={`${hospital.name} 아티클`}>
+  <PageTitle title="아티클" />
+  <div class="article-list">
+    {
+      hospital.articles.map((article) => (
+        <article class="article-item">
+          <h3>{article.title}</h3>
+          <p>{article.summary}</p>
+          <p class="meta">{article.date}</p>
+        </article>
+      ))
+    }
+  </div>
+</BaseLayout>

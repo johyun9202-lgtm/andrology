@@ -1,0 +1,15 @@
+---
+import hospital from '../data/hospital.json'
+---
+
+<section class="contact-box">
+  <h2>{hospital.cta.label}</h2>
+  <p>{hospital.cta.description}</p>
+  <ul>
+    <li><strong>전화</strong> {hospital.phone}</li>
+    <li><strong>주소</strong> {hospital.address}</li>
+    <li><strong>평일</strong> {hospital.hours.weekday}</li>
+    <li><strong>토요일</strong> {hospital.hours.saturday}</li>
+    <li><strong>일요일·공휴일</strong> {hospital.hours.sundayHoliday}</li>
+  </ul>
+</section>

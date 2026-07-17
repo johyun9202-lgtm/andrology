@@ -1,0 +1,69 @@
+{
+  "name": "○○비뇨의학과",
+  "description": "병원 소개 문구 예시입니다. 실제 병원 정보로 교체됩니다.",
+  "phone": "미정",
+  "address": "미정",
+  "hours": {
+    "weekday": "미정",
+    "saturday": "미정",
+    "sundayHoliday": "미정"
+  },
+  "doctor": "미정",
+  "hero": {
+    "title": "Hero 제목 문구 예시",
+    "subtitle": "Hero 보조 문구 예시입니다."
+  },
+  "cta": {
+    "label": "상담 문의",
+    "description": "상담 안내 문구 예시입니다."
+  },
+  "services": [
+    {
+      "slug": "service-1",
+      "title": "진료과목 예시 1",
+      "summary": "진료과목 설명 예시입니다."
+    },
+    {
+      "slug": "service-2",
+      "title": "진료과목 예시 2",
+      "summary": "진료과목 설명 예시입니다."
+    },
+    {
+      "slug": "service-3",
+      "title": "진료과목 예시 3",
+      "summary": "진료과목 설명 예시입니다."
+    }
+  ],
+  "faq": [
+    {
+      "question": "자주 묻는 질문 예시 1입니까?",
+      "answer": "답변 예시입니다."
+    },
+    {
+      "question": "자주 묻는 질문 예시 2입니까?",
+      "answer": "답변 예시입니다."
+    },
+    {
+      "question": "자주 묻는 질문 예시 3입니까?",
+      "answer": "답변 예시입니다."
+    },
+    {
+      "question": "자주 묻는 질문 예시 4입니까?",
+      "answer": "답변 예시입니다."
+    }
+  ],
+  "articles": [
+    {
+      "slug": "article-1",
+      "title": "아티클 제목 예시 1",
+      "summary": "아티클 요약 예시입니다.",
+      "date": "2026-07-01"
+    },
+    {
+      "slug": "article-2",
+      "title": "아티클 제목 예시 2",
+      "summary": "아티클 요약 예시입니다.",
+      "date": "2026-07-10"
+    }
+  ]
+}

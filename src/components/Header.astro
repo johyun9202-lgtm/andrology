@@ -1,0 +1,13 @@
+---
+import hospital from '../data/hospital.json'
+import { nav } from '../config/site.js'
+---
+
+<header class="site-header">
+  <div class="inner">
+    <a href="/" class="logo">{hospital.name}</a>
+    <nav>
+      {nav.map((item) => <a href={item.href}>{item.label}</a>)}
+    </nav>
+  </div>
+</header>

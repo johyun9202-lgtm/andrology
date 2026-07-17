@@ -1,0 +1,17 @@
+---
+// items를 넘기지 않으면 hospital.json의 전체 faq를 출력합니다.
+import hospital from '../data/hospital.json'
+
+const { items = hospital.faq } = Astro.props
+---
+
+<div class="faq-list">
+  {
+    items.map((item) => (
+      <details class="faq-item">
+        <summary>{item.question}</summary>
+        <p>{item.answer}</p>
+      </details>
+    ))
+  }
+</div>
