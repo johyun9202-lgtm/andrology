@@ -1,7 +1,7 @@
 ---
 // 상담 채널 버튼 — buildChannels()가 반환한 유효 채널만 표시합니다.
 // 채널이 하나도 없으면 아무것도 출력하지 않습니다.
-import hospital from '../data/hospital.json'
+import { siteData as hospital } from '../lib/site-data.js'
 import { buildChannels } from '../lib/schema.js'
 
 const channels = buildChannels(hospital)

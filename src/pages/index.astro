@@ -4,7 +4,7 @@ import Hero from '../components/Hero.astro'
 import ServiceCard from '../components/ServiceCard.astro'
 import FaqList from '../components/FaqList.astro'
 import ContactBox from '../components/ContactBox.astro'
-import hospital from '../data/hospital.json'
+import { siteData as hospital } from '../lib/site-data.js'
 import { buildFaqSchema } from '../lib/schema.js'
 
 const faqPreview = hospital.faq.slice(0, 3)

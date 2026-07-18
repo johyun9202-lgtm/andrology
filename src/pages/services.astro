@@ -2,7 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro'
 import PageTitle from '../components/PageTitle.astro'
 import ServiceCard from '../components/ServiceCard.astro'
-import hospital from '../data/hospital.json'
+import { siteData as hospital } from '../lib/site-data.js'
 ---
 
 <BaseLayout title="진료안내" description={`${hospital.name} 진료과목 안내`}>

@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro'
-import hospital from '../../data/hospital.json'
+import { siteData as hospital } from '../../lib/site-data.js'
 
 // articles 배열의 각 글마다 /articles/{slug} 페이지를 정적 생성합니다.
 export function getStaticPaths() {

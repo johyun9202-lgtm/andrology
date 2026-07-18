@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro'
 import PageTitle from '../components/PageTitle.astro'
-import hospital from '../data/hospital.json'
+import { siteData as hospital } from '../lib/site-data.js'
 ---
 
 <BaseLayout title="아티클" description={`${hospital.name} 아티클`}>
