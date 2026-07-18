@@ -1,5 +1,11 @@
 {
   "name": "○○비뇨의학과",
+  "theme": {
+    "primary": "#2563eb"
+  },
+  "images": {
+    "logo": ""
+  },
   "description": "병원 소개 문구 예시입니다. 실제 병원 정보로 교체됩니다.",
   "phone": "미정",
   "address": "미정",

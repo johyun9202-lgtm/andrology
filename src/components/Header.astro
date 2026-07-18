@@ -1,11 +1,17 @@
 ---
 import hospital from '../data/hospital.json'
 import { nav } from '../config/site.js'
+import { isReal } from '../lib/schema.js'
+
+// images.logo가 유효하면 이미지 로고, 아니면 병원명 텍스트 로고를 표시합니다.
+const logoSrc = isReal(hospital.images?.logo) ? hospital.images.logo.trim() : null
 ---
 
 <header class="site-header">
   <div class="inner">
-    <a href="/" class="logo">{hospital.name}</a>
+    <a href="/" class="logo">
+      {logoSrc ? <img src={logoSrc} alt={`${hospital.name} 로고`} class="logo-img" /> : hospital.name}
+    </a>
     <nav>
       {nav.map((item) => <a href={item.href}>{item.label}</a>)}
     </nav>

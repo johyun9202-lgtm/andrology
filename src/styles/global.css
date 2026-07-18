@@ -65,6 +65,24 @@ a {
   font-weight: 700;
   font-size: 18px;
   color: var(--text-strong);
+  display: inline-flex;
+  align-items: center;
+}
+
+/* 이미지 로고: 헤더 높이에 맞게 제한 (모바일 포함) */
+.site-header .logo-img {
+  display: block;
+  max-height: 40px;
+  width: auto;
+  max-width: 220px;
+  object-fit: contain;
+}
+
+@media (max-width: 640px) {
+  .site-header .logo-img {
+    max-height: 32px;
+    max-width: 180px;
+  }
 }
 
 .site-header nav {

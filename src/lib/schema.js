@@ -7,6 +7,12 @@ export function isReal(value) {
   return typeof value === 'string' && value.trim() !== '' && value.trim() !== '미정'
 }
 
+// 안전한 색상값인지 검증 (#RGB 또는 #RRGGBB 형식만 허용)
+// 검증을 통과한 값만 CSS에 사용하므로 임의 문자열이 스타일에 삽입될 수 없습니다.
+export function isValidColor(value) {
+  return typeof value === 'string' && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value.trim())
+}
+
 // 병원 기본 정보 (MedicalClinic)
 export function buildClinicSchema(hospital, siteUrl) {
   const schema = {
