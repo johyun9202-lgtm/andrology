@@ -249,6 +249,48 @@ main {
   color: var(--muted);
 }
 
+/* 아티클 목록 카드 링크 */
+.article-item-link {
+  color: inherit;
+  display: block;
+}
+
+.article-item-link:hover .article-item {
+  border-color: var(--accent);
+}
+
+.article-item-link h3 {
+  color: var(--accent);
+}
+
+/* 아티클 상세 */
+.article-detail .meta {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0 0 4px;
+}
+
+.article-detail .summary {
+  font-weight: 600;
+  color: var(--text-strong);
+  margin: 0 0 20px;
+}
+
+.article-detail .body p {
+  margin: 0 0 16px;
+}
+
+.article-links {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 /* 푸터 */
 .site-footer p {
   margin: 4px 0;

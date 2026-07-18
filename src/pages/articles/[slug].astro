@@ -1,0 +1,30 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import hospital from '../../data/hospital.json'
+
+// articles 배열의 각 글마다 /articles/{slug} 페이지를 정적 생성합니다.
+export function getStaticPaths() {
+  return hospital.articles.map((article) => ({
+    params: { slug: article.slug },
+    props: { article },
+  }))
+}
+
+const { article } = Astro.props
+---
+
+<BaseLayout title={article.title} description={article.summary}>
+  <article class="article-detail">
+    <h1>{article.title}</h1>
+    <p class="meta">작성일: {article.date}</p>
+    <p class="summary">{article.summary}</p>
+    <div class="body">
+      {article.content.map((paragraph) => <p>{paragraph}</p>)}
+    </div>
+  </article>
+
+  <nav class="article-links">
+    <a href="/articles">← 아티클 목록으로 돌아가기</a>
+    <a href="/contact" class="btn">상담 문의</a>
+  </nav>
+</BaseLayout>

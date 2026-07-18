@@ -9,11 +9,13 @@ import hospital from '../data/hospital.json'
   <div class="article-list">
     {
       hospital.articles.map((article) => (
-        <article class="article-item">
-          <h3>{article.title}</h3>
-          <p>{article.summary}</p>
-          <p class="meta">{article.date}</p>
-        </article>
+        <a href={`/articles/${article.slug}/`} class="article-item-link">
+          <article class="article-item">
+            <h3>{article.title}</h3>
+            <p>{article.summary}</p>
+            <p class="meta">{article.date}</p>
+          </article>
+        </a>
       ))
     }
   </div>
