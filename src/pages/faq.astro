@@ -3,9 +3,12 @@ import BaseLayout from '../layouts/BaseLayout.astro'
 import PageTitle from '../components/PageTitle.astro'
 import FaqList from '../components/FaqList.astro'
 import hospital from '../data/hospital.json'
+import { buildFaqSchema } from '../lib/schema.js'
+
+const faqSchema = buildFaqSchema(hospital.faq)
 ---
 
-<BaseLayout title="FAQ" description={`${hospital.name} 자주 묻는 질문`}>
+<BaseLayout title="FAQ" description={`${hospital.name} 자주 묻는 질문`} jsonLd={faqSchema}>
   <PageTitle title="자주 묻는 질문" />
   <FaqList />
 </BaseLayout>

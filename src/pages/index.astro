@@ -5,11 +5,13 @@ import ServiceCard from '../components/ServiceCard.astro'
 import FaqList from '../components/FaqList.astro'
 import ContactBox from '../components/ContactBox.astro'
 import hospital from '../data/hospital.json'
+import { buildFaqSchema } from '../lib/schema.js'
 
 const faqPreview = hospital.faq.slice(0, 3)
+const faqSchema = buildFaqSchema(hospital.faq)
 ---
 
-<BaseLayout description={hospital.description}>
+<BaseLayout description={hospital.description} jsonLd={faqSchema}>
   <Hero />
 
   <section class="section">

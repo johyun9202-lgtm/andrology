@@ -13,7 +13,7 @@ export function getStaticPaths() {
 const { article } = Astro.props
 ---
 
-<BaseLayout title={article.title} description={article.summary}>
+<BaseLayout title={article.title} description={article.summary} ogType="article">
   <article class="article-detail">
     <h1>{article.title}</h1>
     <p class="meta">작성일: {article.date}</p>
