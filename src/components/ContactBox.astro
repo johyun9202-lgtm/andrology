@@ -1,10 +1,12 @@
 ---
 import hospital from '../data/hospital.json'
+import ChannelButtons from './ChannelButtons.astro'
 ---
 
 <section class="contact-box">
   <h2>{hospital.cta.label}</h2>
   <p>{hospital.cta.description}</p>
+  <ChannelButtons />
   <ul>
     <li><strong>전화</strong> {hospital.phone}</li>
     <li><strong>주소</strong> {hospital.address}</li>

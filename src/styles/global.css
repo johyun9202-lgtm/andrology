@@ -240,6 +240,51 @@ main {
   color: var(--text-strong);
 }
 
+/* 상담 채널 버튼 */
+.channel-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0 20px;
+}
+
+.channel-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px; /* 모바일 터치 영역 확보 */
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.channel-btn.primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.channel-btn.secondary {
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  background: transparent;
+}
+
+.channel-btn:hover {
+  opacity: 0.85;
+}
+
+@media (max-width: 640px) {
+  .channel-buttons {
+    gap: 8px;
+  }
+
+  .channel-btn {
+    flex: 1 1 auto;
+    min-width: 140px;
+  }
+}
+
 /* 아티클 */
 .article-list {
   display: flex;

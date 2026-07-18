@@ -1,0 +1,25 @@
+---
+// 상담 채널 버튼 — buildChannels()가 반환한 유효 채널만 표시합니다.
+// 채널이 하나도 없으면 아무것도 출력하지 않습니다.
+import hospital from '../data/hospital.json'
+import { buildChannels } from '../lib/schema.js'
+
+const channels = buildChannels(hospital)
+---
+
+{
+  channels.length > 0 && (
+    <div class="channel-buttons">
+      {channels.map((channel, index) => (
+        <a
+          href={channel.href}
+          class={`channel-btn ${index === 0 ? 'primary' : 'secondary'}`}
+          target={channel.external ? '_blank' : undefined}
+          rel={channel.external ? 'noopener noreferrer' : undefined}
+        >
+          {channel.label}
+        </a>
+      ))}
+    </div>
+  )
+}

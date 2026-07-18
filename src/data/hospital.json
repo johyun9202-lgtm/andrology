@@ -8,6 +8,11 @@
   },
   "description": "병원 소개 문구 예시입니다. 실제 병원 정보로 교체됩니다.",
   "phone": "미정",
+  "channels": {
+    "phone": "",
+    "kakao": "",
+    "naverBooking": ""
+  },
   "address": "미정",
   "hours": {
     "weekday": "미정",
