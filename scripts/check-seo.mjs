@@ -9,21 +9,22 @@
 // - 경고(⚠): 권장 길이 벗어남, 이미지 없음, "미정" 값 등
 //   → 빌드는 계속 진행됩니다 (exit 0)
 //
-// 검사 대상 데이터: src/data/hospital.json (site-data.js와 동일 원천)
+// 검사 대상 데이터: sites/<SITE>/hospital.json
+// (SITE 환경변수로 선택, 없으면 andrology — site-data.js와 동일 원천)
 // 외부 라이브러리를 사용하지 않습니다.
 // ============================================================
 
-import { readFileSync } from 'node:fs'
 import { normalizeSiteUrl } from '../src/lib/site-url.js'
 
-// ---------- 데이터 로드 ----------
-const DATA_URL = new URL('../src/data/hospital.json', import.meta.url)
-
+// ---------- 검사 대상 사이트 데이터 로드 ----------
 let hospital
+let siteId
 try {
-  hospital = JSON.parse(readFileSync(DATA_URL, 'utf-8'))
+  const mod = await import('../src/lib/site-data.js')
+  hospital = mod.siteData
+  siteId = mod.siteId
 } catch (e) {
-  console.error('✕ hospital.json을 읽을 수 없습니다:', e.message)
+  console.error(`✕ ${e.message}`)
   process.exit(1)
 }
 
@@ -59,7 +60,8 @@ const TITLE_MIN = 15, TITLE_MAX = 60
 const DESC_MIN = 50, DESC_MAX = 160
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
-console.log(bold('\nSEO 검사 시작\n'))
+console.log(bold('\nSEO 검사 시작'))
+console.log(`대상 사이트: ${siteId}\n`)
 
 // ============================================================
 // [A] 사이트 공통 설정 검사

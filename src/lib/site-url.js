@@ -1,6 +1,6 @@
 // 사이트 도메인(URL) 검증·정규화
 //
-// 도메인 값의 단일 원천은 src/data/hospital.json 의 site.url 입니다.
+// 도메인 값의 단일 원천은 sites/<사이트ID>/hospital.json 의 site.url 입니다.
 // 이 함수는 그 값이 올바른지 검사하고, 끝의 슬래시를 제거해
 // 사이트 전체(canonical, OG, JSON-LD, sitemap, robots.txt)가
 // 항상 같은 형태의 URL을 쓰도록 통일합니다.

@@ -5,7 +5,7 @@ import { siteData } from './src/lib/site-data.js'
 import { normalizeSiteUrl } from './src/lib/site-url.js'
 
 export default defineConfig({
-  // 도메인 단일 원천: src/data/hospital.json 의 site.url
+  // 도메인 단일 원천: sites/<SITE>/hospital.json 의 site.url (SITE 미지정 시 andrology)
   site: normalizeSiteUrl(siteData.site?.url),
   output: 'static',
   trailingSlash: 'ignore',
