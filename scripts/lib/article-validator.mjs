@@ -29,6 +29,11 @@ const DANGEROUS_PATTERNS = [/<script/i, /javascript:/i, /onerror=/i, /onclick=/i
 
 const isFilled = (v) => typeof v === 'string' && v.trim() !== ''
 
+// slug 형식 검증 — create-draft-prompt 등 다른 도구도 이 함수를 재사용합니다.
+export function isValidSlug(slug) {
+  return typeof slug === 'string' && slug === slug.toLowerCase() && SLUG_PATTERN.test(slug)
+}
+
 function findDangerous(text) {
   return DANGEROUS_PATTERNS.find((p) => p.test(text))
 }

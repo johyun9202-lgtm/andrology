@@ -4,6 +4,9 @@
 AI(Claude/GPT 등)로 글을 작성한 뒤 이 명령으로 등록하는 것이 기본 흐름이며,
 향후 AI 자동 생성 파이프라인이 이 명령을 그대로 사용합니다.
 
+> 팁: `npm run draft-article`로 AI에 붙여넣을 프롬프트를 자동 생성할 수 있습니다.
+> → `docs/create-draft-prompt.md` 참고.
+
 ## 실행
 
 ```
