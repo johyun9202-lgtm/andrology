@@ -21,8 +21,18 @@ sites/
 
 ## 새 사이트 추가 방법
 
+권장: 생성 명령을 사용하면 템플릿 복사·값 입력·SEO 검사가 자동으로 처리됩니다.
+
+```
+npm run create-site
+```
+
+자세한 사용법은 `docs/create-site.md` 참고.
+
+수동으로 추가하는 경우:
+
 1. `sites/새업체ID/` 폴더를 만든다.
-2. 기존 `sites/andrology/hospital.json`을 복사해 넣고 내용을 새 업체 정보로 수정한다.
+2. `templates/hospital/hospital.json`을 복사해 넣고 내용을 새 업체 정보로 수정한다.
    (`site.url`은 반드시 새 업체 도메인으로 변경)
 3. 아래 방법으로 SITE를 지정해 검사·빌드한다.
 
