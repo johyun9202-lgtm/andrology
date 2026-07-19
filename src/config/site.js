@@ -1,13 +1,17 @@
-// 사이트 공통 정보 — 이 파일 한 곳에서만 관리합니다.
+// 사이트 인프라 설정
+//
+// 도메인 값은 hospital.json(site.url)이 단일 원천이며,
+// 여기서는 검증·정규화를 거친 값을 파생해 내보내기만 합니다.
+// (같은 값을 두 곳에 저장하지 않습니다)
+
+import { siteData } from '../lib/site-data.js'
+import { normalizeSiteUrl } from '../lib/site-url.js'
+
 export const site = {
-  siteName: 'andrology.co.kr',
-  siteUrl: 'https://andrology.co.kr',
-  description: '남성의학 정보 사이트 준비 중',
-  phone: '미정',
-  address: '미정',
+  siteUrl: normalizeSiteUrl(siteData.site?.url),
 }
 
-// 헤더 임시 메뉴
+// 헤더 메뉴
 export const nav = [
   { href: '/', label: '홈' },
   { href: '/services', label: '진료안내' },

@@ -86,5 +86,8 @@
         "새 아티클을 추가하려면 articles 배열에 slug, title, summary, date, content를 가진 항목을 추가하기만 하면 상세 페이지가 자동으로 생성됩니다."
       ]
     }
-  ]
+  ],
+  "site": {
+    "url": "https://andrology.co.kr"
+  }
 }
