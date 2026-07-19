@@ -20,6 +20,23 @@ import { normalizeSiteUrl } from '../../src/lib/site-url.js'
 import { runSeoCheck, red, green, yellow } from './seo-checker.mjs'
 import { validateArticle } from './article-validator.mjs'
 
+// 코드펜스와 앞뒤 공백 정리.
+// 순수 JSON / ```json ... ``` / ``` ... ``` / 앞뒤 빈 줄 모두 허용.
+// 그 외의 설명문이 붙어 있으면 null을 반환해 명확한 오류로 처리합니다.
+// (import-ai와 write-article이 공유)
+export function cleanJsonText(raw) {
+  let text = raw.trim()
+  const fenceOpen = text.match(/^```[a-zA-Z]*\s*\n/)
+  if (fenceOpen) {
+    text = text.slice(fenceOpen[0].length)
+    const closeIdx = text.lastIndexOf('```')
+    if (closeIdx !== -1) text = text.slice(0, closeIdx)
+    text = text.trim()
+  }
+  if (!text.startsWith('{') || !text.endsWith('}')) return null
+  return text
+}
+
 export function registerArticle(siteId, articleInput, { rootDir = process.cwd() } = {}) {
   const hospitalPath = join(rootDir, 'sites', siteId, 'hospital.json')
   if (!existsSync(hospitalPath)) {

@@ -17,7 +17,7 @@ import { join } from 'node:path'
 import { resolveSiteId } from '../src/lib/site-id.js'
 import { bold, red, green, yellow } from './lib/seo-checker.mjs'
 import { validateArticle } from './lib/article-validator.mjs'
-import { registerArticle } from './lib/article-importer.mjs'
+import { registerArticle, cleanJsonText } from './lib/article-importer.mjs'
 
 const ROOT = process.cwd()
 const DRAFTS_DIR = join(ROOT, 'content-drafts')
@@ -58,23 +58,6 @@ async function collectMultilineJson() {
     lines.push(line)
   }
   return lines.join('\n')
-}
-
-// 코드펜스와 앞뒤 공백 정리.
-// 순수 JSON / ```json ... ``` / ``` ... ``` / 앞뒤 빈 줄 모두 허용.
-// 그 외의 설명문이 붙어 있으면 null을 반환해 명확한 오류로 처리합니다.
-export function cleanJsonText(raw) {
-  let text = raw.trim()
-  // 코드펜스 제거 (여는 펜스: ``` 또는 ```json 등 언어 표기 허용)
-  const fenceOpen = text.match(/^```[a-zA-Z]*\s*\n/)
-  if (fenceOpen) {
-    text = text.slice(fenceOpen[0].length)
-    const closeIdx = text.lastIndexOf('```')
-    if (closeIdx !== -1) text = text.slice(0, closeIdx)
-    text = text.trim()
-  }
-  if (!text.startsWith('{') || !text.endsWith('}')) return null
-  return text
 }
 
 async function askYesNo(question) {

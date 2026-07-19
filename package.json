@@ -10,6 +10,7 @@
     "create-article": "node scripts/create-article.mjs",
     "draft-article": "node scripts/create-draft-prompt.mjs",
     "import-ai": "node scripts/import-ai-article.mjs",
+    "write-article": "node scripts/write-article.mjs",
     "build": "npm run check:seo && astro build",
     "build:only": "astro build",
     "preview": "astro preview"
