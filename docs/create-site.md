@@ -63,3 +63,8 @@ SITE=사이트ID npm run dev
 4. 업체 도메인 연결
 
 자세한 멀티 사이트 구조는 `docs/multi-site.md` 참고.
+
+## 다음 단계
+
+사이트 생성 후 아티클(콘텐츠) 등록은 `npm run create-article` 명령을 사용합니다.
+→ `docs/create-article.md` 참고.
