@@ -1,6 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro'
+import FaqList from '../../components/FaqList.astro'
 import { siteData as hospital } from '../../lib/site-data.js'
+import { buildFaqSchema } from '../../lib/schema.js'
 
 // articles 배열의 각 글마다 /articles/{slug} 페이지를 정적 생성합니다.
 export function getStaticPaths() {
@@ -11,16 +13,69 @@ export function getStaticPaths() {
 }
 
 const { article } = Astro.props
+
+// --- Article Model v2 필드 (없으면 기존 v1 방식 그대로 렌더링) ---
+const content = Array.isArray(article.content) ? article.content : []
+const sections = Array.isArray(article.sections) ? article.sections : []
+const faq = Array.isArray(article.faq) && article.faq.length > 0 ? article.faq : null
+
+// 관련 글: 실제 존재하는 slug만, 자기 자신 제외 (없는 slug가 있어도 페이지가 깨지지 않음)
+const related = Array.isArray(article.relatedArticles)
+  ? article.relatedArticles
+      .map((slug) => hospital.articles.find((a) => a.slug === slug))
+      .filter((a) => a && a.slug !== article.slug)
+  : []
+
+// FAQ가 있는 아티클에만 FAQPage 구조화 데이터를 추가 (병원 기본 JSON-LD는 BaseLayout이 항상 출력)
+const faqSchema = faq ? buildFaqSchema(faq) : undefined
 ---
 
-<BaseLayout title={article.title} description={article.summary} ogType="article">
+<BaseLayout title={article.title} description={article.summary} ogType="article" jsonLd={faqSchema}>
   <article class="article-detail">
     <h1>{article.title}</h1>
-    <p class="meta">작성일: {article.date}</p>
+    <p class="meta">작성일: {article.date}{article.updatedAt && article.updatedAt !== article.date ? ` · 수정일: ${article.updatedAt}` : ''}</p>
     <p class="summary">{article.summary}</p>
     <div class="body">
-      {article.content.map((paragraph) => <p>{paragraph}</p>)}
+      {article.intro && <p class="intro">{article.intro}</p>}
+      {content.map((paragraph) => <p>{paragraph}</p>)}
+      {sections.map((section) => (
+        <section class="article-section">
+          {section.heading && <h2>{section.heading}</h2>}
+          {(Array.isArray(section.paragraphs) ? section.paragraphs : []).map((paragraph) => <p>{paragraph}</p>)}
+          {(Array.isArray(section.subsections) ? section.subsections : []).map((sub) => (
+            <Fragment>
+              {sub.heading && <h3>{sub.heading}</h3>}
+              {(Array.isArray(sub.paragraphs) ? sub.paragraphs : []).map((paragraph) => <p>{paragraph}</p>)}
+              {Array.isArray(sub.items) && sub.items.length > 0 && (
+                <ul>
+                  {sub.items.map((item) => <li>{item}</li>)}
+                </ul>
+              )}
+            </Fragment>
+          ))}
+        </section>
+      ))}
     </div>
+
+    {faq && (
+      <section class="section article-faq">
+        <h2>자주 묻는 질문</h2>
+        <FaqList items={faq} />
+      </section>
+    )}
+
+    {related.length > 0 && (
+      <section class="section article-related">
+        <h2>관련 글</h2>
+        <ul>
+          {related.map((r) => (
+            <li>
+              <a href={`/articles/${r.slug}/`}>{r.title}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
   </article>
 
   <nav class="article-links">

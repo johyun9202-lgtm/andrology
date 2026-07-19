@@ -138,13 +138,75 @@ export function runSeoCheck(hospital, siteId, { print = true } = {}) {
       if (l < DESC_MIN || l > DESC_MAX) warn(`${where}: summary 길이 ${l}자 — 권장 ${DESC_MIN}~${DESC_MAX}자`)
     }
 
-    // content: 없으면 상세 페이지 렌더링이 깨짐
-    if (!Array.isArray(a.content) || a.content.length === 0 || a.content.every((p) => !isFilled(p))) {
-      fail(`${where}: 본문(content)이 비어 있습니다 — 상세 페이지가 깨집니다`)
+    // 본문: v1(content 배열) 또는 v2(sections) 중 하나에는 실제 내용이 있어야 함
+    const contentText = Array.isArray(a.content) ? a.content.filter(isFilled) : []
+    const sections = Array.isArray(a.sections) ? a.sections : []
+    const sectionText = sections.flatMap((s) => [
+      ...(Array.isArray(s.paragraphs) ? s.paragraphs.filter(isFilled) : []),
+      ...(Array.isArray(s.subsections) ? s.subsections : []).flatMap((sub) => [
+        ...(Array.isArray(sub.paragraphs) ? sub.paragraphs.filter(isFilled) : []),
+        ...(Array.isArray(sub.items) ? sub.items.filter(isFilled) : []),
+      ]),
+    ])
+    if (contentText.length === 0 && sectionText.length === 0) {
+      fail(`${where}: 본문(content 또는 sections)이 비어 있습니다 — 상세 페이지가 깨집니다`)
     }
 
     // date
     if (!isFilled(a.date)) warn(`${where}: 작성일(date)이 없습니다`)
+
+    // ---- Article Model v2 검사 (v2 필드를 쓰는 아티클에만 적용) ----
+    const usesV2 = sections.length > 0 || isFilled(a.intro) || Array.isArray(a.faq) || Array.isArray(a.relatedArticles) || isFilled(a.updatedAt)
+    if (usesV2) {
+      // 섹션 heading 비어 있음 / H2·H3 중복
+      const h2Seen = new Set()
+      const h3Seen = new Set()
+      sections.forEach((s, si) => {
+        if (!isFilled(s.heading)) warn(`${where}: sections[${si}]의 heading(H2)이 비어 있습니다`)
+        else if (h2Seen.has(s.heading.trim())) warn(`${where}: H2 제목 "${s.heading.trim()}" 중복`)
+        else h2Seen.add(s.heading.trim())
+        ;(Array.isArray(s.subsections) ? s.subsections : []).forEach((sub) => {
+          if (isFilled(sub.heading)) {
+            if (h3Seen.has(sub.heading.trim())) warn(`${where}: H3 제목 "${sub.heading.trim()}" 중복`)
+            else h3Seen.add(sub.heading.trim())
+          }
+        })
+      })
+
+      // 본문 분량 (intro 포함)
+      const bodyLength = [a.intro, ...contentText, ...sectionText].filter(isFilled).join('').replace(/\s+/g, '').length
+      if (bodyLength < 300) warn(`${where}: 본문이 ${bodyLength}자로 짧습니다 — 검색 노출을 위해 충분한 분량을 권장합니다`)
+
+      // 아티클 FAQ
+      if (Array.isArray(a.faq)) {
+        const qSeen = new Set()
+        a.faq.forEach((f, fi) => {
+          if (!isFilled(f?.question)) fail(`${where}: faq[${fi}] 질문이 비어 있습니다 — FAQ 구조화 데이터가 잘못 출력됩니다`)
+          else {
+            if (qSeen.has(f.question.trim())) warn(`${where}: FAQ 질문 "${f.question.trim()}" 중복`)
+            else qSeen.add(f.question.trim())
+            if (f.question.trim().length < 5) warn(`${where}: faq[${fi}] 질문이 지나치게 짧습니다`)
+          }
+          if (!isFilled(f?.answer)) fail(`${where}: faq[${fi}] 답변이 비어 있습니다 — FAQ 구조화 데이터가 잘못 출력됩니다`)
+          else if (f.answer.trim().length < 10) warn(`${where}: faq[${fi}] 답변이 지나치게 짧습니다`)
+        })
+      }
+
+      // 관련 글
+      if (Array.isArray(a.relatedArticles)) {
+        const allSlugs = new Set(articles.map((x) => x.slug).filter(Boolean))
+        a.relatedArticles.forEach((rs) => {
+          if (rs === a.slug) warn(`${where}: relatedArticles에 자기 자신(${rs})이 포함되어 있습니다`)
+          else if (!allSlugs.has(rs)) warn(`${where}: relatedArticles의 "${rs}"에 해당하는 아티클이 없습니다 — 화면에는 표시되지 않습니다`)
+        })
+      }
+
+      // updatedAt 관계
+      if (isFilled(a.updatedAt)) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(a.updatedAt.trim())) fail(`${where}: updatedAt은 YYYY-MM-DD 형식이어야 합니다`)
+        else if (isFilled(a.date) && a.updatedAt.trim() < a.date.trim()) warn(`${where}: updatedAt(${a.updatedAt})이 date(${a.date})보다 이전입니다`)
+      }
+    }
 
     // canonical 생성 가능 여부 (site.url + slug 둘 다 유효해야 함)
     if (siteUrl && isFilled(a.slug) && SLUG_PATTERN.test(a.slug.trim())) {

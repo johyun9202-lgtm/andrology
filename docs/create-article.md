@@ -15,7 +15,9 @@ npm run create-article
 ## 아티클 JSON 작성 방법
 
 기준 형식(스키마): `templates/hospital/article.json` — 이 파일을 `content-drafts/`로
-복사해 내용을 채우면 됩니다.
+복사해 내용을 채우면 됩니다. 두 가지 형식을 모두 지원하며 **서로 완전히 호환**됩니다.
+
+### 방법 1 — 간단한 형식 (기존 방식, 계속 사용 가능)
 
 ```json
 {
@@ -30,11 +32,52 @@ npm run create-article
 }
 ```
 
-- **필수**: slug, title, summary, content
-- **선택**: date (없으면 오늘 날짜 자동 입력, YYYY-MM-DD 형식)
+### 방법 2 — Article Model v2 (소제목·목록·FAQ·관련 글 지원)
+
+```json
+{
+  "slug": "example-article",
+  "title": "예시 제목",
+  "summary": "검색 결과와 글 목록에 표시할 요약",
+  "date": "2026-07-20",
+  "updatedAt": "2026-07-20",
+  "intro": "글의 도입문",
+  "sections": [
+    {
+      "heading": "첫 번째 H2 제목",
+      "paragraphs": ["첫 번째 문단", "두 번째 문단"],
+      "subsections": [
+        {
+          "heading": "H3 제목",
+          "paragraphs": ["세부 설명"],
+          "items": ["목록 항목 1", "목록 항목 2"]
+        }
+      ]
+    }
+  ],
+  "faq": [
+    { "question": "질문", "answer": "답변" }
+  ],
+  "relatedArticles": ["another-article-slug"]
+}
+```
+
+### 필드 정리
+
+| 필드 | 구분 | 설명 |
+|---|---|---|
+| slug, title, summary | **필수** | 주소·제목·요약(meta description) |
+| 본문 | **필수** | `content`(문단 배열) 또는 `sections` 중 하나에는 실제 내용 필요 |
+| date | 선택 | 없으면 오늘 날짜 자동 입력 (YYYY-MM-DD) |
+| updatedAt | 선택 | 수정일 (YYYY-MM-DD, date보다 이전이면 오류) |
+| intro | 선택 | 본문 맨 앞 도입문 |
+| sections | 선택 | heading은 H2, subsections.heading은 H3, paragraphs는 문단, items는 목록(ul/li)으로 렌더링 |
+| faq | 선택 | 페이지 하단에 표시 + FAQ 구조화 데이터(JSON-LD) 자동 생성. 없으면 생성 안 함 |
+| relatedArticles | 선택 | 관련 글 slug 목록 — 실제 존재하는 글만 표시되며, 없는 slug가 있어도 페이지는 깨지지 않음(경고만) |
+
 - 아티클 **객체 1개**만 허용 — 배열이나 `{"articles": [...]}` 형식은 거부됩니다.
-- 본문(content)은 문단 문자열 배열이며 HTML 태그 없이 일반 텍스트로 작성합니다.
-  (`<script`, `javascript:` 등 위험 패턴은 등록이 차단됩니다)
+- 모든 텍스트는 HTML 태그 없이 일반 텍스트로 작성합니다.
+  (`<script`, `javascript:` 등 위험 패턴은 새 필드를 포함한 전체에서 등록이 차단됩니다)
 
 ## slug 규칙
 

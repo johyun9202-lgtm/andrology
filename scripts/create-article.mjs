@@ -183,6 +183,12 @@ async function main() {
   }
   console.log(green('아티클 등록 완료'))
   console.log(`URL: ${url}`)
+  const summaryParts = []
+  if (article.sections) summaryParts.push(`섹션 ${article.sections.length}개`)
+  if (article.faq) summaryParts.push(`FAQ ${article.faq.length}개`)
+  if (article.relatedArticles) summaryParts.push(`관련 글 ${article.relatedArticles.length}개`)
+  if (article.content) summaryParts.push(`본문 문단 ${article.content.length}개`)
+  if (summaryParts.length > 0) console.log(`구성: ${summaryParts.join(' / ')}`)
   console.log(yellow('게시 전 의료 내용과 광고 표현을 담당자가 최종 검토해 주세요.\n'))
   process.exit(0)
 }
