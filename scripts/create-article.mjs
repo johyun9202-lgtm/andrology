@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ============================================================
-// Create Article CLI (1차) — Article Ingestion Pipeline
+// Create Article CLI — Article Ingestion Pipeline
 //
 // 실행: npm run create-article
 //
@@ -9,20 +9,21 @@
 //   → 입력 구조 검증 → articles 배열에 추가 → 전체 SEO 검사
 //   → 성공 시 저장 확정 / 실패 시 원본 hospital.json 복원
 //
+// 등록 핵심 로직은 scripts/lib/article-importer.mjs 공용 함수를 사용하며
+// import-ai(터미널 붙여넣기) 명령과 동일한 파이프라인을 공유합니다.
 // 외부 라이브러리·외부 AI API 없이 Node 내장 모듈만 사용합니다.
 // ============================================================
 
 import { createInterface } from 'node:readline'
-import { readFileSync, writeFileSync, existsSync, renameSync, rmSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import { join, isAbsolute } from 'node:path'
 import { resolveSiteId } from '../src/lib/site-id.js'
-import { normalizeSiteUrl } from '../src/lib/site-url.js'
-import { runSeoCheck, bold, red, green, yellow } from './lib/seo-checker.mjs'
-import { validateArticle } from './lib/article-validator.mjs'
+import { bold, red } from './lib/seo-checker.mjs'
+import { registerArticle } from './lib/article-importer.mjs'
 
 const ROOT = process.cwd()
 
-// ---------- 입력 처리 (create-site와 동일 — 파이프 입력에서 줄 유실 방지) ----------
+// ---------- 입력 처리 (파이프 입력에서 줄 유실 방지) ----------
 const pendingLines = []
 const waiters = []
 let stdinClosed = false
@@ -104,93 +105,9 @@ async function main() {
 
   rl.close()
 
-  // ---------- 3) 입력 아티클 구조 검증 ----------
-  const { errors, warnings, article } = validateArticle(articleInput)
-  for (const w of warnings) console.log(`  ${yellow('⚠')} ${w}`)
-  if (errors.length > 0) {
-    for (const e of errors) console.log(`  ${red('✕')} ${e}`)
-    console.error(red('\n입력 검증에 실패했습니다. hospital.json은 수정되지 않았습니다.'))
-    process.exit(1)
-  }
-
-  console.log(green('\n아티클 입력 검증 완료'))
-  console.log(`사이트: ${siteId}`)
-  console.log(`슬러그: ${article.slug}`)
-
-  // ---------- 4) 원본 로드 및 중복 슬러그 확인 ----------
-  const originalString = readFileSync(hospitalPath, 'utf-8')
-  let hospital
-  try {
-    hospital = JSON.parse(originalString)
-  } catch (e) {
-    console.error(red(`sites/${siteId}/hospital.json이 올바른 JSON이 아닙니다: ${e.message}`))
-    process.exit(1)
-  }
-  if (!Array.isArray(hospital.articles)) {
-    console.error(red(`sites/${siteId}/hospital.json에 articles 배열이 없습니다.`))
-    process.exit(1)
-  }
-  const duplicate = hospital.articles.find((a) => typeof a.slug === 'string' && a.slug.trim().toLowerCase() === article.slug)
-  if (duplicate) {
-    console.error(red(`\n슬러그 "${article.slug}"는 이미 존재합니다.`))
-    console.error('기존 아티클은 변경하지 않았습니다.')
-    process.exit(1)
-  }
-
-  // ---------- 5) 안전한 갱신 (임시 파일 → 재검증 → 교체) ----------
-  console.log('\n아티클 등록 중...')
-  const tmpPath = hospitalPath + '.tmp'
-  try {
-    hospital.articles.push(article) // 배열 끝에 추가
-    const nextString = JSON.stringify(hospital, null, 2) + '\n'
-    writeFileSync(tmpPath, nextString, 'utf-8')
-    JSON.parse(readFileSync(tmpPath, 'utf-8')) // 임시 파일 재파싱으로 손상 여부 확인
-    renameSync(tmpPath, hospitalPath) // 같은 폴더 내 교체
-  } catch (e) {
-    rmSync(tmpPath, { force: true })
-    // 원본은 아직 교체 전이거나, 만약을 위해 원본 문자열로 복원
-    writeFileSync(hospitalPath, originalString, 'utf-8')
-    console.error(red(`파일 저장에 실패하여 원본을 유지했습니다: ${e.message}`))
-    process.exit(1)
-  }
-
-  // ---------- 6) 전체 SEO 검사 (기존 규칙 그대로 재사용) ----------
-  console.log('전체 SEO 검사 실행 중...')
-  let result
-  try {
-    const updated = JSON.parse(readFileSync(hospitalPath, 'utf-8'))
-    result = runSeoCheck(updated, siteId, { print: true })
-  } catch (e) {
-    writeFileSync(hospitalPath, originalString, 'utf-8')
-    console.error(red(`SEO 검사를 실행하지 못해 hospital.json을 원래 상태로 복원했습니다: ${e.message}`))
-    process.exit(1)
-  }
-
-  if (result.errors.length > 0) {
-    writeFileSync(hospitalPath, originalString, 'utf-8')
-    console.error(red(`SEO 검증에서 오류 ${result.errors.length}개가 발견되었습니다.`))
-    console.error('hospital.json을 원래 상태로 복원했습니다.')
-    console.error('아티클은 등록되지 않았습니다.')
-    process.exit(1)
-  }
-
-  // ---------- 7) 완료 — canonical URL 표시 ----------
-  let url = `/articles/${article.slug}/`
-  try {
-    url = `${normalizeSiteUrl(hospital.site?.url)}/articles/${article.slug}/`
-  } catch {
-    // site.url이 비정상이면 상대 경로만 표시 (전체 검사에서 이미 경고/오류로 다뤄짐)
-  }
-  console.log(green('아티클 등록 완료'))
-  console.log(`URL: ${url}`)
-  const summaryParts = []
-  if (article.sections) summaryParts.push(`섹션 ${article.sections.length}개`)
-  if (article.faq) summaryParts.push(`FAQ ${article.faq.length}개`)
-  if (article.relatedArticles) summaryParts.push(`관련 글 ${article.relatedArticles.length}개`)
-  if (article.content) summaryParts.push(`본문 문단 ${article.content.length}개`)
-  if (summaryParts.length > 0) console.log(`구성: ${summaryParts.join(' / ')}`)
-  console.log(yellow('게시 전 의료 내용과 광고 표현을 담당자가 최종 검토해 주세요.\n'))
-  process.exit(0)
+  // ---------- 3) 공용 등록 파이프라인 실행 ----------
+  const result = registerArticle(siteId, articleInput, { rootDir: ROOT })
+  process.exit(result.ok ? 0 : 1)
 }
 
 main().catch((e) => {

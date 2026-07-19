@@ -4,8 +4,13 @@
 AI(Claude/GPT 등)로 글을 작성한 뒤 이 명령으로 등록하는 것이 기본 흐름이며,
 향후 AI 자동 생성 파이프라인이 이 명령을 그대로 사용합니다.
 
-> 팁: `npm run draft-article`로 AI에 붙여넣을 프롬프트를 자동 생성할 수 있습니다.
+> 팁 1: `npm run draft-article`로 AI에 붙여넣을 프롬프트를 자동 생성할 수 있습니다.
 > → `docs/create-draft-prompt.md` 참고.
+>
+> 팁 2: AI가 출력한 JSON을 파일로 저장하지 않고 터미널에 바로 붙여넣어 등록하려면
+> `npm run import-ai`를 사용하세요. → `docs/import-ai-article.md` 참고.
+>
+> 전체 흐름: `draft-article` → Claude에 프롬프트 입력 → JSON 복사 → `import-ai` → 자동 저장·등록
 
 ## 실행
 

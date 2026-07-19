@@ -46,10 +46,13 @@ content-drafts/{slug}.prompt.md
 
 1. 파일 열기: `notepad content-drafts\{slug}.prompt.md`
 2. 내용 전체를 복사해 Claude 또는 ChatGPT에 붙여넣기
-3. AI가 출력한 JSON을 그대로 복사해 `content-drafts\{slug}.article.json` 파일로 저장
-   (JSON 앞뒤에 설명이 붙어 있으면 `{` 부터 `}` 까지만 저장)
-4. 등록: `npm run create-article` 실행 → 사이트 ID → 파일 경로 입력
+3. AI가 출력한 JSON을 복사한 뒤 **`npm run import-ai`** 실행 → 터미널에 붙여넣기 → `END` 입력
+   — 저장과 등록이 자동으로 처리됩니다. (→ `docs/import-ai-article.md`)
 
+또는 기존 방식: JSON을 `content-drafts\{slug}.article.json` 파일로 직접 저장한 뒤
+`npm run create-article`로 등록해도 됩니다.
+
+전체 흐름: `draft-article` → Claude에 프롬프트 입력 → JSON 복사 → `import-ai` → 자동 저장·등록
 등록 단계에서 구조 검증·중복 차단·SEO 검사·실패 시 복원이 자동으로 처리됩니다.
 
 ## 의료 콘텐츠 주의
