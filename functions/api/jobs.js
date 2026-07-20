@@ -12,23 +12,17 @@ import {
   ALLOWED_SITES,
 } from '../_lib/auth.js'
 import { insertJob, listJobs } from '../_lib/job-repository.js'
+import { getDb, dbUnavailableResponse } from '../_lib/db.js'
 
 const MAX_KEYWORD_LENGTH = 200
 const MAX_TITLE_LENGTH = 200
-
-function dbOf(context) {
-  const db = context.env?.DB
-  return db && typeof db.prepare === 'function' ? db : null
-}
 
 export async function onRequestPost(context) {
   if (!(await isAuthenticated(context))) {
     return jsonResponse({ ok: false, error: '로그인이 필요합니다.' }, 401)
   }
-  const db = dbOf(context)
-  if (!db) {
-    return jsonResponse({ ok: false, error: '서버 저장소 설정이 완료되지 않았습니다.' }, 500)
-  }
+  const db = getDb(context)
+  if (!db) return dbUnavailableResponse(context)
 
   const body = await readJsonBody(context.request, 10_000)
   if (body === null || typeof body !== 'object') {
@@ -74,10 +68,8 @@ export async function onRequestGet(context) {
   if (!(await isAuthenticated(context))) {
     return jsonResponse({ ok: false, error: '로그인이 필요합니다.' }, 401)
   }
-  const db = dbOf(context)
-  if (!db) {
-    return jsonResponse({ ok: false, error: '서버 저장소 설정이 완료되지 않았습니다.' }, 500)
-  }
+  const db = getDb(context)
+  if (!db) return dbUnavailableResponse(context)
   try {
     const jobs = await listJobs(db)
     return jsonResponse({ ok: true, jobs })

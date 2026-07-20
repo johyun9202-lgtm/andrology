@@ -6,14 +6,10 @@
 
 import { jsonResponse, methodNotAllowed, readJsonBody, isAuthenticated } from '../../_lib/auth.js'
 import { getJob, updateJob, JOB_STATUSES } from '../../_lib/job-repository.js'
+import { getDb, dbUnavailableResponse } from '../../_lib/db.js'
 
 const JOB_ID_PATTERN = /^job_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const MAX_TEXT_LENGTH = 10_000
-
-function dbOf(context) {
-  const db = context.env?.DB
-  return db && typeof db.prepare === 'function' ? db : null
-}
 
 function validJobId(params) {
   const id = typeof params?.id === 'string' ? params.id : ''
@@ -24,8 +20,8 @@ export async function onRequestGet(context) {
   if (!(await isAuthenticated(context))) {
     return jsonResponse({ ok: false, error: '로그인이 필요합니다.' }, 401)
   }
-  const db = dbOf(context)
-  if (!db) return jsonResponse({ ok: false, error: '서버 저장소 설정이 완료되지 않았습니다.' }, 500)
+  const db = getDb(context)
+  if (!db) return dbUnavailableResponse(context)
 
   const id = validJobId(context.params)
   if (!id) return jsonResponse({ ok: false, error: '올바르지 않은 작업 ID입니다.' }, 400)
@@ -43,8 +39,8 @@ export async function onRequestPatch(context) {
   if (!(await isAuthenticated(context))) {
     return jsonResponse({ ok: false, error: '로그인이 필요합니다.' }, 401)
   }
-  const db = dbOf(context)
-  if (!db) return jsonResponse({ ok: false, error: '서버 저장소 설정이 완료되지 않았습니다.' }, 500)
+  const db = getDb(context)
+  if (!db) return dbUnavailableResponse(context)
 
   const id = validJobId(context.params)
   if (!id) return jsonResponse({ ok: false, error: '올바르지 않은 작업 ID입니다.' }, 400)
