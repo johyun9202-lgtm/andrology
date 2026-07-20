@@ -82,20 +82,26 @@ export async function callClaude(env, prompt, model) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
+  const headers = {
+    'content-type': 'application/json',
+    accept: 'application/json',
+    'x-api-key': apiKey,
+    'anthropic-version': API_VERSION,
+    // Workers의 fetch는 기본 User-Agent를 보내지 않아, UA 없는 요청을
+    // 봇으로 오인해 차단(403)하는 경우를 줄이기 위해 명시합니다.
+    'user-agent': 'aiseolab-ai-writer/1.0 (Cloudflare Pages Functions)',
+  }
+  // (선택) AI Gateway의 Authenticated Gateway를 켠 경우에만 필요합니다.
+  // Secret CF_AIG_TOKEN이 설정되어 있으면 자동으로 헤더를 추가합니다.
+  const gatewayToken = typeof env?.CF_AIG_TOKEN === 'string' ? env.CF_AIG_TOKEN.trim() : ''
+  if (gatewayToken !== '') headers['cf-aig-authorization'] = `Bearer ${gatewayToken}`
+
   let response
   try {
     response = await fetch(env.ANTHROPIC_API_URL || DEFAULT_API_URL, {
       method: 'POST',
       signal: controller.signal,
-      headers: {
-        'content-type': 'application/json',
-        accept: 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': API_VERSION,
-        // Workers의 fetch는 기본 User-Agent를 보내지 않아, UA 없는 요청을
-        // 봇으로 오인해 차단(403)하는 경우를 줄이기 위해 명시합니다.
-        'user-agent': 'aiseolab-ai-writer/1.0 (Cloudflare Pages Functions)',
-      },
+      headers,
       body: JSON.stringify({
         model,
         max_tokens: MAX_OUTPUT_TOKENS,

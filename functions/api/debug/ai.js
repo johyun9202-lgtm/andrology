@@ -36,18 +36,22 @@ export async function onRequestGet(context) {
 
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
+  const requestHeaders = {
+    'content-type': 'application/json',
+    accept: 'application/json',
+    'x-api-key': raw.trim(),
+    'anthropic-version': API_VERSION,
+    'user-agent': 'aiseolab-ai-writer/1.0 (Cloudflare Pages Functions)',
+  }
+  // (선택) Authenticated Gateway 사용 시에만 — 실전 코드와 동일 조건
+  const gatewayToken = typeof context.env?.CF_AIG_TOKEN === 'string' ? context.env.CF_AIG_TOKEN.trim() : ''
+  if (gatewayToken !== '') requestHeaders['cf-aig-authorization'] = `Bearer ${gatewayToken}`
   let response
   try {
     response = await fetch(url, {
       method: 'POST',
       signal: controller.signal,
-      headers: {
-        'content-type': 'application/json',
-        accept: 'application/json',
-        'x-api-key': raw.trim(),
-        'anthropic-version': API_VERSION,
-        'user-agent': 'aiseolab-ai-writer/1.0 (Cloudflare Pages Functions)',
-      },
+      headers: requestHeaders,
       // 최소 비용 요청 (성공 시 출력 토큰 1개)
       body: JSON.stringify({ model, max_tokens: 1, messages: [{ role: 'user', content: 'ping' }] }),
     })
