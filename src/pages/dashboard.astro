@@ -13,8 +13,7 @@ const siteIds = readdirSync(join(process.cwd(), 'sites'), { withFileTypes: true 
 
 const DEFAULT_DASHBOARD_SITE = 'aiseolab'
 
-// 최근 작업: 이번 버전은 영구 저장 단계가 아니므로 세션(페이지) 중 생성한
-// Job만 표시하며, 새로고침하면 목록이 비워집니다. (영구 저장은 D1 연결 단계에서)
+// 최근 작업: Cloudflare D1에 영구 저장된 Job을 GET /api/jobs 로 불러와 표시합니다.
 ---
 
 <BaseLayout title="Dashboard" description="AI 콘텐츠 생성과 SEO 자동화 작업을 관리합니다." noindex={true}>
@@ -64,12 +63,12 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
         </thead>
         <tbody id="jobs-body">
           <tr id="jobs-empty">
-            <td colspan="4" class="dash-empty">아직 생성된 작업이 없습니다.</td>
+            <td colspan="4" class="dash-empty">작업 목록을 불러오는 중...</td>
           </tr>
         </tbody>
       </table>
     </div>
-    <p class="dash-note">※ 작업 목록은 아직 영구 저장되지 않으며, 새로고침하면 비워집니다. (영구 저장은 다음 단계에서 연결됩니다)</p>
+    <p class="dash-note">※ 작업은 D1에 영구 저장되며 새로고침해도 유지됩니다. 실제 글 생성(Claude API)은 다음 단계에서 연결됩니다.</p>
   </section>
 </BaseLayout>
 
@@ -165,8 +164,9 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     font-weight: 600;
   }
 
+  .s-queued { background: #f3f4f6; color: #4b5563; }
+  .s-running { background: #eff6ff; color: #1d4ed8; }
   .s-done { background: #ecfdf5; color: #047857; }
-  .s-wait { background: #fffbeb; color: #b45309; }
   .s-fail { background: #fef2f2; color: #b91c1c; }
 
   .dash-note {
@@ -213,7 +213,7 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
   // 주의: 이 페이지의 HTML 자체는 정적 파일이라 서버 리다이렉트로 숨길 수 없습니다.
   // 대신 ① 진입 시 세션 확인 후 미로그인 시 /login 이동 ② 실제 기능(API)은
   // 서버에서 세션을 재검증하므로, 화면을 우회해 호출해도 401로 차단됩니다.
-  // 작업 목록은 이번 버전에서 영구 저장하지 않습니다 (새로고침 시 초기화).
+  // 작업은 Cloudflare D1에 영구 저장되며 새로고침해도 유지됩니다.
 
   // ---------- 세션 가드 ----------
   fetch('/api/auth/session')
@@ -249,23 +249,63 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
   }
 
-  function prependJobRow(job) {
-    document.getElementById('jobs-empty')?.remove()
+  const STATUS_LABEL = { queued: '대기 중', running: '진행 중', completed: '완료', failed: '실패' }
+  const STATUS_CLASS = { queued: 's-queued', running: 's-running', completed: 's-done', failed: 's-fail' }
+
+  function jobRow(job) {
     const row = document.createElement('tr')
-    const cells = [formatTime(job.createdAt), job.site, job.keyword]
-    for (const text of cells) {
+    for (const text of [formatTime(job.createdAt), job.site, job.keyword]) {
       const td = document.createElement('td')
       td.textContent = text
       row.appendChild(td)
     }
     const statusTd = document.createElement('td')
     const badge = document.createElement('span')
-    badge.className = 'dash-status s-wait'
-    badge.textContent = '대기 중'
+    badge.className = `dash-status ${STATUS_CLASS[job.status] ?? 's-queued'}`
+    badge.textContent = STATUS_LABEL[job.status] ?? job.status
     statusTd.appendChild(badge)
     row.appendChild(statusTd)
-    jobsBody?.prepend(row)
+    return row
   }
+
+  function renderEmpty(message) {
+    if (!jobsBody) return
+    jobsBody.innerHTML = ''
+    const row = document.createElement('tr')
+    const td = document.createElement('td')
+    td.colSpan = 4
+    td.className = 'dash-empty'
+    td.textContent = message
+    row.appendChild(td)
+    jobsBody.appendChild(row)
+  }
+
+  function renderJobs(jobs) {
+    if (!jobsBody) return
+    if (!jobs.length) {
+      renderEmpty('아직 생성된 작업이 없습니다.')
+      return
+    }
+    jobsBody.innerHTML = ''
+    for (const job of jobs) jobsBody.appendChild(jobRow(job))
+  }
+
+  // D1에 저장된 최근 작업 불러오기 (최대 30개)
+  async function loadJobs() {
+    try {
+      const response = await fetch('/api/jobs')
+      if (response.status === 401) {
+        location.href = '/login'
+        return
+      }
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok) renderJobs(data.jobs ?? [])
+      else renderEmpty(data.error ?? '작업 목록을 불러오지 못했습니다.')
+    } catch {
+      renderEmpty('작업 목록을 불러오지 못했습니다. (서버 연결 실패)')
+    }
+  }
+  loadJobs()
 
   form?.addEventListener('submit', async (event) => {
     event.preventDefault()
@@ -295,9 +335,9 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
       }
       const data = await response.json().catch(() => ({}))
       if (response.ok && data.ok && data.job) {
-        prependJobRow(data.job)
         showToast('작업이 접수되었습니다. (대기 중)')
         form.reset()
+        loadJobs() // 저장된 목록 다시 불러오기
       } else {
         showToast(data.error ?? '요청 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.', true)
       }

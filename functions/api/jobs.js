@@ -1,8 +1,8 @@
-// POST /api/jobs — AI 초안 생성 Job 접수 (v1 골격)
+// /api/jobs — Job 생성(POST) 및 최근 목록 조회(GET)
 //
-// 이번 버전은 Job을 저장하지 않고 요청 검증 후 Job 객체만 반환합니다.
-// (영구 저장은 다음 단계에서 D1 연결 시 이 파일에 추가됩니다.
-//  Claude API 호출도 이 파일이 연결 지점이 됩니다.)
+// - 두 요청 모두 로그인 세션 필수 (서버에서 재검증)
+// - Job은 Cloudflare D1(바인딩 이름: DB)에 영구 저장됩니다
+// - Claude API 호출·Article 생성은 다음 단계에서 이 파일에 연결됩니다
 
 import {
   jsonResponse,
@@ -11,14 +11,23 @@ import {
   isAuthenticated,
   ALLOWED_SITES,
 } from '../_lib/auth.js'
+import { insertJob, listJobs } from '../_lib/job-repository.js'
 
 const MAX_KEYWORD_LENGTH = 200
 const MAX_TITLE_LENGTH = 200
 
+function dbOf(context) {
+  const db = context.env?.DB
+  return db && typeof db.prepare === 'function' ? db : null
+}
+
 export async function onRequestPost(context) {
-  // 화면을 우회해 직접 호출해도 서버에서 세션을 재검증합니다
   if (!(await isAuthenticated(context))) {
     return jsonResponse({ ok: false, error: '로그인이 필요합니다.' }, 401)
+  }
+  const db = dbOf(context)
+  if (!db) {
+    return jsonResponse({ ok: false, error: '서버 저장소 설정이 완료되지 않았습니다.' }, 500)
   }
 
   const body = await readJsonBody(context.request, 10_000)
@@ -47,17 +56,34 @@ export async function onRequestPost(context) {
     return jsonResponse({ ok: false, error: '허용되지 않는 사이트입니다.' }, 400)
   }
 
-  const job = {
-    id: `job_${crypto.randomUUID()}`,
-    type: 'article_draft',
-    keyword,
-    title,
-    site,
-    status: 'queued',
-    createdAt: new Date().toISOString(),
+  try {
+    const job = await insertJob(db, {
+      id: `job_${crypto.randomUUID()}`,
+      type: 'article_draft',
+      site,
+      keyword,
+      title,
+    })
+    return jsonResponse({ ok: true, job })
+  } catch {
+    return jsonResponse({ ok: false, error: '작업 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.' }, 500)
   }
+}
 
-  return jsonResponse({ ok: true, job })
+export async function onRequestGet(context) {
+  if (!(await isAuthenticated(context))) {
+    return jsonResponse({ ok: false, error: '로그인이 필요합니다.' }, 401)
+  }
+  const db = dbOf(context)
+  if (!db) {
+    return jsonResponse({ ok: false, error: '서버 저장소 설정이 완료되지 않았습니다.' }, 500)
+  }
+  try {
+    const jobs = await listJobs(db)
+    return jsonResponse({ ok: true, jobs })
+  } catch {
+    return jsonResponse({ ok: false, error: '작업 목록을 불러오지 못했습니다.' }, 500)
+  }
 }
 
 export function onRequest() {
