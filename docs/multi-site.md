@@ -7,6 +7,8 @@
 
 ```
 sites/
+  aiseolab/
+    hospital.json     ← aiseolab.kr 데이터 (기본 사이트)
   andrology/
     hospital.json     ← andrology.co.kr 데이터
   (새업체ID)/
@@ -17,7 +19,8 @@ sites/
 
 - 영문 소문자, 숫자, 하이픈만 사용 (예: `andrology`, `dental-example`)
 - 폴더 이름 = 사이트 ID = SITE 환경변수 값
-- **기본 사이트는 `andrology`** — SITE를 지정하지 않으면 항상 andrology가 빌드됩니다.
+- **기본 사이트는 `aiseolab`** — SITE를 지정하지 않으면 항상 aiseolab가 빌드됩니다.
+  (기존 andrology 배포는 Cloudflare 프로젝트에 환경변수 `SITE=andrology`를 설정해야 유지됩니다)
 
 ## 새 사이트 추가 방법
 
@@ -61,7 +64,7 @@ SITE=andrology npm run build
 
 ## Cloudflare Pages 설정
 
-- 기존 andrology 프로젝트: **아무 설정도 바꿀 필요 없음** (SITE 미지정 = andrology)
+- 기존 andrology 프로젝트: **환경변수 `SITE=andrology` 설정 필요** (미지정 시 기본값 aiseolab가 빌드됨)
 - 새 업체 배포: Cloudflare Pages에서 같은 GitHub 저장소로 새 프로젝트를 만들고
   - 빌드 명령: `npm run build`
   - 출력 디렉터리: `dist`

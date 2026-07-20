@@ -19,7 +19,7 @@
 import { createInterface } from 'node:readline'
 import { readFileSync, writeFileSync, existsSync, renameSync, rmSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { resolveSiteId } from '../src/lib/site-id.js'
+import { resolveSiteId, DEFAULT_SITE } from '../src/lib/site-id.js'
 import { isValidSlug } from './lib/article-validator.mjs'
 import { buildArticlePrompt, sanitize, localToday } from './lib/prompt-builder.mjs'
 import { bold, red, green, yellow } from './lib/seo-checker.mjs'
@@ -71,7 +71,7 @@ async function main() {
   console.log('외부 AI를 호출하지 않고, Claude/ChatGPT에 붙여넣을 프롬프트 파일을 만듭니다.\n')
 
   // ---------- 1) 사이트 ID ----------
-  const envSite = typeof process.env.SITE === 'string' && process.env.SITE.trim() !== '' ? process.env.SITE.trim() : 'andrology'
+  const envSite = typeof process.env.SITE === 'string' && process.env.SITE.trim() !== '' ? process.env.SITE.trim() : DEFAULT_SITE
   let siteId
   for (;;) {
     process.stdout.write(`1) 사이트 ID (Enter = ${envSite}): `)

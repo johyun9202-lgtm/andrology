@@ -17,7 +17,7 @@
 import { createInterface } from 'node:readline'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { resolveSiteId } from '../src/lib/site-id.js'
+import { resolveSiteId, DEFAULT_SITE } from '../src/lib/site-id.js'
 import { bold, red, green, yellow } from './lib/seo-checker.mjs'
 import { isValidSlug, validateArticle } from './lib/article-validator.mjs'
 import { buildArticlePrompt, sanitize, localToday } from './lib/prompt-builder.mjs'
@@ -83,7 +83,7 @@ async function main() {
   }
 
   // ---------- 1) 사이트 ID ----------
-  const envSite = typeof process.env.SITE === 'string' && process.env.SITE.trim() !== '' ? process.env.SITE.trim() : 'andrology'
+  const envSite = typeof process.env.SITE === 'string' && process.env.SITE.trim() !== '' ? process.env.SITE.trim() : DEFAULT_SITE
   let siteId
   for (;;) {
     process.stdout.write(`1) 사이트 ID (Enter = ${envSite}): `)

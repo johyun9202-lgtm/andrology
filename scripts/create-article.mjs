@@ -17,7 +17,7 @@
 import { createInterface } from 'node:readline'
 import { readFileSync, existsSync } from 'node:fs'
 import { join, isAbsolute } from 'node:path'
-import { resolveSiteId } from '../src/lib/site-id.js'
+import { resolveSiteId, DEFAULT_SITE } from '../src/lib/site-id.js'
 import { bold, red } from './lib/seo-checker.mjs'
 import { registerArticle } from './lib/article-importer.mjs'
 
@@ -66,7 +66,7 @@ async function main() {
   console.log('입력 방식: JSON 파일\n')
 
   // ---------- 1) 사이트 ID ----------
-  const envSite = typeof process.env.SITE === 'string' && process.env.SITE.trim() !== '' ? process.env.SITE.trim() : 'andrology'
+  const envSite = typeof process.env.SITE === 'string' && process.env.SITE.trim() !== '' ? process.env.SITE.trim() : DEFAULT_SITE
   let siteId
   for (;;) {
     process.stdout.write(`1) 사이트 ID (Enter = ${envSite}): `)

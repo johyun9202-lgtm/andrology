@@ -1,0 +1,78 @@
+{
+  "site": {
+    "url": "https://aiseolab.kr"
+  },
+  "name": "AI SEO Lab",
+  "theme": {
+    "primary": "#2563eb"
+  },
+  "images": {
+    "logo": ""
+  },
+  "description": "AI 기반 SEO 자동화 실험 및 운영 플랫폼",
+  "phone": "미정",
+  "channels": {
+    "phone": "",
+    "kakao": "",
+    "naverBooking": ""
+  },
+  "address": "미정",
+  "hours": {
+    "weekday": "미정",
+    "saturday": "미정",
+    "sundayHoliday": "미정"
+  },
+  "doctor": "미정",
+  "hero": {
+    "title": "AI가 만드는 검색 최적화의 기준",
+    "subtitle": "AI 기반 SEO 자동화 실험과 운영 사례를 공유합니다."
+  },
+  "cta": {
+    "label": "문의하기",
+    "description": "플랫폼과 협업 관련 문의를 남겨주시면 안내해 드립니다."
+  },
+  "services": [
+    {
+      "slug": "ai-content",
+      "title": "AI 콘텐츠 자동 생성",
+      "summary": "검증 파이프라인을 거친 AI 기반 SEO 콘텐츠 자동 생성"
+    },
+    {
+      "slug": "multi-site",
+      "title": "멀티사이트 자동화",
+      "summary": "하나의 엔진으로 여러 사이트를 생성·운영하는 자동화 구조"
+    },
+    {
+      "slug": "seo-validation",
+      "title": "SEO 기술 검증",
+      "summary": "구조화 데이터·사이트맵·메타 자동화와 빌드 단계 SEO 검사"
+    }
+  ],
+  "faq": [
+    {
+      "question": "AI SEO Lab은 어떤 곳인가요?",
+      "answer": "AI 기반 SEO 자동화 기술을 실험하고 실제 사이트 운영에 적용하는 플랫폼입니다."
+    },
+    {
+      "question": "콘텐츠는 어떻게 만들어지나요?",
+      "answer": "AI가 초안을 생성하고, 구조 검증과 SEO 검사를 통과한 콘텐츠만 게시됩니다."
+    },
+    {
+      "question": "협업 문의는 어떻게 하나요?",
+      "answer": "문의하기 페이지를 통해 연락 주시면 안내해 드립니다."
+    }
+  ],
+  "articles": [
+    {
+      "slug": "what-is-ai-seo-lab",
+      "title": "AI SEO Lab을 시작하며: 자동화 실험 플랫폼 소개",
+      "summary": "AI 기반 SEO 자동화 실험 플랫폼 AI SEO Lab이 무엇을 하는 곳인지, 어떤 방식으로 콘텐츠를 만들고 검증하는지 소개합니다.",
+      "date": "2026-07-20",
+      "content": [
+        "AI SEO Lab은 AI 기반 SEO 자동화 기술을 실험하고 운영하는 플랫폼입니다.",
+        "콘텐츠 자동 생성, 멀티사이트 엔진, 빌드 단계 SEO 검증 등 실제 운영에서 검증된 자동화 사례를 다룹니다.",
+        "앞으로 이곳에 실험 결과와 운영 노하우를 정리해 나갈 예정입니다."
+      ]
+    }
+  ]
+}

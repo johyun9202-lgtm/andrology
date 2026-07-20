@@ -14,7 +14,7 @@
 import { createInterface } from 'node:readline'
 import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
-import { resolveSiteId } from '../src/lib/site-id.js'
+import { resolveSiteId, DEFAULT_SITE } from '../src/lib/site-id.js'
 import { bold, red, green, yellow } from './lib/seo-checker.mjs'
 import { validateArticle } from './lib/article-validator.mjs'
 import { registerArticle, cleanJsonText } from './lib/article-importer.mjs'
@@ -71,7 +71,7 @@ async function main() {
   console.log('Claude/ChatGPT가 출력한 JSON을 붙여넣으면 저장과 등록까지 자동 처리합니다.\n')
 
   // ---------- 1) 사이트 ID ----------
-  const envSite = typeof process.env.SITE === 'string' && process.env.SITE.trim() !== '' ? process.env.SITE.trim() : 'andrology'
+  const envSite = typeof process.env.SITE === 'string' && process.env.SITE.trim() !== '' ? process.env.SITE.trim() : DEFAULT_SITE
   let siteId
   for (;;) {
     process.stdout.write(`1) 사이트 ID (Enter = ${envSite}): `)

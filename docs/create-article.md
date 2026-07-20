@@ -112,7 +112,7 @@ F:\AI-SEO\drafts\new-article.json
 
 ```
 npm run create-article
-1) 사이트 ID (Enter = andrology):
+1) 사이트 ID (Enter = 기본 사이트):
 2) 아티클 JSON 파일 경로: content-drafts\new-article.json
 ...
 아티클 등록 완료

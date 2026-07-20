@@ -47,7 +47,7 @@ npm run write-article
 |---|---|---|
 | `ANTHROPIC_API_KEY` | (없음, 필수) | API 키. 저장소에 절대 커밋하지 말 것 |
 | `AI_WRITER_MODEL` | `claude-sonnet-5` | 사용할 모델 |
-| `SITE` | `andrology` | 기본 사이트 |
+| `SITE` | `aiseolab` | 기본 사이트 |
 
 ## 주의
 
