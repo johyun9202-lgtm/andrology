@@ -13,20 +13,17 @@ const siteIds = readdirSync(join(process.cwd(), 'sites'), { withFileTypes: true 
 
 const DEFAULT_DASHBOARD_SITE = 'aiseolab'
 
-// 최근 작업 더미 데이터 (v1 — UI 확인용)
-const recentJobs = [
-  { time: '2026-07-20 14:20', site: 'aiseolab', keyword: 'AI SEO 자동화 사례', status: '완료' },
-  { time: '2026-07-20 11:05', site: 'andrology', keyword: '전립선 비대증 원인', status: '완료' },
-  { time: '2026-07-19 17:42', site: 'aiseolab', keyword: '멀티사이트 운영 방법', status: '검토 대기' },
-  { time: '2026-07-19 10:15', site: 'andrology', keyword: '발기부전 원인', status: '완료' },
-  { time: '2026-07-18 16:30', site: 'aiseolab', keyword: 'SEO 자동 검증이란', status: '실패' },
-]
+// 최근 작업: 이번 버전은 영구 저장 단계가 아니므로 세션(페이지) 중 생성한
+// Job만 표시하며, 새로고침하면 목록이 비워집니다. (영구 저장은 D1 연결 단계에서)
 ---
 
 <BaseLayout title="Dashboard" description="AI 콘텐츠 생성과 SEO 자동화 작업을 관리합니다." noindex={true}>
-  <div class="page-title">
-    <h1>AI Writer Dashboard</h1>
-    <p>AI 콘텐츠 생성과 SEO 자동화 작업을 관리합니다.</p>
+  <div class="page-title dash-head">
+    <div>
+      <h1>AI Writer Dashboard</h1>
+      <p>AI 콘텐츠 생성과 SEO 자동화 작업을 관리합니다.</p>
+    </div>
+    <button type="button" class="btn dash-logout" id="logout-btn">로그아웃</button>
   </div>
 
   <section class="section contact-box">
@@ -65,19 +62,14 @@ const recentJobs = [
             <th>상태</th>
           </tr>
         </thead>
-        <tbody>
-          {recentJobs.map((job) => (
-            <tr>
-              <td>{job.time}</td>
-              <td>{job.site}</td>
-              <td>{job.keyword}</td>
-              <td><span class={`dash-status s-${job.status === '완료' ? 'done' : job.status === '실패' ? 'fail' : 'wait'}`}>{job.status}</span></td>
-            </tr>
-          ))}
+        <tbody id="jobs-body">
+          <tr id="jobs-empty">
+            <td colspan="4" class="dash-empty">아직 생성된 작업이 없습니다.</td>
+          </tr>
         </tbody>
       </table>
     </div>
-    <p class="dash-note">※ 현재는 UI 미리보기용 예시 데이터입니다. 실제 생성 기능은 다음 단계에서 연결됩니다.</p>
+    <p class="dash-note">※ 작업 목록은 아직 영구 저장되지 않으며, 새로고침하면 비워집니다. (영구 저장은 다음 단계에서 연결됩니다)</p>
   </section>
 </BaseLayout>
 
@@ -182,18 +174,138 @@ const recentJobs = [
     font-size: 13px;
     color: var(--muted);
   }
+
+  .dash-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .dash-logout {
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 8px 16px;
+  }
+
+  .dash-empty {
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .dash-form .btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+
+  .dash-toast.error {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #b91c1c;
+  }
 </style>
 
 <script>
-  // v1: 실제 CLI/API 호출 없이 안내만 표시합니다.
+  // 주의: 이 페이지의 HTML 자체는 정적 파일이라 서버 리다이렉트로 숨길 수 없습니다.
+  // 대신 ① 진입 시 세션 확인 후 미로그인 시 /login 이동 ② 실제 기능(API)은
+  // 서버에서 세션을 재검증하므로, 화면을 우회해 호출해도 401로 차단됩니다.
+  // 작업 목록은 이번 버전에서 영구 저장하지 않습니다 (새로고침 시 초기화).
+
+  // ---------- 세션 가드 ----------
+  fetch('/api/auth/session')
+    .then((r) => r.json())
+    .then((d) => {
+      if (!d.authenticated) location.href = '/login'
+    })
+    .catch(() => {})
+
+  // ---------- 로그아웃 ----------
+  document.getElementById('logout-btn')?.addEventListener('click', async () => {
+    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
+    location.href = '/login'
+  })
+
+  // ---------- Job 생성 ----------
   const form = document.getElementById('draft-form')
   const toast = document.getElementById('dash-toast')
-  form?.addEventListener('submit', (event) => {
+  const submitButton = form?.querySelector('button[type=submit]')
+  const jobsBody = document.getElementById('jobs-body')
+
+  function showToast(message, isError = false) {
+    if (!toast) return
+    toast.textContent = message
+    toast.classList.toggle('error', isError)
+    toast.hidden = false
+    setTimeout(() => { toast.hidden = true }, 5000)
+  }
+
+  function formatTime(iso) {
+    const d = new Date(iso)
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  }
+
+  function prependJobRow(job) {
+    document.getElementById('jobs-empty')?.remove()
+    const row = document.createElement('tr')
+    const cells = [formatTime(job.createdAt), job.site, job.keyword]
+    for (const text of cells) {
+      const td = document.createElement('td')
+      td.textContent = text
+      row.appendChild(td)
+    }
+    const statusTd = document.createElement('td')
+    const badge = document.createElement('span')
+    badge.className = 'dash-status s-wait'
+    badge.textContent = '대기 중'
+    statusTd.appendChild(badge)
+    row.appendChild(statusTd)
+    jobsBody?.prepend(row)
+  }
+
+  form?.addEventListener('submit', async (event) => {
     event.preventDefault()
-    if (toast) {
-      toast.textContent = '준비 중입니다 — AI 초안 생성 기능은 다음 단계에서 연결됩니다.'
-      toast.hidden = false
-      setTimeout(() => { toast.hidden = true }, 4000)
+    if (submitButton?.disabled) return // 중복 클릭 방지
+    const formData = new FormData(form)
+    const keyword = String(formData.get('keyword') ?? '').trim()
+    if (keyword === '') {
+      showToast('키워드를 입력해 주세요.', true)
+      return
+    }
+    submitButton.disabled = true
+    const originalLabel = submitButton.textContent
+    submitButton.textContent = '생성 요청 중...'
+    try {
+      const response = await fetch('/api/jobs', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          keyword,
+          title: String(formData.get('title') ?? '').trim(),
+          site: String(formData.get('site') ?? ''),
+        }),
+      })
+      if (response.status === 401) {
+        location.href = '/login'
+        return
+      }
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok && data.job) {
+        prependJobRow(data.job)
+        showToast('작업이 접수되었습니다. (대기 중)')
+        form.reset()
+      } else {
+        showToast(data.error ?? '요청 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.', true)
+      }
+    } catch {
+      showToast('서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.', true)
+    } finally {
+      submitButton.disabled = false
+      submitButton.textContent = originalLabel
     }
   })
 </script>

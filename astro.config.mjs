@@ -12,7 +12,7 @@ export default defineConfig({
   integrations: [
     sitemap({
       // 관리자용 페이지는 사이트맵에서 제외 (검색 노출 대상 아님)
-      filter: (page) => !page.includes('/dashboard'),
+      filter: (page) => !page.includes('/dashboard') && !page.includes('/login'),
     }),
   ],
   build: {

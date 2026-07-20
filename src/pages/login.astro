@@ -1,0 +1,132 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+
+// 관리자 로그인 페이지 — 색인 제외(noindex) + 사이트맵 제외
+---
+
+<BaseLayout title="관리자 로그인" description="AI SEO Lab 관리자 로그인" noindex={true}>
+  <div class="login-wrap">
+    <section class="contact-box login-box">
+      <h1>AI SEO Lab 관리자 로그인</h1>
+      <form id="login-form" class="login-form">
+        <label>
+          비밀번호
+          <input type="password" name="password" autocomplete="current-password" required />
+        </label>
+        <button type="submit" class="btn" id="login-btn">로그인</button>
+      </form>
+      <p id="login-error" class="login-error" hidden></p>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .login-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 40px 0;
+  }
+
+  .login-box {
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .login-box h1 {
+    font-size: 22px;
+    margin: 0 0 20px;
+  }
+
+  .login-form {
+    display: grid;
+    gap: 16px;
+  }
+
+  .login-form label {
+    display: grid;
+    gap: 6px;
+    font-weight: 600;
+    color: var(--text-strong);
+    font-size: 15px;
+  }
+
+  .login-form input {
+    font: inherit;
+    font-weight: 400;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .login-form input:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-color: var(--accent);
+  }
+
+  .login-form .btn {
+    border: 0;
+    cursor: pointer;
+  }
+
+  .login-form .btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+
+  .login-error {
+    margin: 16px 0 0;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    font-weight: 600;
+    font-size: 14px;
+  }
+</style>
+
+<script>
+  // 이미 로그인된 상태면 대시보드로 이동
+  fetch('/api/auth/session')
+    .then((r) => r.json())
+    .then((d) => {
+      if (d.authenticated) location.href = '/dashboard'
+    })
+    .catch(() => {})
+
+  const form = document.getElementById('login-form')
+  const button = document.getElementById('login-btn')
+  const errorBox = document.getElementById('login-error')
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault()
+    if (button.disabled) return
+    const password = new FormData(form).get('password')
+    button.disabled = true
+    button.textContent = '확인 중...'
+    errorBox.hidden = true
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ password }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok) {
+        location.href = '/dashboard'
+        return
+      }
+      errorBox.textContent = data.error ?? '인증에 실패했습니다.'
+      errorBox.hidden = false
+    } catch {
+      errorBox.textContent = '서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.'
+      errorBox.hidden = false
+    } finally {
+      button.disabled = false
+      button.textContent = '로그인'
+    }
+  })
+</script>

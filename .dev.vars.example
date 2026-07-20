@@ -1,0 +1,5 @@
+# 로컬 테스트용 Secret 예시 — 이 파일을 .dev.vars 로 복사한 뒤 실제 값을 채우세요.
+# .dev.vars 는 .gitignore 에 등록되어 있어 저장소에 올라가지 않습니다.
+# SESSION_SECRET 은 32자 이상의 임의 문자열을 사용하세요.
+ADMIN_PASSWORD=
+SESSION_SECRET=
