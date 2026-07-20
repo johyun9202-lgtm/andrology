@@ -19,12 +19,10 @@
 
 import { buildArticlePrompt, sanitize } from '../../scripts/lib/prompt-builder.mjs'
 import { validateArticle } from '../../scripts/lib/article-validator.mjs'
-import andrologyData from '../../sites/andrology/hospital.json' with { type: 'json' }
-import aiseolabData from '../../sites/aiseolab/hospital.json' with { type: 'json' }
-
 // 사이트 정보 (functions는 배포 후 파일시스템에 접근할 수 없어 빌드 시점에 포함)
-// 새 사이트 추가 시 auth.js의 ALLOWED_SITES와 함께 여기에도 추가해야 합니다.
-const SITE_DATA = { andrology: andrologyData, aiseolab: aiseolabData }
+// npm run build 가 sites/<siteId>/hospital.json에서 자동 생성하는 일반 JS 모듈입니다.
+// (JSON 직접 import는 번들러 버전에 따라 배포가 실패할 수 있어 사용하지 않습니다)
+import { SITE_DATA } from './site-data.generated.js'
 
 // 모델명은 이 상수 한 곳에서만 관리합니다.
 // 배포 환경에서 코드 수정 없이 바꾸려면 env(AI_WRITER_MODEL)로 재정의하세요.

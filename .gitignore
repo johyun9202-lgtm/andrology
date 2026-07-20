@@ -26,3 +26,6 @@ content-drafts/*.article.json
 
 # local secrets for wrangler pages dev (never commit)
 .dev.vars
+
+# AI Writer용 자동 생성 사이트 데이터 (빌드 시 재생성)
+functions/_lib/site-data.generated.js
