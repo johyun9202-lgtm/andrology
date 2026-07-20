@@ -123,6 +123,10 @@
     {
       "href": "/contact",
       "label": "문의"
+    },
+    {
+      "href": "/dashboard",
+      "label": "Dashboard"
     }
   ],
   "home": {

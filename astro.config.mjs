@@ -9,7 +9,12 @@ export default defineConfig({
   site: normalizeSiteUrl(siteData.site?.url),
   output: 'static',
   trailingSlash: 'ignore',
-  integrations: [sitemap()],
+  integrations: [
+    sitemap({
+      // 관리자용 페이지는 사이트맵에서 제외 (검색 노출 대상 아님)
+      filter: (page) => !page.includes('/dashboard'),
+    }),
+  ],
   build: {
     // 각 URL이 독립적인 HTML 파일로 생성됩니다. 예: /services → /services/index.html
     format: 'directory',

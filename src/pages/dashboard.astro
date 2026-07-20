@@ -1,0 +1,199 @@
+---
+import { readdirSync } from 'node:fs'
+import { join } from 'node:path'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import { siteId as currentSiteId } from '../lib/site-data.js'
+
+// 관리자용 페이지 — 검색엔진 색인 제외(noindex), 사이트맵에서도 제외됩니다.
+// 사이트 선택 옵션은 빌드 시점의 sites/ 폴더 목록에서 자동 수집합니다.
+const siteIds = readdirSync(join(process.cwd(), 'sites'), { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name)
+  .sort()
+
+const DEFAULT_DASHBOARD_SITE = 'aiseolab'
+
+// 최근 작업 더미 데이터 (v1 — UI 확인용)
+const recentJobs = [
+  { time: '2026-07-20 14:20', site: 'aiseolab', keyword: 'AI SEO 자동화 사례', status: '완료' },
+  { time: '2026-07-20 11:05', site: 'andrology', keyword: '전립선 비대증 원인', status: '완료' },
+  { time: '2026-07-19 17:42', site: 'aiseolab', keyword: '멀티사이트 운영 방법', status: '검토 대기' },
+  { time: '2026-07-19 10:15', site: 'andrology', keyword: '발기부전 원인', status: '완료' },
+  { time: '2026-07-18 16:30', site: 'aiseolab', keyword: 'SEO 자동 검증이란', status: '실패' },
+]
+---
+
+<BaseLayout title="Dashboard" description="AI 콘텐츠 생성과 SEO 자동화 작업을 관리합니다." noindex={true}>
+  <div class="page-title">
+    <h1>AI Writer Dashboard</h1>
+    <p>AI 콘텐츠 생성과 SEO 자동화 작업을 관리합니다.</p>
+  </div>
+
+  <section class="section contact-box">
+    <h2>새 아티클 생성</h2>
+    <form id="draft-form" class="dash-form">
+      <label>
+        키워드 <span class="required">*</span>
+        <input type="text" name="keyword" placeholder="예: 전립선 비대증 원인" required />
+      </label>
+      <label>
+        제목 (선택)
+        <input type="text" name="title" placeholder="비워두면 AI가 제안합니다" />
+      </label>
+      <label>
+        사이트 선택
+        <select name="site">
+          {siteIds.map((id) => (
+            <option value={id} selected={id === DEFAULT_DASHBOARD_SITE}>{id}</option>
+          ))}
+        </select>
+      </label>
+      <button type="submit" class="btn">AI 초안 생성</button>
+    </form>
+    <p id="dash-toast" class="dash-toast" hidden></p>
+  </section>
+
+  <section class="section">
+    <h2>최근 작업</h2>
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>시간</th>
+            <th>사이트</th>
+            <th>키워드</th>
+            <th>상태</th>
+          </tr>
+        </thead>
+        <tbody>
+          {recentJobs.map((job) => (
+            <tr>
+              <td>{job.time}</td>
+              <td>{job.site}</td>
+              <td>{job.keyword}</td>
+              <td><span class={`dash-status s-${job.status === '완료' ? 'done' : job.status === '실패' ? 'fail' : 'wait'}`}>{job.status}</span></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="dash-note">※ 현재는 UI 미리보기용 예시 데이터입니다. 실제 생성 기능은 다음 단계에서 연결됩니다.</p>
+  </section>
+</BaseLayout>
+
+<style>
+  /* 이 스타일은 dashboard 페이지에만 적용됩니다 (다른 페이지 출력 불변) */
+  .dash-form {
+    display: grid;
+    gap: 16px;
+    max-width: 480px;
+    margin-top: 8px;
+  }
+
+  .dash-form label {
+    display: grid;
+    gap: 6px;
+    font-weight: 600;
+    color: var(--text-strong);
+    font-size: 15px;
+  }
+
+  .dash-form input,
+  .dash-form select {
+    font: inherit;
+    font-weight: 400;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .dash-form input:focus,
+  .dash-form select:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-color: var(--accent);
+  }
+
+  .dash-form .btn {
+    border: 0;
+    cursor: pointer;
+    justify-self: start;
+  }
+
+  .required {
+    color: var(--accent);
+  }
+
+  .dash-toast {
+    margin-top: 16px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    background: var(--accent-bg, #eff6ff);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .dash-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .dash-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+    min-width: 520px;
+  }
+
+  .dash-table th,
+  .dash-table td {
+    text-align: left;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dash-table thead th {
+    color: var(--text-strong);
+    background: #f9fafb;
+  }
+
+  .dash-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .dash-status {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .s-done { background: #ecfdf5; color: #047857; }
+  .s-wait { background: #fffbeb; color: #b45309; }
+  .s-fail { background: #fef2f2; color: #b91c1c; }
+
+  .dash-note {
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+</style>
+
+<script>
+  // v1: 실제 CLI/API 호출 없이 안내만 표시합니다.
+  const form = document.getElementById('draft-form')
+  const toast = document.getElementById('dash-toast')
+  form?.addEventListener('submit', (event) => {
+    event.preventDefault()
+    if (toast) {
+      toast.textContent = '준비 중입니다 — AI 초안 생성 기능은 다음 단계에서 연결됩니다.'
+      toast.hidden = false
+      setTimeout(() => { toast.hidden = true }, 4000)
+    }
+  })
+</script>

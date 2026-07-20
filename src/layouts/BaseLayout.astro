@@ -10,7 +10,8 @@ import '../styles/global.css'
 // title: 섹션명만 넘기면 "병원명 | 섹션명" 형태로 자동 생성됩니다.
 // ogType: 기본 'website', 아티클 상세 페이지는 'article'을 전달합니다.
 // jsonLd: 페이지별 추가 구조화 데이터(예: FAQPage)를 전달하면 함께 출력됩니다.
-const { title, description = hospital.description, ogType = 'website', jsonLd } = Astro.props
+// noindex: 관리자 페이지 등 검색 색인에서 제외할 페이지가 true로 전달 (기본 false — 기존 출력 불변)
+const { title, description = hospital.description, ogType = 'website', jsonLd, noindex = false } = Astro.props
 const pageTitle = title ? `${hospital.name} | ${title}` : hospital.name
 const canonical = new URL(Astro.url.pathname, site.siteUrl)
 
@@ -33,6 +34,7 @@ const primaryColor = isValidColor(hospital.theme?.primary) ? hospital.theme.prim
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="sitemap" href="/sitemap-index.xml" />
