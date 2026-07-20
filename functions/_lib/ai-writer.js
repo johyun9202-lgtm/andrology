@@ -27,8 +27,8 @@ import { SITE_DATA } from './site-data.generated.js'
 // 모델명은 이 상수 한 곳에서만 관리합니다.
 // 배포 환경에서 코드 수정 없이 바꾸려면 env(AI_WRITER_MODEL)로 재정의하세요.
 export const DEFAULT_MODEL = 'claude-sonnet-5'
-const DEFAULT_API_URL = 'https://api.anthropic.com/v1/messages'
-const API_VERSION = '2023-06-01'
+export const DEFAULT_API_URL = 'https://api.anthropic.com/v1/messages'
+export const API_VERSION = '2023-06-01'
 const TIMEOUT_MS = 90_000 // Cloudflare 단일 요청 안에서 처리해야 하므로 CLI(180초)보다 짧게
 const MAX_OUTPUT_TOKENS = 8192
 const MAX_ERROR_LENGTH = 500
