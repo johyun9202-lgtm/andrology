@@ -89,8 +89,12 @@ export async function callClaude(env, prompt, model) {
       signal: controller.signal,
       headers: {
         'content-type': 'application/json',
+        accept: 'application/json',
         'x-api-key': apiKey,
         'anthropic-version': API_VERSION,
+        // Workers의 fetch는 기본 User-Agent를 보내지 않아, UA 없는 요청을
+        // 봇으로 오인해 차단(403)하는 경우를 줄이기 위해 명시합니다.
+        'user-agent': 'aiseolab-ai-writer/1.0 (Cloudflare Pages Functions)',
       },
       body: JSON.stringify({
         model,
@@ -117,6 +121,15 @@ export async function callClaude(env, prompt, model) {
       }
     } catch {
       // 오류 본문 파싱 실패는 무시 (상태 코드만 전달)
+    }
+    // 403 "Request not allowed"는 API 규격 문제가 아니라, Anthropic 보안 계층이
+    // 호출 IP(Cloudflare 데이터센터 IP)를 차단할 때 발생하는 알려진 현상입니다.
+    // 해결: env ANTHROPIC_API_URL을 Cloudflare AI Gateway 주소로 설정 (코드 수정 불필요)
+    if (response.status === 403) {
+      throw new Error(
+        `AI API 오류 (HTTP 403)${detail ? `: ${detail}` : ''} — API 키 문제가 아니라 호출 위치(IP) 차단일 가능성이 높습니다. ` +
+          'Cloudflare AI Gateway를 생성한 뒤 환경변수 ANTHROPIC_API_URL을 게이트웨이 주소로 설정해 주세요. (docs/ai-writer-engine.md 참고)'
+      )
     }
     throw new Error(`AI API 오류 (HTTP ${response.status})${detail ? `: ${detail}` : ''}`)
   }
