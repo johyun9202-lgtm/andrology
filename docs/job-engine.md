@@ -70,8 +70,7 @@ npx wrangler pages dev dist --d1 DB=aiseolab-jobs
 
 ## 현재 한계 / 다음 단계
 
-- Job은 저장·조회·상태 변경까지만 지원합니다. **실제 글 생성(Claude API),
-  Article 등록, GitHub Push는 아직 연결되지 않았습니다.**
-- 다음 단계(Claude API 연결) 위치: `functions/api/jobs.js`의 INSERT 직후 —
-  Job을 running으로 바꾸고 생성 → 완료 시 result 저장 → completed/failed 갱신.
+- (Phase 6에서 연결됨) 실제 글 생성은 `POST /api/jobs/:id/run`이 담당합니다.
+  실행 흐름·환경 변수·migration 0002는 **docs/ai-writer-engine.md** 참고.
+- Article 등록·GitHub Push는 아직 연결되지 않았습니다.
 - PATCH는 현재 수동/향후 워커용 API이며 Dashboard UI에는 노출되지 않습니다.

@@ -59,16 +59,17 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
             <th>사이트</th>
             <th>키워드</th>
             <th>상태</th>
+            <th>작업</th>
           </tr>
         </thead>
         <tbody id="jobs-body">
           <tr id="jobs-empty">
-            <td colspan="4" class="dash-empty">작업 목록을 불러오는 중...</td>
+            <td colspan="5" class="dash-empty">작업 목록을 불러오는 중...</td>
           </tr>
         </tbody>
       </table>
     </div>
-    <p class="dash-note">※ 작업은 D1에 영구 저장되며 새로고침해도 유지됩니다. 실제 글 생성(Claude API)은 다음 단계에서 연결됩니다.</p>
+    <p class="dash-note">※ 작업은 D1에 영구 저장되며 새로고침해도 유지됩니다. "글 생성 실행"은 Claude API로 초안을 생성하며 최대 1~2분 걸릴 수 있습니다. 생성된 글은 초안이며, 발행 전 반드시 사람이 검토해야 합니다.</p>
   </section>
 </BaseLayout>
 
@@ -207,6 +208,50 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     border-color: #fecaca;
     color: #b91c1c;
   }
+
+  .dash-action-btn {
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-strong);
+    cursor: pointer;
+  }
+
+  .dash-action-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+
+  .dash-detail-cell {
+    background: #f9fafb;
+  }
+
+  .dash-detail-cell h3 {
+    font-size: 14px;
+    margin: 0 0 4px;
+  }
+
+  .dash-detail-cell p {
+    margin: 0 0 12px;
+    font-size: 14px;
+  }
+
+  .dash-detail-cell pre {
+    margin: 0;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    font-size: 12px;
+    max-height: 320px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
 </style>
 
 <script>
@@ -252,6 +297,100 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
   const STATUS_LABEL = { queued: '대기 중', running: '진행 중', completed: '완료', failed: '실패' }
   const STATUS_CLASS = { queued: 's-queued', running: 's-running', completed: 's-done', failed: 's-fail' }
 
+  // ---------- 글 생성 실행 (POST /api/jobs/:id/run) ----------
+  // 서버가 상태를 다시 검증하므로(중복 실행 차단) 이 Set은 UX용 이중 안전장치입니다.
+  const runningIds = new Set()
+
+  async function runJob(job, button) {
+    if (runningIds.has(job.id)) return
+    runningIds.add(job.id)
+    button.disabled = true
+    button.textContent = '생성 중... (최대 2분)'
+    try {
+      const response = await fetch(`/api/jobs/${encodeURIComponent(job.id)}/run`, { method: 'POST' })
+      if (response.status === 401) {
+        location.href = '/login'
+        return
+      }
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok) showToast('글 생성이 완료되었습니다. (완료)')
+      else showToast(data.error ?? '글 생성에 실패했습니다.', true)
+    } catch {
+      showToast('서버에 연결하지 못했습니다. 목록을 새로고침합니다.', true)
+    } finally {
+      runningIds.delete(job.id)
+      loadJobs() // 성공/실패 모두 D1에 저장된 최신 상태로 다시 그림
+    }
+  }
+
+  // ---------- 결과/오류 보기 (행 아래 상세 토글) ----------
+  function detailRow(job) {
+    const row = document.createElement('tr')
+    row.className = 'dash-detail'
+    const td = document.createElement('td')
+    td.colSpan = 5
+    td.className = 'dash-detail-cell'
+    if (job.status === 'completed' && job.result) {
+      let parsed = null
+      try { parsed = JSON.parse(job.result) } catch {}
+      if (parsed) {
+        const h = document.createElement('h3')
+        h.textContent = parsed.title ?? '(제목 없음)'
+        const meta = document.createElement('p')
+        meta.textContent = `메타 설명: ${parsed.metaDescription ?? ''}`
+        const pre = document.createElement('pre')
+        pre.textContent = JSON.stringify(parsed.article ?? parsed, null, 2)
+        td.append(h, meta, pre)
+      } else {
+        const pre = document.createElement('pre')
+        pre.textContent = job.result
+        td.appendChild(pre)
+      }
+    } else {
+      const p = document.createElement('p')
+      p.textContent = `오류: ${job.error ?? '(오류 내용 없음)'}`
+      td.appendChild(p)
+    }
+    row.appendChild(td)
+    return row
+  }
+
+  function toggleDetail(row, job, button) {
+    const next = row.nextElementSibling
+    if (next && next.classList.contains('dash-detail')) {
+      next.remove()
+      button.textContent = job.status === 'completed' ? '결과 보기' : '오류 보기'
+    } else {
+      row.after(detailRow(job))
+      button.textContent = '닫기'
+    }
+  }
+
+  function actionCell(job, row) {
+    const td = document.createElement('td')
+    const addButton = (label, handler) => {
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.className = 'dash-action-btn'
+      button.textContent = label
+      button.addEventListener('click', () => handler(button))
+      td.appendChild(button)
+      return button
+    }
+    if (job.status === 'queued') {
+      addButton('글 생성 실행', (button) => runJob(job, button))
+    } else if (job.status === 'failed') {
+      addButton('오류 보기', (button) => toggleDetail(row, job, button))
+      td.append(' ')
+      addButton('다시 실행', (button) => runJob(job, button))
+    } else if (job.status === 'completed') {
+      addButton('결과 보기', (button) => toggleDetail(row, job, button))
+    } else {
+      td.textContent = '실행 중...'
+    }
+    return td
+  }
+
   function jobRow(job) {
     const row = document.createElement('tr')
     for (const text of [formatTime(job.createdAt), job.site, job.keyword]) {
@@ -265,6 +404,7 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     badge.textContent = STATUS_LABEL[job.status] ?? job.status
     statusTd.appendChild(badge)
     row.appendChild(statusTd)
+    row.appendChild(actionCell(job, row))
     return row
   }
 
@@ -273,7 +413,7 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     jobsBody.innerHTML = ''
     const row = document.createElement('tr')
     const td = document.createElement('td')
-    td.colSpan = 4
+    td.colSpan = 5
     td.className = 'dash-empty'
     td.textContent = message
     row.appendChild(td)
