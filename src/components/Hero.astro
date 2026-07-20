@@ -1,9 +1,30 @@
 ---
 import { siteData as hospital } from '../lib/site-data.js'
+
+// hero.buttons 배열이 있으면 여러 버튼(첫 번째는 채움, 나머지는 외곽선)을,
+// 없으면 기존처럼 상담 버튼 하나를 표시합니다.
+const buttons =
+  Array.isArray(hospital.hero?.buttons) && hospital.hero.buttons.length > 0
+    ? hospital.hero.buttons
+    : null
 ---
 
 <section class="hero">
   <h1>{hospital.hero.title}</h1>
   <p>{hospital.hero.subtitle}</p>
-  <a href="/contact" class="btn">{hospital.cta.label}</a>
+  {
+    buttons ? (
+      <div class="channel-buttons" style="justify-content: center; margin: 0;">
+        {buttons.map((button, index) => (
+          <a href={button.href} class={`channel-btn ${index === 0 ? 'primary' : 'secondary'}`}>
+            {button.label}
+          </a>
+        ))}
+      </div>
+    ) : (
+      <a href="/contact" class="btn">
+        {hospital.cta.label}
+      </a>
+    )
+  }
 </section>

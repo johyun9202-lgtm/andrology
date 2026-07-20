@@ -66,38 +66,8 @@ export function buildChannels(hospital) {
   return result
 }
 
-// 병원 기본 정보 (MedicalClinic)
-export function buildClinicSchema(hospital, siteUrl) {
-  const schema = {
-    '@context': 'https://schema.org',
-    '@type': 'MedicalClinic',
-    name: hospital.name,
-    description: hospital.description,
-    url: siteUrl,
-  }
-
-  if (isReal(hospital.phone)) {
-    schema.telephone = hospital.phone
-  }
-
-  if (isReal(hospital.address)) {
-    schema.address = hospital.address
-  }
-
-  const hoursLabels = {
-    weekday: '평일',
-    saturday: '토요일',
-    sundayHoliday: '일요일·공휴일',
-  }
-  const hours = Object.entries(hospital.hours ?? {})
-    .filter(([, value]) => isReal(value))
-    .map(([key, value]) => `${hoursLabels[key] ?? key} ${value}`)
-  if (hours.length > 0) {
-    schema.openingHours = hours
-  }
-
-  return schema
-}
+// 사이트 대표 구조화 데이터는 Schema Engine으로 이동했습니다.
+// → src/lib/schema/generate-schema.js (schema.type 기반 타입 선택)
 
 // 자주 묻는 질문 (FAQPage)
 export function buildFaqSchema(faqItems) {

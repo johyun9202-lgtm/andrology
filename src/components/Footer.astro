@@ -1,13 +1,31 @@
 ---
 import { siteData as hospital } from '../lib/site-data.js'
+import { site } from '../config/site.js'
+
+// footer.tagline이 있으면 플랫폼형 푸터(사이트명·태그라인·URL)를,
+// 없으면 기존 푸터를 표시합니다.
+const tagline = hospital.footer?.tagline
 ---
 
 <footer class="site-footer">
   <div class="inner">
-    <p>운영자 정보 준비 중</p>
-    <p>
-      {hospital.name} · 전화: {hospital.phone} · 주소: {hospital.address}
-    </p>
-    <p><a href="/privacy">개인정보처리방침</a></p>
+    {
+      tagline ? (
+        <>
+          <p><strong>{hospital.name}</strong></p>
+          <p>{tagline}</p>
+          <p><a href={site.siteUrl}>{site.siteUrl}</a></p>
+          <p><a href="/privacy">개인정보처리방침</a></p>
+        </>
+      ) : (
+        <>
+          <p>운영자 정보 준비 중</p>
+          <p>
+            {hospital.name} · 전화: {hospital.phone} · 주소: {hospital.address}
+          </p>
+          <p><a href="/privacy">개인정보처리방침</a></p>
+        </>
+      )
+    }
   </div>
 </footer>

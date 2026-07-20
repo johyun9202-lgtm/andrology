@@ -9,19 +9,29 @@ import { buildFaqSchema } from '../lib/schema.js'
 
 const faqPreview = hospital.faq.slice(0, 3)
 const faqSchema = buildFaqSchema(hospital.faq)
+
+// 사이트 데이터의 home 설정으로 홈 섹션 제목·구성을 바꿀 수 있습니다. (없으면 기존 그대로)
+const home = hospital.home ?? {}
 ---
 
 <BaseLayout description={hospital.description} jsonLd={faqSchema}>
   <Hero />
 
   <section class="section">
-    <h2>병원 소개</h2>
+    <h2>{home.aboutTitle ?? '병원 소개'}</h2>
     <p>{hospital.description}</p>
-    <p>대표원장: {hospital.doctor}</p>
+    {!home.goalText && <p>대표원장: {hospital.doctor}</p>}
   </section>
 
+  {home.goalText && (
+    <section class="section">
+      <h2>{home.goalTitle ?? '핵심 목표'}</h2>
+      <p>{home.goalText}</p>
+    </section>
+  )}
+
   <section class="section">
-    <h2>진료과목</h2>
+    <h2>{home.servicesTitle ?? '진료과목'}</h2>
     <div class="card-grid">
       {hospital.services.map((service) => <ServiceCard service={service} />)}
     </div>

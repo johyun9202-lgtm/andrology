@@ -1,17 +1,29 @@
 ---
 import { siteData as hospital } from '../lib/site-data.js'
 import ChannelButtons from './ChannelButtons.astro'
+
+// home.contactComingSoon이 true면 전화·주소·운영시간 대신
+// 문의 메일 자리(Coming Soon)만 표시합니다.
+const comingSoon = hospital.home?.contactComingSoon === true
 ---
 
 <section class="contact-box">
   <h2>{hospital.cta.label}</h2>
   <p>{hospital.cta.description}</p>
   <ChannelButtons />
-  <ul>
-    <li><strong>전화</strong> {hospital.phone}</li>
-    <li><strong>주소</strong> {hospital.address}</li>
-    <li><strong>평일</strong> {hospital.hours.weekday}</li>
-    <li><strong>토요일</strong> {hospital.hours.saturday}</li>
-    <li><strong>일요일·공휴일</strong> {hospital.hours.sundayHoliday}</li>
-  </ul>
+  {
+    comingSoon ? (
+      <ul>
+        <li><strong>문의 메일</strong> Coming Soon</li>
+      </ul>
+    ) : (
+      <ul>
+        <li><strong>전화</strong> {hospital.phone}</li>
+        <li><strong>주소</strong> {hospital.address}</li>
+        <li><strong>평일</strong> {hospital.hours.weekday}</li>
+        <li><strong>토요일</strong> {hospital.hours.saturday}</li>
+        <li><strong>일요일·공휴일</strong> {hospital.hours.sundayHoliday}</li>
+      </ul>
+    )
+  }
 </section>

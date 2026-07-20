@@ -3,9 +3,15 @@ import BaseLayout from '../layouts/BaseLayout.astro'
 import PageTitle from '../components/PageTitle.astro'
 import ContactBox from '../components/ContactBox.astro'
 import { siteData as hospital } from '../lib/site-data.js'
+
+// home.contactTitle이 있으면 페이지 제목·설명에 반영 (없으면 기존 그대로)
+const contactTitle = hospital.home?.contactTitle
 ---
 
-<BaseLayout title="상담문의" description={`${hospital.name} 상담 및 오시는 길 안내`}>
-  <PageTitle title="상담문의" />
+<BaseLayout
+  title={contactTitle ?? '상담문의'}
+  description={contactTitle ? `${hospital.name} ${contactTitle} 안내` : `${hospital.name} 상담 및 오시는 길 안내`}
+>
+  <PageTitle title={contactTitle ?? '상담문의'} />
   <ContactBox />
 </BaseLayout>

@@ -184,5 +184,8 @@
   ],
   "site": {
     "url": "https://andrology.co.kr"
+  },
+  "schema": {
+    "type": "MedicalClinic"
   }
 }

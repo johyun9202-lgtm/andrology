@@ -3,10 +3,16 @@ import BaseLayout from '../layouts/BaseLayout.astro'
 import PageTitle from '../components/PageTitle.astro'
 import ServiceCard from '../components/ServiceCard.astro'
 import { siteData as hospital } from '../lib/site-data.js'
+
+// home.servicesTitle이 있으면 페이지 제목·설명에 반영 (없으면 기존 그대로)
+const servicesTitle = hospital.home?.servicesTitle
 ---
 
-<BaseLayout title="진료안내" description={`${hospital.name} 진료과목 안내`}>
-  <PageTitle title="진료안내" />
+<BaseLayout
+  title={servicesTitle ?? '진료안내'}
+  description={servicesTitle ? `${hospital.name} ${servicesTitle} 안내` : `${hospital.name} 진료과목 안내`}
+>
+  <PageTitle title={servicesTitle ?? '진료안내'} />
   <div class="card-grid">
     {hospital.services.map((service) => <ServiceCard service={service} />)}
   </div>

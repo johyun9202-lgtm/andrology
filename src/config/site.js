@@ -11,11 +11,14 @@ export const site = {
   siteUrl: normalizeSiteUrl(siteData.site?.url),
 }
 
-// 헤더 메뉴
-export const nav = [
-  { href: '/', label: '홈' },
-  { href: '/services', label: '진료안내' },
-  { href: '/faq', label: 'FAQ' },
-  { href: '/articles', label: '아티클' },
-  { href: '/contact', label: '상담문의' },
-]
+// 헤더 메뉴 — 사이트 데이터에 nav 배열이 있으면 그 값을, 없으면 기본 메뉴를 사용합니다.
+export const nav =
+  Array.isArray(siteData.nav) && siteData.nav.length > 0
+    ? siteData.nav
+    : [
+        { href: '/', label: '홈' },
+        { href: '/services', label: '진료안내' },
+        { href: '/faq', label: 'FAQ' },
+        { href: '/articles', label: '아티클' },
+        { href: '/contact', label: '상담문의' },
+      ]

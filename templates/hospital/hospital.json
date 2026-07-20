@@ -2,6 +2,9 @@
   "site": {
     "url": "https://example.com"
   },
+  "schema": {
+    "type": "MedicalClinic"
+  },
   "name": "병원명",
   "theme": {
     "primary": "#2563eb"

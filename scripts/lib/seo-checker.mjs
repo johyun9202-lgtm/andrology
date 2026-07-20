@@ -12,6 +12,7 @@
 // ============================================================
 
 import { normalizeSiteUrl } from '../../src/lib/site-url.js'
+import { SUPPORTED_SCHEMA_TYPES, DEFAULT_SCHEMA_TYPE } from '../../src/lib/schema/generate-schema.js'
 
 // ---------- 출력 도우미 (ANSI 컬러, 외부 라이브러리 없음) ----------
 const supportsColor = process.stdout.isTTY || process.env.FORCE_COLOR
@@ -102,6 +103,16 @@ export function runSeoCheck(hospital, siteId, { print = true } = {}) {
   // 로고 / 대표(OG) 이미지
   if (isReal(hospital.images?.logo)) ok(`로고: ${hospital.images.logo}`)
   else warn('로고(images.logo)가 설정되지 않았습니다 — 텍스트 로고로 표시되는 중 (OG 대표 이미지도 없음)')
+
+  // 구조화 데이터 타입 (Schema Engine)
+  const schemaType = hospital.schema?.type
+  if (schemaType === undefined || (typeof schemaType === 'string' && schemaType.trim() === '')) {
+    ok(`구조화 데이터 타입: ${DEFAULT_SCHEMA_TYPE} (기본값)`)
+  } else if (SUPPORTED_SCHEMA_TYPES.includes(String(schemaType).trim())) {
+    ok(`구조화 데이터 타입: ${String(schemaType).trim()}`)
+  } else {
+    fail(`schema.type "${schemaType}"은 지원하지 않는 타입입니다 — 사용 가능: ${SUPPORTED_SCHEMA_TYPES.join(', ')}`)
+  }
 
   // ============================================================
   // [B] 콘텐츠 검사
