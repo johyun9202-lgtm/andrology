@@ -72,5 +72,6 @@ npx wrangler pages dev dist --d1 DB=aiseolab-jobs
 
 - (Phase 6에서 연결됨) 실제 글 생성은 `POST /api/jobs/:id/run`이 담당합니다.
   실행 흐름·환경 변수·migration 0002는 **docs/ai-writer-engine.md** 참고.
-- Article 등록·GitHub Push는 아직 연결되지 않았습니다.
+- (Phase 7에서 연결됨) 검토·승인 후 게시는 `POST /api/jobs/:id/publish` —
+  게시 상태 컬럼(migration 0003)·GitHub 연동은 **docs/article-publishing-engine.md** 참고.
 - PATCH는 현재 수동/향후 워커용 API이며 Dashboard UI에는 노출되지 않습니다.

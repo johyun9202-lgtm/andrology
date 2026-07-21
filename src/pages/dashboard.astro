@@ -311,6 +311,49 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     color: var(--muted);
     font-size: 12px;
   }
+
+  /* 게시 승인 영역 */
+  .dash-publish {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+  }
+
+  .dash-publish p {
+    margin: 0 0 8px;
+    font-size: 13px;
+  }
+
+  .dash-publish-warn {
+    color: #92400e;
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-weight: 600;
+  }
+
+  .dash-publish-error {
+    color: #b91c1c;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-weight: 600;
+  }
+
+  .dash-publish-done {
+    color: #047857;
+    font-weight: 700;
+  }
+
+  .dash-publish-link {
+    display: inline-block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+  }
 </style>
 
 <script>
@@ -443,6 +486,74 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     return wrap
   }
 
+  // ---------- 게시 승인 (POST /api/jobs/:id/publish) ----------
+  // 서버가 상태를 다시 검증하므로(중복 게시 차단) 이 Set은 UX용 이중 안전장치입니다.
+  const publishingIds = new Set()
+
+  async function publishJob(job, button) {
+    // 검토 확인 대화상자 — 승인 없이는 절대 게시하지 않음
+    if (!window.confirm('이 초안을 검토했으며 실제 사이트에 게시합니다. 진행할까요?')) return
+    if (publishingIds.has(job.id)) return
+    publishingIds.add(job.id)
+    button.disabled = true
+    button.textContent = '게시 중...'
+    try {
+      const response = await fetch(`/api/jobs/${encodeURIComponent(job.id)}/publish`, { method: 'POST' })
+      if (response.status === 401) {
+        location.href = '/login'
+        return
+      }
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok) showToast('게시가 완료되었습니다. 배포 반영까지 1~2분 걸릴 수 있습니다.')
+      else showToast(data.error ?? '게시에 실패했습니다.', true)
+    } catch {
+      showToast('서버에 연결하지 못했습니다. 목록을 새로고침합니다.', true)
+    } finally {
+      publishingIds.delete(job.id)
+      loadJobs()
+    }
+  }
+
+  // 게시 상태 표시 + 승인/재시도 버튼 (결과 미리보기 하단)
+  function publishSection(job) {
+    const box = document.createElement('div')
+    box.className = 'dash-publish'
+    const status = job.publishStatus ?? 'draft'
+
+    if (status === 'published') {
+      box.appendChild(textEl('p', '게시 완료', 'dash-publish-done'))
+      const sha = typeof job.publishCommitSha === 'string' ? job.publishCommitSha.slice(0, 7) : '-'
+      box.appendChild(textEl('p', `경로: ${job.publishedPath ?? '-'} · 커밋: ${sha}`, 'dash-meta'))
+      if (typeof job.publishedUrl === 'string' && /^https?:\/\//.test(job.publishedUrl)) {
+        const link = document.createElement('a')
+        link.href = job.publishedUrl
+        link.target = '_blank'
+        link.rel = 'noopener'
+        link.textContent = '게시 글 열기 →'
+        link.className = 'dash-publish-link'
+        box.appendChild(link)
+      }
+      box.appendChild(textEl('p', '※ Cloudflare 배포가 진행 중일 수 있어 링크 반영까지 1~2분 걸릴 수 있습니다.', 'dash-meta'))
+      return box
+    }
+
+    if (status === 'publishing') {
+      box.appendChild(textEl('p', '게시 진행 중... 잠시 후 목록을 새로고침해 주세요.', 'dash-meta'))
+      return box
+    }
+
+    if (status === 'publish_failed') {
+      box.appendChild(textEl('p', `게시 실패: ${job.publishErrorMessage ?? '(원인 미상)'}`, 'dash-publish-error'))
+    } else {
+      box.appendChild(textEl('p', 'AI가 생성한 초안입니다. 위 미리보기 내용을 반드시 검토한 뒤 게시하세요.', 'dash-publish-warn'))
+    }
+    const btn = textEl('button', status === 'publish_failed' ? '게시 다시 시도' : '게시 승인', 'dash-action-btn dash-publish-btn')
+    btn.type = 'button'
+    btn.addEventListener('click', () => publishJob(job, btn))
+    box.appendChild(btn)
+    return box
+  }
+
   function detailRow(job) {
     const row = document.createElement('tr')
     row.className = 'dash-detail'
@@ -467,6 +578,8 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
           toggle.textContent = rawPre.hidden ? 'JSON 원문 보기' : 'JSON 원문 닫기'
         })
         td.append(toggle, rawPre)
+        // 게시 승인 영역 — 미리보기를 연(=검토한) 상태에서만 노출
+        td.appendChild(publishSection(job))
       } else if (job.result) {
         // JSON 해석 불가 시 원문을 텍스트로만 표시
         td.appendChild(textEl('p', '결과 형식을 해석할 수 없어 원문을 표시합니다.', 'dash-meta'))

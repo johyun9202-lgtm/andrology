@@ -138,4 +138,5 @@ npx wrangler d1 execute aiseolab-jobs --file=migrations/0002_add_job_run_timesta
   "호출·저장" 부분(ai-writer.js)이 그대로 consumer로 이동하면 되도록 분리되어 있습니다.
 - running 상태로 방치된 Job의 자동 복구(스테일 타임아웃)는 Queue 전환 시 함께 도입 예정.
 - 생성된 글은 **초안**입니다. 특히 의료 콘텐츠는 발행 전 반드시 사람이 검토해야 합니다.
-  (Article 등록·GitHub 반영은 다음 단계)
+- (Phase 7에서 연결됨) 검토 후 실제 게시는 `POST /api/jobs/:id/publish` —
+  **docs/article-publishing-engine.md** 참고.

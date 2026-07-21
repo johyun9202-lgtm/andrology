@@ -13,8 +13,9 @@
 // - 생성 결과는 .gitignore 대상이며 직접 수정하지 않습니다.
 // ============================================================
 
-import { readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs'
+import { readdirSync, writeFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { loadHospital } from '../src/lib/load-hospital.js'
 
 const root = process.cwd()
 const sitesDir = join(root, 'sites')
@@ -27,8 +28,9 @@ const siteIds = readdirSync(sitesDir, { withFileTypes: true })
 
 const data = {}
 for (const siteId of siteIds) {
-  const raw = readFileSync(join(sitesDir, siteId, 'hospital.json'), 'utf-8')
-  data[siteId] = JSON.parse(raw) // JSON이 깨져 있으면 여기서 빌드가 실패 (조용한 오배포 방지)
+  // 사이트 로더와 동일한 병합 규칙 사용 (hospital.json + articles/*.json)
+  // 깨진 JSON·slug 중복이면 여기서 빌드가 실패 (조용한 오배포 방지)
+  data[siteId] = loadHospital(siteId, { rootDir: root })
 }
 
 const banner = [

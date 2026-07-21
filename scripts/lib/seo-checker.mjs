@@ -15,7 +15,10 @@ import { normalizeSiteUrl } from '../../src/lib/site-url.js'
 import { SUPPORTED_SCHEMA_TYPES, DEFAULT_SCHEMA_TYPE } from '../../src/lib/schema/generate-schema.js'
 
 // ---------- 출력 도우미 (ANSI 컬러, 외부 라이브러리 없음) ----------
-const supportsColor = process.stdout.isTTY || process.env.FORCE_COLOR
+// Workers(Pages Functions)에는 process가 없으므로 존재 여부를 먼저 확인합니다.
+// (게시 엔진이 print:false로 이 모듈을 재사용 — CLI 동작은 기존과 동일)
+const supportsColor =
+  typeof process !== 'undefined' && (process.stdout?.isTTY || process.env?.FORCE_COLOR)
 const paint = (code, text) => (supportsColor ? `\x1b[${code}m${text}\x1b[0m` : text)
 export const green = (t) => paint('32', t)
 export const yellow = (t) => paint('33', t)

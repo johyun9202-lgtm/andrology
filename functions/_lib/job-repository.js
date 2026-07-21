@@ -9,10 +9,16 @@
 // ============================================================
 
 export const JOB_STATUSES = ['queued', 'running', 'completed', 'failed']
+export const PUBLISH_STATUSES = ['draft', 'publishing', 'published', 'publish_failed']
 export const MAX_LIST_LIMIT = 30
 
+// publishing 상태로 방치된 Job(요청 중단 등)은 이 시간이 지나면 재시도(재선점)를 허용
+const STALE_PUBLISHING_MS = 15 * 60 * 1000
+
 const JOB_FIELDS =
-  'id, type, site, keyword, title, status, progress, result, error, started_at, completed_at, created_at, updated_at'
+  'id, type, site, keyword, title, status, progress, result, error, started_at, completed_at, ' +
+  'publish_status, published_path, published_url, publish_commit_sha, publish_error_message, published_at, publish_started_at, ' +
+  'created_at, updated_at'
 
 // DB 행 → API 응답용 Job 객체 (스네이크 케이스 → 카멜 케이스)
 function toJob(row) {
@@ -29,6 +35,13 @@ function toJob(row) {
     error: row.error ?? null,
     startedAt: row.started_at ?? null,
     completedAt: row.completed_at ?? null,
+    publishStatus: row.publish_status ?? 'draft',
+    publishedPath: row.published_path ?? null,
+    publishedUrl: row.published_url ?? null,
+    publishCommitSha: row.publish_commit_sha ?? null,
+    publishErrorMessage: row.publish_error_message ?? null,
+    publishedAt: row.published_at ?? null,
+    publishStartedAt: row.publish_started_at ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -38,7 +51,7 @@ export async function insertJob(db, { id, type, site, keyword, title }) {
   const now = new Date().toISOString()
   await db
     .prepare(
-      `INSERT INTO jobs (${JOB_FIELDS}) VALUES (?, ?, ?, ?, ?, 'queued', 0, NULL, NULL, NULL, NULL, ?, ?)`
+      `INSERT INTO jobs (${JOB_FIELDS}) VALUES (?, ?, ?, ?, ?, 'queued', 0, NULL, NULL, NULL, NULL, 'draft', NULL, NULL, NULL, NULL, NULL, NULL, ?, ?)`
     )
     .bind(id, type, site, keyword, title ?? '', now, now)
     .run()
@@ -129,6 +142,60 @@ export async function markJobFailed(db, id, errorMessage) {
        WHERE id = ?`
     )
     .bind(errorMessage, now, now, id)
+    .run()
+  return getJob(db, id)
+}
+
+// ------------------------------------------------------------
+// Phase 7 — 게시(Publishing) 상태 전이
+// ------------------------------------------------------------
+
+// 게시 선점(claim): 상태 검사와 publishing 전환을 한 번의 조건부 UPDATE로 수행.
+// - AI 생성이 completed인 Job만
+// - publish_status가 draft/publish_failed일 때만 (published/publishing 재게시 차단)
+// - 단, publishing 상태로 15분 이상 방치된 경우(요청 중단 등)는 재선점 허용
+export async function claimJobForPublish(db, id) {
+  const now = new Date()
+  const iso = now.toISOString()
+  const staleCutoff = new Date(now.getTime() - STALE_PUBLISHING_MS).toISOString()
+  const info = await db
+    .prepare(
+      `UPDATE jobs
+         SET publish_status = 'publishing', publish_started_at = ?, publish_error_message = NULL, updated_at = ?
+       WHERE id = ? AND status = 'completed'
+         AND (publish_status IN ('draft', 'publish_failed')
+              OR (publish_status = 'publishing' AND publish_started_at <= ?))`
+    )
+    .bind(iso, iso, id, staleCutoff)
+    .run()
+  return (info?.meta?.changes ?? info?.changes) === 1
+}
+
+// 게시 성공: 경로·URL·커밋 SHA 저장 + published
+export async function markJobPublished(db, id, { path, url, sha }) {
+  const now = new Date().toISOString()
+  await db
+    .prepare(
+      `UPDATE jobs
+         SET publish_status = 'published', published_path = ?, published_url = ?, publish_commit_sha = ?,
+             publish_error_message = NULL, published_at = ?, updated_at = ?
+       WHERE id = ?`
+    )
+    .bind(path, url, sha, now, now, id)
+    .run()
+  return getJob(db, id)
+}
+
+// 게시 실패: 안전한 오류 메시지 저장 + publish_failed (이후 "게시 다시 시도" 가능)
+export async function markJobPublishFailed(db, id, errorMessage) {
+  const now = new Date().toISOString()
+  await db
+    .prepare(
+      `UPDATE jobs
+         SET publish_status = 'publish_failed', publish_error_message = ?, updated_at = ?
+       WHERE id = ?`
+    )
+    .bind(errorMessage, now, id)
     .run()
   return getJob(db, id)
 }
