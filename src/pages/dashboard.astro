@@ -25,6 +25,12 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     <button type="button" class="btn dash-logout" id="logout-btn">로그아웃</button>
   </div>
 
+  <div class="dash-tabs" role="tablist">
+    <button type="button" class="dash-tab active" id="tab-btn-create">생성 작업</button>
+    <button type="button" class="dash-tab" id="tab-btn-published">게시된 글</button>
+  </div>
+
+  <div id="tab-create">
   <section class="section contact-box">
     <h2>새 아티클 생성</h2>
     <form id="draft-form" class="dash-form">
@@ -70,6 +76,53 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
       </table>
     </div>
     <p class="dash-note">※ 작업은 D1에 영구 저장되며 새로고침해도 유지됩니다. "글 생성 실행"은 Claude API로 초안을 생성하며 최대 1~2분 걸릴 수 있습니다. 생성된 글은 초안이며, 발행 전 반드시 사람이 검토해야 합니다.</p>
+  </section>
+  </div>
+
+  <section class="section" id="tab-published" hidden>
+    <h2>게시된 글</h2>
+    <form id="pub-filter" class="dash-pub-filter">
+      <select name="site" id="pub-site">
+        <option value="">전체 사이트</option>
+        {siteIds.map((id) => <option value={id}>{id}</option>)}
+      </select>
+      <select name="status" id="pub-status">
+        <option value="">전체 상태</option>
+        <option value="published">게시됨</option>
+        <option value="deleted">삭제됨</option>
+      </select>
+      <select name="deployment" id="pub-deployment">
+        <option value="">전체 배포 상태</option>
+        <option value="pending">배포 확인 중</option>
+        <option value="deployed">사이트 게시 완료</option>
+        <option value="deploy_failed">배포 확인 실패</option>
+      </select>
+      <input type="search" name="q" id="pub-search" placeholder="키워드·제목 검색" maxlength="100" />
+      <button type="submit" class="dash-action-btn">검색</button>
+    </form>
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>사이트</th>
+            <th>제목</th>
+            <th>키워드</th>
+            <th>게시 시각</th>
+            <th>상태</th>
+            <th>작업</th>
+          </tr>
+        </thead>
+        <tbody id="pub-body">
+          <tr><td colspan="6" class="dash-empty">게시된 글을 불러오는 중...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="dash-pub-pager">
+      <button type="button" class="dash-action-btn" id="pub-prev">← 이전</button>
+      <span id="pub-page-info"></span>
+      <button type="button" class="dash-action-btn" id="pub-next">다음 →</button>
+    </div>
+    <p class="dash-note">※ 목록은 D1 게시 이력 기준입니다. "배포 확인"은 실제 URL이 열리는지 서버에서 검사합니다. 수정·삭제는 GitHub 커밋으로 반영되며, 재배포(1~2분) 후 사이트에 적용됩니다.</p>
   </section>
 </BaseLayout>
 
@@ -353,6 +406,109 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     font-size: 13px;
     font-weight: 600;
     color: var(--accent);
+  }
+
+  /* 탭 */
+  .dash-tabs {
+    display: flex;
+    gap: 8px;
+    margin: 8px 0 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dash-tab {
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+  }
+
+  .dash-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* 게시된 글 필터/페이저 */
+  .dash-pub-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 8px 0 16px;
+  }
+
+  .dash-pub-filter select,
+  .dash-pub-filter input {
+    font: inherit;
+    font-size: 13px;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .dash-pub-pager {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .dash-pub-pager button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  /* 게시 글 편집 폼 */
+  .dash-edit-form {
+    display: grid;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .dash-edit-form label {
+    display: grid;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-strong);
+  }
+
+  .dash-edit-form input,
+  .dash-edit-form textarea {
+    font: inherit;
+    font-size: 13px;
+    font-weight: 400;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .dash-edit-form textarea {
+    font-family: ui-monospace, monospace;
+    min-height: 120px;
+    white-space: pre;
+  }
+
+  .dash-edit-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .dash-edit-error {
+    color: #b91c1c;
+    font-size: 13px;
+    font-weight: 600;
   }
 </style>
 
@@ -730,4 +886,297 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
       submitButton.textContent = originalLabel
     }
   })
+
+  // ==================================================================
+  // Phase 8 — 게시된 글 관리 탭
+  // ==================================================================
+  const tabCreate = document.getElementById('tab-create')
+  const tabPublished = document.getElementById('tab-published')
+  const tabBtnCreate = document.getElementById('tab-btn-create')
+  const tabBtnPublished = document.getElementById('tab-btn-published')
+
+  function switchTab(showPublished) {
+    tabCreate.hidden = showPublished
+    tabPublished.hidden = !showPublished
+    tabBtnCreate.classList.toggle('active', !showPublished)
+    tabBtnPublished.classList.toggle('active', showPublished)
+    if (showPublished) loadPublished()
+  }
+  tabBtnCreate?.addEventListener('click', () => switchTab(false))
+  tabBtnPublished?.addEventListener('click', () => switchTab(true))
+
+  const pubBody = document.getElementById('pub-body')
+  const pubFilter = document.getElementById('pub-filter')
+  const pubPrev = document.getElementById('pub-prev')
+  const pubNext = document.getElementById('pub-next')
+  const pubPageInfo = document.getElementById('pub-page-info')
+  let pubPage = 1
+  let pubPageCount = 1
+
+  const PUB_STATUS_LABEL = { published: 'GitHub 반영 완료', deleted: '삭제됨' }
+  const DEPLOY_LABEL = { pending: '배포 확인 중', deployed: '사이트 게시 완료', deploy_failed: '배포 확인 실패' }
+  const DEPLOY_CLASS = { pending: 's-queued', deployed: 's-done', deploy_failed: 's-fail' }
+
+  function pubEmpty(message) {
+    if (!pubBody) return
+    pubBody.innerHTML = ''
+    const row = document.createElement('tr')
+    const td = document.createElement('td')
+    td.colSpan = 6
+    td.className = 'dash-empty'
+    td.textContent = message
+    row.appendChild(td)
+    pubBody.appendChild(row)
+  }
+
+  async function loadPublished() {
+    const params = new URLSearchParams()
+    const site = document.getElementById('pub-site')?.value ?? ''
+    const status = document.getElementById('pub-status')?.value ?? ''
+    const deployment = document.getElementById('pub-deployment')?.value ?? ''
+    const q = document.getElementById('pub-search')?.value?.trim() ?? ''
+    if (site) params.set('site', site)
+    if (status) params.set('status', status)
+    if (deployment) params.set('deployment', deployment)
+    if (q) params.set('q', q)
+    params.set('page', String(pubPage))
+    try {
+      const response = await fetch(`/api/published-articles?${params}`)
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data.ok) { pubEmpty(data.error ?? '목록을 불러오지 못했습니다.'); return }
+      pubPageCount = data.pageCount ?? 1
+      if (pubPageInfo) pubPageInfo.textContent = `${data.page} / ${pubPageCount} 페이지 (총 ${data.total}건)`
+      if (pubPrev) pubPrev.disabled = data.page <= 1
+      if (pubNext) pubNext.disabled = data.page >= pubPageCount
+      if (!data.articles.length) { pubEmpty('게시된 글이 없습니다.'); return }
+      pubBody.innerHTML = ''
+      for (const item of data.articles) pubBody.appendChild(pubRow(item))
+    } catch {
+      pubEmpty('목록을 불러오지 못했습니다. (서버 연결 실패)')
+    }
+  }
+
+  pubFilter?.addEventListener('submit', (event) => { event.preventDefault(); pubPage = 1; loadPublished() })
+  pubPrev?.addEventListener('click', () => { if (pubPage > 1) { pubPage -= 1; loadPublished() } })
+  pubNext?.addEventListener('click', () => { if (pubPage < pubPageCount) { pubPage += 1; loadPublished() } })
+
+  function articleTitleOf(item) {
+    try { return JSON.parse(item.result)?.title ?? '(제목 없음)' } catch { return '(제목 없음)' }
+  }
+
+  function pubRow(item) {
+    const row = document.createElement('tr')
+    for (const text of [item.site, articleTitleOf(item), item.keyword, item.publishedAt ? formatTime(item.publishedAt) : '-']) {
+      const td = document.createElement('td')
+      td.textContent = text
+      row.appendChild(td)
+    }
+    // 상태: GitHub 반영 + 배포 확인
+    const statusTd = document.createElement('td')
+    const pubBadge = document.createElement('span')
+    pubBadge.className = `dash-status ${item.publishStatus === 'deleted' ? 's-fail' : 's-running'}`
+    pubBadge.textContent = PUB_STATUS_LABEL[item.publishStatus] ?? item.publishStatus
+    statusTd.appendChild(pubBadge)
+    statusTd.append(' ')
+    const depBadge = document.createElement('span')
+    depBadge.className = `dash-status ${DEPLOY_CLASS[item.deploymentStatus] ?? 's-queued'}`
+    depBadge.textContent = DEPLOY_LABEL[item.deploymentStatus] ?? item.deploymentStatus
+    depBadge.title = item.deploymentErrorMessage ?? ''
+    statusTd.appendChild(depBadge)
+    row.appendChild(statusTd)
+    // 작업 버튼
+    const actionTd = document.createElement('td')
+    const addBtn = (label, handler) => {
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.className = 'dash-action-btn'
+      button.textContent = label
+      button.addEventListener('click', () => handler(button))
+      actionTd.appendChild(button)
+      actionTd.append(' ')
+      return button
+    }
+    if (item.publishStatus === 'published' && typeof item.publishedUrl === 'string' && /^https?:\/\//.test(item.publishedUrl)) {
+      const link = document.createElement('a')
+      link.href = item.publishedUrl
+      link.target = '_blank'
+      link.rel = 'noopener'
+      link.className = 'dash-publish-link'
+      link.textContent = '열기'
+      actionTd.appendChild(link)
+      actionTd.append(' ')
+    }
+    addBtn('배포 확인', (button) => checkDeploymentAction(item, button))
+    if (item.publishStatus === 'published') {
+      addBtn('수정', () => openEditForm(item, row))
+      addBtn('삭제', (button) => deleteArticleAction(item, button))
+    }
+    row.appendChild(actionTd)
+    return row
+  }
+
+  async function checkDeploymentAction(item, button) {
+    button.disabled = true
+    button.textContent = '확인 중...'
+    try {
+      const response = await fetch(`/api/jobs/${encodeURIComponent(item.id)}/check-deployment`, { method: 'POST' })
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok) showToast(data.deployment?.note ?? '확인이 완료되었습니다.', data.deployment?.status === 'deploy_failed')
+      else showToast(data.error ?? '배포 확인에 실패했습니다.', true)
+    } catch {
+      showToast('서버에 연결하지 못했습니다.', true)
+    } finally {
+      loadPublished()
+    }
+  }
+
+  async function deleteArticleAction(item, button) {
+    // 2단계 확인 — 실수 삭제 방지
+    if (!window.confirm('이 글을 사이트에서 삭제합니다. 계속할까요?')) return
+    if (!window.confirm('정말 삭제하시겠습니까? 저장소 커밋 이력으로만 복구할 수 있습니다.')) return
+    button.disabled = true
+    button.textContent = '삭제 중...'
+    try {
+      const response = await fetch(`/api/jobs/${encodeURIComponent(item.id)}/article`, { method: 'DELETE' })
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok) showToast('삭제되었습니다. 재배포 후 URL이 404가 됩니다.')
+      else showToast(data.error ?? '삭제에 실패했습니다.', true)
+    } catch {
+      showToast('서버에 연결하지 못했습니다.', true)
+    } finally {
+      loadPublished()
+    }
+  }
+
+  // ---------- 게시 글 수정 폼 (필드 편집 + 미리보기 + 재검토 확인) ----------
+  function formField(labelText, el) {
+    const label = document.createElement('label')
+    label.textContent = labelText
+    label.appendChild(el)
+    return label
+  }
+
+  async function openEditForm(item, row) {
+    // 기존 편집 행 제거 (한 번에 하나만)
+    document.querySelectorAll('.dash-detail').forEach((el) => el.remove())
+    let payload
+    try {
+      const response = await fetch(`/api/jobs/${encodeURIComponent(item.id)}/article`)
+      if (response.status === 401) { location.href = '/login'; return }
+      payload = await response.json()
+      if (!payload.ok) { showToast(payload.error ?? '글을 불러오지 못했습니다.', true); return }
+    } catch {
+      showToast('서버에 연결하지 못했습니다.', true)
+      return
+    }
+    const article = payload.article
+
+    const detail = document.createElement('tr')
+    detail.className = 'dash-detail'
+    const td = document.createElement('td')
+    td.colSpan = 6
+    td.className = 'dash-detail-cell'
+
+    const form = document.createElement('div')
+    form.className = 'dash-edit-form'
+    const titleInput = document.createElement('input')
+    titleInput.value = article.title ?? ''
+    titleInput.maxLength = 120
+    const summaryInput = document.createElement('textarea')
+    summaryInput.value = article.summary ?? ''
+    summaryInput.style.minHeight = '60px'
+    const introInput = document.createElement('textarea')
+    introInput.value = article.intro ?? ''
+    introInput.style.minHeight = '60px'
+    const sectionsInput = document.createElement('textarea')
+    sectionsInput.value = JSON.stringify(article.sections ?? [], null, 2)
+    const faqInput = document.createElement('textarea')
+    faqInput.value = JSON.stringify(article.faq ?? [], null, 2)
+    const errorLine = document.createElement('p')
+    errorLine.className = 'dash-edit-error'
+    errorLine.hidden = true
+    const previewHolder = document.createElement('div')
+
+    form.append(
+      formField('제목', titleInput),
+      formField('요약 / 메타 설명 (summary)', summaryInput),
+      formField('도입부 (intro)', introInput),
+      formField('본문 섹션 (sections — JSON)', sectionsInput),
+      formField('FAQ (JSON)', faqInput),
+    )
+
+    // 편집 값 → 아티클 객체 (JSON 필드 파싱 실패 시 null + 오류 표시)
+    function draftArticle() {
+      errorLine.hidden = true
+      let sections, faq
+      try { sections = JSON.parse(sectionsInput.value) } catch { errorLine.textContent = 'sections JSON을 해석할 수 없습니다.'; errorLine.hidden = false; return null }
+      try { faq = JSON.parse(faqInput.value) } catch { errorLine.textContent = 'FAQ JSON을 해석할 수 없습니다.'; errorLine.hidden = false; return null }
+      return {
+        ...article,
+        title: titleInput.value.trim(),
+        summary: summaryInput.value.trim(),
+        intro: introInput.value.trim(),
+        sections,
+        faq,
+      }
+    }
+
+    const actions = document.createElement('div')
+    actions.className = 'dash-edit-actions'
+    const previewBtn = textEl('button', '미리보기', 'dash-action-btn')
+    previewBtn.type = 'button'
+    previewBtn.addEventListener('click', () => {
+      const draft = draftArticle()
+      if (!draft) return
+      previewHolder.innerHTML = ''
+      previewHolder.appendChild(articlePreview({ title: draft.title, metaDescription: draft.summary, article: draft }))
+    })
+    const saveBtn = textEl('button', '저장 후 다시 게시', 'dash-action-btn dash-publish-btn')
+    saveBtn.type = 'button'
+    saveBtn.addEventListener('click', async () => {
+      const draft = draftArticle()
+      if (!draft) return
+      // 의료 콘텐츠 포함 — 수정 후 재검토 확인 필수
+      if (!window.confirm('수정 내용을 검토했으며 다시 게시합니다. 진행할까요?')) return
+      saveBtn.disabled = true
+      saveBtn.textContent = '저장 중...'
+      try {
+        const response = await fetch(`/api/jobs/${encodeURIComponent(item.id)}/article`, {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ article: draft }),
+        })
+        if (response.status === 401) { location.href = '/login'; return }
+        const data = await response.json().catch(() => ({}))
+        if (response.ok && data.ok) {
+          showToast('수정이 저장되었습니다. 재배포 후 사이트에 반영됩니다.')
+          detail.remove()
+        } else {
+          errorLine.textContent = data.error ?? '저장에 실패했습니다.'
+          errorLine.hidden = false
+        }
+      } catch {
+        errorLine.textContent = '서버에 연결하지 못했습니다.'
+        errorLine.hidden = false
+      } finally {
+        saveBtn.disabled = false
+        saveBtn.textContent = '저장 후 다시 게시'
+        loadPublished()
+      }
+    })
+    const cancelBtn = textEl('button', '닫기', 'dash-action-btn')
+    cancelBtn.type = 'button'
+    cancelBtn.addEventListener('click', () => detail.remove())
+    actions.append(previewBtn, saveBtn, cancelBtn)
+
+    td.append(
+      textEl('p', 'slug와 게시 URL은 변경되지 않습니다. 저장 시 GitHub에 수정 커밋이 생성됩니다.', 'dash-meta'),
+      form, errorLine, actions, previewHolder
+    )
+    detail.appendChild(td)
+    row.after(detail)
+  }
 </script>

@@ -144,6 +144,9 @@ GitHub 커밋 성공 = **published**입니다. 실제 사이트 반영은 Cloudf
 
 ## 현재 한계 / 향후 계획
 
+- (Phase 8에서 연결됨) 실제 배포 확인·게시 글 수정·삭제는
+  **docs/published-article-management.md** 참고 (migration 0004 필요).
+
 - 본문 편집기 없음 — 편집 추가 지점: Dashboard 미리보기(articlePreview)와
   게시 승인 버튼 사이. 편집 결과를 PATCH로 result에 저장한 뒤 게시하는 구조 권장.
 - slug 수정 UI 없음 — 서버가 안정적으로 생성. 향후 승인 단계에서 편집 허용 예정.

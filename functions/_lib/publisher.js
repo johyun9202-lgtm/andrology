@@ -220,3 +220,196 @@ export async function publishArticle(config, job, rawArticle) {
 
   return { path: committedPath, sha: commitSha, url, slug: cleanArticle.slug }
 }
+
+// ============================================================
+// Phase 8 — 게시 글 관리 (읽기 / 수정 / 삭제) + 배포 확인
+// ============================================================
+
+// D1에 저장된 published_path가 이 엔진이 만든 개별 아티클 파일인지 검증.
+// (레거시 hospital.json 경로·임의 경로는 관리 대상에서 제외)
+const ARTICLE_PATH_PATTERN = /^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*\/([a-z0-9-]+)\/articles\/([a-z0-9-]+)\.json$/
+
+export function parseArticlePath(publishedPath) {
+  const match = typeof publishedPath === 'string' ? publishedPath.match(ARTICLE_PATH_PATTERN) : null
+  if (!match) return null
+  const [, site, slug] = match
+  if (!isValidSlug(slug)) return null
+  return { site, slug }
+}
+
+const MAX_REMOTE_FILE_SIZE = 512 * 1024 // 개별 아티클 파일 크기 상한 (안전장치)
+
+// GitHub에서 개별 아티클 파일 읽기 → { text, sha }
+export async function githubReadArticleFile(config, filePath) {
+  const getPath = `/repos/${config.owner}/${config.repo}/contents/${filePath}?ref=${encodeURIComponent(config.branch)}`
+  const response = await githubFetch(config, getPath)
+  if (!response.ok) throw new Error(githubErrorMessage(response.status, response.headers))
+  const data = await response.json().catch(() => null)
+  if (!data || typeof data.sha !== 'string' || typeof data.content !== 'string' || data.content === '') {
+    throw new Error('저장소의 아티클 파일을 읽지 못했습니다. 파일 상태를 확인해 주세요.')
+  }
+  if (Number(data.size) > MAX_REMOTE_FILE_SIZE) {
+    throw new Error('아티클 파일이 허용 크기를 초과합니다.')
+  }
+  return { text: base64ToUtf8(data.content), sha: data.sha }
+}
+
+// 게시 글 수정: 검증 → 현재 파일 GET(sha) → 동일 내용이면 커밋 생략 → sha 기반 PUT
+// 반환: { sha(새 커밋), path, article } / noChange=true면 { noChange: true }
+export async function updatePublishedArticle(config, job, rawArticle) {
+  const parsed = parseArticlePath(job.publishedPath)
+  if (!parsed) {
+    throw new Error('이 작업의 게시 파일 경로가 관리 대상 형식이 아닙니다. (개별 아티클 파일만 수정할 수 있습니다)')
+  }
+
+  // slug·사이트는 D1의 검증된 값으로 강제 — 사용자 입력이 경로에 관여하지 않음
+  const article = JSON.parse(JSON.stringify(rawArticle))
+  article.slug = parsed.slug
+  const { errors, article: cleanArticle } = validateArticle(article)
+  if (errors.length > 0 || !cleanArticle) {
+    const summary = errors.slice(0, 2).map((m) => sanitize(String(m))).join(' / ')
+    throw new Error(`수정한 아티클이 형식 검증에 실패했습니다. (${summary || '구조 오류'})`)
+  }
+
+  const current = await githubReadArticleFile(config, job.publishedPath)
+  const newContent = JSON.stringify(cleanArticle, null, 2) + '\n'
+  // 동일 내용이면 불필요한 커밋 생략 — 문자열이 아니라 "정규화된 의미" 기준으로 비교
+  // (validator가 키 순서·공백을 정리하므로 원문 문자열 비교는 오탐이 생길 수 있음)
+  try {
+    const currentValidated = validateArticle(JSON.parse(current.text)).article
+    if (currentValidated && JSON.stringify(currentValidated) === JSON.stringify(cleanArticle)) {
+      return { noChange: true }
+    }
+  } catch {
+    // 현재 파일 해석 불가 시 비교 생략하고 수정 진행 (파일 정상화 효과)
+  }
+
+  const putResponse = await githubFetch(config, `/repos/${config.owner}/${config.repo}/contents/${job.publishedPath}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      message: `Update article: ${parsed.site}/${parsed.slug} (${job.id})`,
+      content: utf8ToBase64(newContent),
+      sha: current.sha, // 수정은 반드시 현재 sha 기반 — 그 사이 변경되면 409/422
+      branch: config.branch,
+    }),
+  })
+  if (!putResponse.ok) throw new Error(githubErrorMessage(putResponse.status, putResponse.headers))
+  const putResult = await putResponse.json().catch(() => null)
+  const commitSha = putResult?.commit?.sha
+  if (typeof commitSha !== 'string' || commitSha === '') {
+    throw new Error('GitHub 커밋 결과를 확인하지 못했습니다. 저장소에서 커밋 이력을 확인해 주세요.')
+  }
+  return { sha: commitSha, path: job.publishedPath, article: cleanArticle }
+}
+
+// 게시 글 삭제: 현재 파일 GET(sha) → sha 기반 DELETE (커밋 이력은 남아 복구 가능)
+export async function deletePublishedArticle(config, job) {
+  const parsed = parseArticlePath(job.publishedPath)
+  if (!parsed) {
+    throw new Error('이 작업의 게시 파일 경로가 관리 대상 형식이 아닙니다. (개별 아티클 파일만 삭제할 수 있습니다)')
+  }
+  const current = await githubReadArticleFile(config, job.publishedPath)
+  const deleteResponse = await githubFetch(config, `/repos/${config.owner}/${config.repo}/contents/${job.publishedPath}`, {
+    method: 'DELETE',
+    body: JSON.stringify({
+      message: `Delete article: ${parsed.site}/${parsed.slug} (${job.id})`,
+      sha: current.sha,
+      branch: config.branch,
+    }),
+  })
+  if (!deleteResponse.ok) throw new Error(githubErrorMessage(deleteResponse.status, deleteResponse.headers))
+  const deleteResult = await deleteResponse.json().catch(() => null)
+  const commitSha = deleteResult?.commit?.sha
+  if (typeof commitSha !== 'string' || commitSha === '') {
+    throw new Error('GitHub 삭제 커밋을 확인하지 못했습니다. 저장소에서 커밋 이력을 확인해 주세요.')
+  }
+  return { sha: commitSha }
+}
+
+// ------------------------------------------------------------
+// 배포 확인 (SSRF 방지 설계)
+//
+// 요청 URL은 사용자·D1의 published_url을 그대로 쓰지 않고,
+// "빌드에 포함된 사이트 설정(site.url) + 검증된 slug"로만 서버가 조립합니다.
+// → localhost/사설 IP/임의 도메인 요청이 구조적으로 불가능.
+// redirect 발생 시 최종 URL도 허용 origin 안인지 확인합니다.
+// 응답 본문은 저장하지 않으며 상태·시각만 D1에 기록됩니다.
+// ------------------------------------------------------------
+
+const DEPLOY_CHECK_TIMEOUT_MS = 10_000
+
+// 검사 대상 URL 계산: 허용 origin(사이트 설정) + slug — 실패 시 null
+export function buildDeployCheckUrl(env, job) {
+  const parsed = parseArticlePath(job.publishedPath)
+  if (!parsed || parsed.site !== job.site) return null
+  // 테스트 전용 재정의(DEPLOY_CHECK_BASE_URL) — 미설정 시 사이트 설정의 URL 사용
+  const override = typeof env?.DEPLOY_CHECK_BASE_URL === 'string' ? env.DEPLOY_CHECK_BASE_URL.trim() : ''
+  let origin
+  try {
+    origin = normalizeSiteUrl(override || SITE_DATA[job.site]?.site?.url)
+  } catch {
+    return null
+  }
+  return { url: `${origin}/articles/${parsed.slug}/`, origin, slug: parsed.slug }
+}
+
+// 배포 상태 실제 확인. 반환: { status: 'deployed'|'pending'|'deploy_failed', note }
+export async function checkDeployment(env, job) {
+  const target = buildDeployCheckUrl(env, job)
+  if (!target) {
+    return { status: 'deploy_failed', note: '검사할 URL을 계산하지 못했습니다. 게시 경로를 확인해 주세요.' }
+  }
+
+  const timeoutMs = Number(env?.DEPLOY_CHECK_TIMEOUT_MS) > 0 ? Number(env.DEPLOY_CHECK_TIMEOUT_MS) : DEPLOY_CHECK_TIMEOUT_MS
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  let response
+  try {
+    response = await fetch(target.url, {
+      redirect: 'follow',
+      signal: controller.signal,
+      headers: { accept: 'text/html', 'user-agent': 'aiseolab-deploy-check/1.0' },
+    })
+  } catch (e) {
+    clearTimeout(timer)
+    return {
+      status: 'deploy_failed',
+      note: e?.name === 'AbortError' ? '확인 요청이 10초 안에 응답하지 않았습니다.' : '사이트에 연결하지 못했습니다.',
+    }
+  }
+  clearTimeout(timer)
+
+  // redirect가 있었다면 최종 URL이 허용 origin 안인지 확인
+  try {
+    if (response.url && new URL(response.url).origin !== new URL(target.origin).origin) {
+      return { status: 'deploy_failed', note: '허용되지 않은 위치로 이동되었습니다.' }
+    }
+  } catch {
+    return { status: 'deploy_failed', note: '최종 URL을 확인하지 못했습니다.' }
+  }
+
+  // 삭제된 글: 404가 곧 "삭제 반영 완료"
+  if (job.publishStatus === 'deleted') {
+    if (response.status === 404) return { status: 'deployed', note: '삭제가 사이트에 반영되었습니다 (404 확인).' }
+    if (response.status === 200) return { status: 'pending', note: '아직 삭제 전 페이지가 남아 있습니다. 재배포 완료 후 다시 확인해 주세요.' }
+    return { status: 'deploy_failed', note: `예상하지 못한 응답입니다 (HTTP ${response.status}).` }
+  }
+
+  if (response.status === 404) {
+    return { status: 'pending', note: '아직 배포 반영 전입니다 (404). 1~2분 후 다시 확인해 주세요.' }
+  }
+  if (response.status !== 200) {
+    return { status: 'deploy_failed', note: `사이트가 오류를 반환했습니다 (HTTP ${response.status}).` }
+  }
+  const contentType = response.headers.get('content-type') ?? ''
+  if (!contentType.includes('text/html')) {
+    return { status: 'deploy_failed', note: '응답이 HTML 페이지가 아닙니다.' }
+  }
+  // 가벼운 내용 확인: 페이지에 slug(canonical 링크에 항상 포함)가 있는지만 확인
+  // (본문은 저장하지 않음 — 확인 후 즉시 폐기)
+  const bodyText = await response.text().catch(() => '')
+  if (!bodyText.includes(target.slug)) {
+    return { status: 'deploy_failed', note: '페이지가 열리지만 게시한 글이 아닌 것으로 보입니다.' }
+  }
+  return { status: 'deployed', note: '사이트 게시가 확인되었습니다 (HTTP 200).' }
+}
