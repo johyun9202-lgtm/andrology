@@ -73,8 +73,11 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
   </section>
 </BaseLayout>
 
-<style>
-  /* 이 스타일은 dashboard 페이지에만 적용됩니다 (다른 페이지 출력 불변) */
+<style is:global>
+  /* 이 스타일은 dashboard 페이지에만 로드됩니다 (다른 페이지 출력 불변).
+     is:global 이유: JS로 동적 생성하는 요소(작업 행·배지·미리보기)에는
+     Astro scoped style의 data-astro-cid 속성이 없어 스타일이 적용되지 않기 때문.
+     모든 선택자는 dash-/s- 접두사 클래스라 전역 충돌 위험이 없습니다. */
   .dash-form {
     display: grid;
     gap: 16px;
@@ -241,7 +244,7 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
   }
 
   .dash-detail-cell pre {
-    margin: 0;
+    margin: 8px 0 0;
     padding: 12px;
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -251,6 +254,62 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     overflow: auto;
     white-space: pre-wrap;
     word-break: break-all;
+  }
+
+  /* 아티클 미리보기 — 긴 결과가 대시보드를 밀어내지 않도록 높이 제한 + 스크롤 */
+  .dash-preview {
+    max-height: 420px;
+    overflow: auto;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    margin-bottom: 8px;
+  }
+
+  .dash-preview h3 {
+    font-size: 16px;
+    margin: 0 0 8px;
+  }
+
+  .dash-preview h4 {
+    font-size: 14px;
+    margin: 14px 0 4px;
+  }
+
+  .dash-preview h5 {
+    font-size: 13px;
+    margin: 10px 0 4px;
+    color: var(--text-strong);
+  }
+
+  .dash-preview p {
+    margin: 0 0 8px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .dash-preview ul {
+    margin: 0 0 8px;
+    padding-left: 20px;
+    font-size: 13px;
+  }
+
+  .dash-preview .dash-meta {
+    color: var(--muted);
+  }
+
+  .dash-preview .dash-faq-q {
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .dash-preview .dash-gen-info {
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
   }
 </style>
 
@@ -324,32 +383,102 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
   }
 
   // ---------- 결과/오류 보기 (행 아래 상세 토글) ----------
+  // XSS 방지: 모든 출력은 textContent 기반 DOM 생성만 사용 (innerHTML 미사용)
+  function textEl(tag, text, className) {
+    const el = document.createElement(tag)
+    if (className) el.className = className
+    el.textContent = text
+    return el
+  }
+
+  function appendItems(parent, items) {
+    if (!Array.isArray(items) || items.length === 0) return
+    const ul = document.createElement('ul')
+    for (const item of items) ul.appendChild(textEl('li', String(item)))
+    parent.appendChild(ul)
+  }
+
+  // 생성 결과(payload)를 사람이 읽기 좋은 미리보기로 렌더링
+  function articlePreview(payload) {
+    const wrap = document.createElement('div')
+    wrap.className = 'dash-preview'
+    const article = payload.article && typeof payload.article === 'object' ? payload.article : {}
+
+    wrap.appendChild(textEl('h3', payload.title ?? article.title ?? '(제목 없음)'))
+    if (payload.metaDescription) wrap.appendChild(textEl('p', `메타 설명: ${payload.metaDescription}`, 'dash-meta'))
+    if (article.summary && article.summary !== payload.metaDescription) {
+      wrap.appendChild(textEl('p', `요약: ${article.summary}`, 'dash-meta'))
+    }
+    if (article.intro) wrap.appendChild(textEl('p', String(article.intro)))
+
+    for (const section of Array.isArray(article.sections) ? article.sections : []) {
+      if (!section || typeof section !== 'object') continue
+      wrap.appendChild(textEl('h4', String(section.heading ?? '')))
+      for (const p of Array.isArray(section.paragraphs) ? section.paragraphs : []) {
+        wrap.appendChild(textEl('p', String(p)))
+      }
+      appendItems(wrap, section.items)
+      for (const sub of Array.isArray(section.subsections) ? section.subsections : []) {
+        if (!sub || typeof sub !== 'object') continue
+        wrap.appendChild(textEl('h5', String(sub.heading ?? '')))
+        for (const p of Array.isArray(sub.paragraphs) ? sub.paragraphs : []) {
+          wrap.appendChild(textEl('p', String(p)))
+        }
+        appendItems(wrap, sub.items)
+      }
+    }
+
+    const faqs = Array.isArray(article.faq) ? article.faq : []
+    if (faqs.length) {
+      wrap.appendChild(textEl('h4', 'FAQ'))
+      for (const f of faqs) {
+        if (!f || typeof f !== 'object') continue
+        wrap.appendChild(textEl('p', `Q. ${f.question ?? ''}`, 'dash-faq-q'))
+        wrap.appendChild(textEl('p', `A. ${f.answer ?? ''}`))
+      }
+    }
+
+    const generated = payload.generatedAt ? formatTime(payload.generatedAt) : '-'
+    wrap.appendChild(textEl('p', `생성 모델: ${payload.model ?? '-'} · 생성 시각: ${generated}`, 'dash-gen-info'))
+    return wrap
+  }
+
   function detailRow(job) {
     const row = document.createElement('tr')
     row.className = 'dash-detail'
     const td = document.createElement('td')
     td.colSpan = 5
     td.className = 'dash-detail-cell'
-    if (job.status === 'completed' && job.result) {
-      let parsed = null
-      try { parsed = JSON.parse(job.result) } catch {}
-      if (parsed) {
-        const h = document.createElement('h3')
-        h.textContent = parsed.title ?? '(제목 없음)'
-        const meta = document.createElement('p')
-        meta.textContent = `메타 설명: ${parsed.metaDescription ?? ''}`
-        const pre = document.createElement('pre')
-        pre.textContent = JSON.stringify(parsed.article ?? parsed, null, 2)
-        td.append(h, meta, pre)
+
+    if (job.status === 'completed') {
+      let payload = null
+      try { payload = JSON.parse(job.result) } catch {}
+      if (payload && typeof payload === 'object') {
+        td.appendChild(articlePreview(payload))
+        // JSON 원문은 기본 숨김 — 버튼으로만 펼침
+        const rawPre = document.createElement('pre')
+        rawPre.className = 'dash-raw-json'
+        rawPre.textContent = JSON.stringify(payload, null, 2)
+        rawPre.hidden = true
+        const toggle = textEl('button', 'JSON 원문 보기', 'dash-action-btn dash-json-toggle')
+        toggle.type = 'button'
+        toggle.addEventListener('click', () => {
+          rawPre.hidden = !rawPre.hidden
+          toggle.textContent = rawPre.hidden ? 'JSON 원문 보기' : 'JSON 원문 닫기'
+        })
+        td.append(toggle, rawPre)
+      } else if (job.result) {
+        // JSON 해석 불가 시 원문을 텍스트로만 표시
+        td.appendChild(textEl('p', '결과 형식을 해석할 수 없어 원문을 표시합니다.', 'dash-meta'))
+        const rawPre = document.createElement('pre')
+        rawPre.className = 'dash-raw-json'
+        rawPre.textContent = String(job.result)
+        td.appendChild(rawPre)
       } else {
-        const pre = document.createElement('pre')
-        pre.textContent = job.result
-        td.appendChild(pre)
+        td.appendChild(textEl('p', '저장된 결과가 없습니다.', 'dash-meta'))
       }
     } else {
-      const p = document.createElement('p')
-      p.textContent = `오류: ${job.error ?? '(오류 내용 없음)'}`
-      td.appendChild(p)
+      td.appendChild(textEl('p', `오류: ${job.error ?? '(오류 내용 없음)'}`))
     }
     row.appendChild(td)
     return row
