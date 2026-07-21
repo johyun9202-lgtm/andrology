@@ -5,22 +5,54 @@ import ServiceCard from '../components/ServiceCard.astro'
 import FaqList from '../components/FaqList.astro'
 import ContactBox from '../components/ContactBox.astro'
 import { siteData as hospital } from '../lib/site-data.js'
-import { buildFaqSchema } from '../lib/schema.js'
+import { buildFaqSchema, isReal, isValidHttpUrl } from '../lib/schema.js'
 
 const faqPreview = hospital.faq.slice(0, 3)
 const faqSchema = buildFaqSchema(hospital.faq)
 
 // 사이트 데이터의 home 설정으로 홈 섹션 제목·구성을 바꿀 수 있습니다. (없으면 기존 그대로)
 const home = hospital.home ?? {}
+
+// ---------- SEO (Phase 9A) ----------
+// seo 필드가 있으면 사용하고, 없으면 병원명·지역·진료 유형 기반 안전한 fallback.
+// (기존 사이트는 seo/region/hospitalType이 없으므로 출력이 바뀌지 않습니다)
+const seo = hospital.seo ?? {}
+const autoTitleParts = [hospital.region, hospital.hospitalType]
+  .filter((v) => typeof v === 'string' && v.trim() !== '')
+  .join(' ')
+const titleOverride =
+  (typeof seo.title === 'string' && seo.title.trim() !== '' && seo.title.trim()) ||
+  (autoTitleParts ? `${hospital.name} | ${autoTitleParts}` : undefined)
+const seoDescription =
+  (typeof seo.description === 'string' && seo.description.trim() !== '' && seo.description.trim()) ||
+  hospital.description
+const seoKeywords = Array.isArray(seo.keywords) ? seo.keywords : []
+
+// ---------- 병원형 섹션 데이터 (전부 optional — 값이 있을 때만 렌더링) ----------
+// doctor: 기존 문자열("미정" 등)과 신규 객체({name,title,bio}) 모두 지원
+const doctorInfo = hospital.doctor && typeof hospital.doctor === 'object' ? hospital.doctor : null
+const doctorImage = isValidHttpUrl(hospital.images?.doctor) ? hospital.images.doctor.trim() : null
+
+// 최근 칼럼: 병합 로더(hospital.json + articles/*.json)의 articles를 날짜 내림차순 3개
+const recentArticles = [...(Array.isArray(hospital.articles) ? hospital.articles : [])]
+  .filter((a) => a && typeof a.slug === 'string' && typeof a.title === 'string')
+  .sort((a, b) => String(b.date ?? '').localeCompare(String(a.date ?? '')))
+  .slice(0, 3)
+
+const hours = hospital.hours ?? {}
+const sundayValue = hours.sundayHoliday ?? hours.sunday
+const hasHours = [hours.weekday, hours.saturday, sundayValue].some(isReal)
+const naverMapUrl = isValidHttpUrl(hospital.channels?.naverMap) ? hospital.channels.naverMap.trim() : null
+const hasLocation = hasHours || isReal(hospital.address) || isReal(hospital.phone) || !!naverMapUrl
 ---
 
-<BaseLayout description={hospital.description} jsonLd={faqSchema}>
+<BaseLayout description={seoDescription} jsonLd={faqSchema} titleOverride={titleOverride} keywords={seoKeywords}>
   <Hero />
 
   <section class="section">
     <h2>{home.aboutTitle ?? '병원 소개'}</h2>
     <p>{hospital.description}</p>
-    {!home.goalText && <p>대표원장: {hospital.doctor}</p>}
+    {!home.goalText && !doctorInfo && <p>대표원장: {hospital.doctor}</p>}
   </section>
 
   {home.goalText && (
@@ -36,6 +68,73 @@ const home = hospital.home ?? {}
       {hospital.services.map((service) => <ServiceCard service={service} />)}
     </div>
   </section>
+
+  {doctorInfo && isReal(doctorInfo.name) && (
+    <section class="section">
+      <h2>의료진 소개</h2>
+      <div class="article-item" style="display: flex; gap: 16px; align-items: flex-start;">
+        {doctorImage && (
+          <img
+            src={doctorImage}
+            alt={`${doctorInfo.name} ${doctorInfo.title ?? '대표원장'}`}
+            loading="lazy"
+            style="width: 96px; height: 96px; object-fit: cover; border-radius: 12px; flex-shrink: 0;"
+          />
+        )}
+        <div>
+          <h3 style="margin: 0 0 6px;">
+            {doctorInfo.name}
+            <span style="font-weight: 400; color: var(--muted); font-size: 14px;"> {doctorInfo.title ?? '대표원장'}</span>
+          </h3>
+          {isReal(doctorInfo.bio) && <p style="margin: 0;">{doctorInfo.bio}</p>}
+        </div>
+      </div>
+    </section>
+  )}
+
+  {recentArticles.length > 0 && (
+    <section class="section">
+      <h2>{home.articlesTitle ?? '최근 칼럼'}</h2>
+      <div class="article-list">
+        {recentArticles.map((article) => (
+          <a href={`/articles/${article.slug}/`} class="article-item-link">
+            <article class="article-item">
+              <h3>{article.title}</h3>
+              <p>{article.summary}</p>
+              <p class="meta">{article.date}</p>
+            </article>
+          </a>
+        ))}
+      </div>
+      <p><a href="/articles">칼럼 전체 보기 →</a></p>
+    </section>
+  )}
+
+  {hasLocation && (
+    <section class="section">
+      <h2>진료 시간 및 위치</h2>
+      <div class="article-item">
+        {hasHours && (
+          <p style="margin: 0 0 8px;">
+            {isReal(hours.weekday) && <>평일 {hours.weekday}<br /></>}
+            {isReal(hours.saturday) && <>토요일 {hours.saturday}<br /></>}
+            {isReal(sundayValue) && <>일요일·공휴일 {sundayValue}</>}
+          </p>
+        )}
+        {isReal(hospital.address) && <p style="margin: 0 0 8px;">주소: {hospital.address}</p>}
+        {isReal(hospital.phone) && (
+          <p style="margin: 0 0 8px;">
+            전화: <a href={`tel:${hospital.phone.trim().replace(/\s+/g, '')}`}>{hospital.phone}</a>
+          </p>
+        )}
+        {naverMapUrl && (
+          <p style="margin: 0;">
+            <a href={naverMapUrl} target="_blank" rel="noopener">네이버 지도에서 보기 →</a>
+          </p>
+        )}
+      </div>
+    </section>
+  )}
 
   <section class="section">
     <h2>자주 묻는 질문</h2>

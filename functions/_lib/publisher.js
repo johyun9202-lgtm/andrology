@@ -115,7 +115,7 @@ export function generatePublishSlug(job, article) {
 
 // ---------- GitHub Contents API ----------
 
-async function githubFetch(config, path, init = {}) {
+export async function githubFetch(config, path, init = {}) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), config.timeoutMs)
   try {
@@ -142,7 +142,7 @@ async function githubFetch(config, path, init = {}) {
 
 // 상태 코드별 안전한 한국어 오류 (원문·토큰 미노출, 운영 로그용 상태 코드는 포함)
 // isCreate=true: sha 없는 "생성 전용 PUT"에서의 409/422는 파일이 이미 존재한다는 뜻
-function githubErrorMessage(status, headers, { isCreate = false, slug = '' } = {}) {
+export function githubErrorMessage(status, headers, { isCreate = false, slug = '' } = {}) {
   if (status === 401) return 'GitHub 인증에 실패했습니다 (401). GITHUB_TOKEN이 유효한지 확인해 주세요.'
   if (status === 403) {
     if (headers?.get?.('x-ratelimit-remaining') === '0') {

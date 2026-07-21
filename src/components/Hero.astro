@@ -1,5 +1,6 @@
 ---
 import { siteData as hospital } from '../lib/site-data.js'
+import { isValidHttpUrl } from '../lib/schema.js'
 
 // hero.buttons 배열이 있으면 여러 버튼(첫 번째는 채움, 나머지는 외곽선)을,
 // 없으면 기존처럼 상담 버튼 하나를 표시합니다.
@@ -7,6 +8,9 @@ const buttons =
   Array.isArray(hospital.hero?.buttons) && hospital.hero.buttons.length > 0
     ? hospital.hero.buttons
     : null
+
+// 대표 이미지: 유효한 http(s) URL일 때만 표시 (없으면 기존 레이아웃 그대로 — 깨진 이미지 없음)
+const heroImage = isValidHttpUrl(hospital.images?.hero) ? hospital.images.hero.trim() : null
 ---
 
 <section class="hero">
@@ -27,4 +31,12 @@ const buttons =
       </a>
     )
   }
+  {heroImage && (
+    <img
+      src={heroImage}
+      alt={`${hospital.name} 대표 이미지`}
+      loading="lazy"
+      style="max-width: 100%; border-radius: 12px; margin-top: 24px;"
+    />
+  )}
 </section>

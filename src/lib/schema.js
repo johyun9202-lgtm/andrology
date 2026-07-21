@@ -63,6 +63,25 @@ export function buildChannels(hospital) {
     })
   }
 
+  // Phase 9A 확장 채널 — 값이 있을 때만 추가 (기존 사이트 출력 불변)
+  if (isValidHttpUrl(channels.consult)) {
+    result.push({
+      type: 'consult',
+      label: '상담 신청',
+      href: channels.consult.trim(),
+      external: true,
+    })
+  }
+
+  if (isValidHttpUrl(channels.naverMap)) {
+    result.push({
+      type: 'navermap',
+      label: '네이버 지도',
+      href: channels.naverMap.trim(),
+      external: true,
+    })
+  }
+
   return result
 }
 

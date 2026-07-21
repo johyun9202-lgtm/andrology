@@ -83,5 +83,15 @@ export function generateSiteSchema(hospital, siteUrl) {
     }
   }
 
+  // 진료 분야 (Phase 9A) — 의료기관 타입 + 진료과목이 있을 때만 추가
+  if (type === 'MedicalClinic') {
+    const specialties = (Array.isArray(hospital.services) ? hospital.services : [])
+      .map((service) => service?.title)
+      .filter((title) => isReal(title))
+    if (specialties.length > 0) {
+      schema.medicalSpecialty = specialties
+    }
+  }
+
   return schema
 }

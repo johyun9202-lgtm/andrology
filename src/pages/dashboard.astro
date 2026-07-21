@@ -28,6 +28,7 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
   <div class="dash-tabs" role="tablist">
     <button type="button" class="dash-tab active" id="tab-btn-create">생성 작업</button>
     <button type="button" class="dash-tab" id="tab-btn-published">게시된 글</button>
+    <button type="button" class="dash-tab" id="tab-btn-settings">사이트 설정</button>
   </div>
 
   <div id="tab-create">
@@ -123,6 +124,69 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
       <button type="button" class="dash-action-btn" id="pub-next">다음 →</button>
     </div>
     <p class="dash-note">※ 목록은 D1 게시 이력 기준입니다. "배포 확인"은 실제 URL이 열리는지 서버에서 검사합니다. 수정·삭제는 GitHub 커밋으로 반영되며, 재배포(1~2분) 후 사이트에 적용됩니다.</p>
+  </section>
+
+  <section class="section" id="tab-settings" hidden>
+    <h2>사이트 설정</h2>
+    <div class="dash-pub-filter">
+      <label for="set-site" style="font-size: 13px; font-weight: 600; align-self: center;">사이트</label>
+      <select id="set-site">
+        {siteIds.map((id) => (
+          <option value={id} selected={id === DEFAULT_DASHBOARD_SITE}>{id}</option>
+        ))}
+      </select>
+      <a id="set-open-site" class="dash-action-btn" href="/" target="_blank" rel="noopener" hidden>홈페이지 열기 →</a>
+    </div>
+
+    <form id="settings-form" class="dash-edit-form" style="max-width: 640px;">
+      <h3 style="margin: 12px 0 0;">기본 정보</h3>
+      <label>병원명(사이트명) <span class="required">*</span><input type="text" id="set-name" maxlength="60" required /></label>
+      <label>병원 유형 (예: 비뇨의학과, 성형외과)<input type="text" id="set-hospitalType" maxlength="30" /></label>
+      <label>지역 (예: 광주광역시)<input type="text" id="set-region" maxlength="50" /></label>
+      <label>주소<input type="text" id="set-address" maxlength="120" /></label>
+      <label>전화번호<input type="text" id="set-phone" maxlength="30" /></label>
+      <label>병원 소개 <span class="required">*</span><textarea id="set-description" maxlength="500" style="min-height: 70px; white-space: normal; font-family: inherit;"></textarea></label>
+
+      <h3 style="margin: 12px 0 0;">대표 문구 (Hero)</h3>
+      <label>대표 문구 <span class="required">*</span><input type="text" id="set-heroTitle" maxlength="80" required /></label>
+      <label>보조 문구<input type="text" id="set-heroSubtitle" maxlength="160" /></label>
+
+      <h3 style="margin: 12px 0 0;">대표원장</h3>
+      <label>이름<input type="text" id="set-doctorName" maxlength="30" /></label>
+      <label>직함 (기본: 대표원장)<input type="text" id="set-doctorTitle" maxlength="30" /></label>
+      <label>소개<textarea id="set-doctorBio" maxlength="500" style="min-height: 60px; white-space: normal; font-family: inherit;"></textarea></label>
+
+      <h3 style="margin: 12px 0 0;">운영시간</h3>
+      <label>평일<input type="text" id="set-hoursWeekday" maxlength="60" placeholder="예: 09:00 - 18:00" /></label>
+      <label>토요일<input type="text" id="set-hoursSaturday" maxlength="60" /></label>
+      <label>일요일·공휴일<input type="text" id="set-hoursSunday" maxlength="60" placeholder="예: 휴진" /></label>
+
+      <h3 style="margin: 12px 0 0;">주요 진료 분야 (1~10개)</h3>
+      <div id="set-services"></div>
+      <button type="button" class="dash-action-btn" id="set-add-service">+ 분야 추가</button>
+
+      <h3 style="margin: 12px 0 0;">상담·링크 (http/https 주소만)</h3>
+      <label>상담 URL<input type="url" id="set-consultUrl" maxlength="300" /></label>
+      <label>카카오 URL<input type="url" id="set-kakaoUrl" maxlength="300" /></label>
+      <label>네이버 예약 URL<input type="url" id="set-naverBookingUrl" maxlength="300" /></label>
+      <label>네이버 지도 URL<input type="url" id="set-naverMapUrl" maxlength="300" /></label>
+
+      <h3 style="margin: 12px 0 0;">SEO</h3>
+      <label>SEO 제목 (비우면 병원명·지역·유형으로 자동 구성)<input type="text" id="set-seoTitle" maxlength="70" /></label>
+      <label>SEO 설명<textarea id="set-seoDescription" maxlength="200" style="min-height: 50px; white-space: normal; font-family: inherit;"></textarea></label>
+      <label>SEO 키워드 (콤마로 구분, 최대 10개)<input type="text" id="set-seoKeywords" maxlength="300" /></label>
+
+      <h3 style="margin: 12px 0 0;">이미지 (URL 방식)</h3>
+      <label>로고 이미지 URL<input type="url" id="set-logoImage" maxlength="300" /></label>
+      <label>대표(Hero) 이미지 URL<input type="url" id="set-heroImage" maxlength="300" /></label>
+      <label>원장 이미지 URL<input type="url" id="set-doctorImage" maxlength="300" /></label>
+
+      <div class="dash-edit-actions" style="margin-top: 12px;">
+        <button type="submit" class="dash-action-btn dash-publish-btn" id="set-save">설정 저장</button>
+      </div>
+      <p id="set-status" class="dash-meta" hidden></p>
+    </form>
+    <p class="dash-note">※ 저장하면 GitHub에 설정 커밋이 생성되고, Cloudflare 재배포(1~2분) 후 실제 홈페이지에 반영됩니다. 아티클·메뉴 등 이 폼에 없는 설정은 그대로 보존됩니다.</p>
   </section>
 </BaseLayout>
 
@@ -890,20 +954,23 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
   // ==================================================================
   // Phase 8 — 게시된 글 관리 탭
   // ==================================================================
-  const tabCreate = document.getElementById('tab-create')
-  const tabPublished = document.getElementById('tab-published')
-  const tabBtnCreate = document.getElementById('tab-btn-create')
-  const tabBtnPublished = document.getElementById('tab-btn-published')
-
-  function switchTab(showPublished) {
-    tabCreate.hidden = showPublished
-    tabPublished.hidden = !showPublished
-    tabBtnCreate.classList.toggle('active', !showPublished)
-    tabBtnPublished.classList.toggle('active', showPublished)
-    if (showPublished) loadPublished()
+  const TAB_PANELS = {
+    create: [document.getElementById('tab-create'), document.getElementById('tab-btn-create')],
+    published: [document.getElementById('tab-published'), document.getElementById('tab-btn-published')],
+    settings: [document.getElementById('tab-settings'), document.getElementById('tab-btn-settings')],
   }
-  tabBtnCreate?.addEventListener('click', () => switchTab(false))
-  tabBtnPublished?.addEventListener('click', () => switchTab(true))
+
+  function switchTab(name) {
+    for (const [key, [panel, button]] of Object.entries(TAB_PANELS)) {
+      if (panel) panel.hidden = key !== name
+      if (button) button.classList.toggle('active', key === name)
+    }
+    if (name === 'published') loadPublished()
+    if (name === 'settings') loadSettings()
+  }
+  TAB_PANELS.create[1]?.addEventListener('click', () => switchTab('create'))
+  TAB_PANELS.published[1]?.addEventListener('click', () => switchTab('published'))
+  TAB_PANELS.settings[1]?.addEventListener('click', () => switchTab('settings'))
 
   const pubBody = document.getElementById('pub-body')
   const pubFilter = document.getElementById('pub-filter')
@@ -1179,4 +1246,150 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     detail.appendChild(td)
     row.after(detail)
   }
+
+  // ==================================================================
+  // Phase 9A — 사이트 설정 탭
+  // ==================================================================
+  const settingsForm = document.getElementById('settings-form')
+  const setStatus = document.getElementById('set-status')
+  const setSiteSelect = document.getElementById('set-site')
+  const setOpenSite = document.getElementById('set-open-site')
+  const servicesHolder = document.getElementById('set-services')
+  let settingsSha = '' // 낙관적 잠금용 — GET 시 저장
+  const SET_TEXT_FIELDS = [
+    'name', 'hospitalType', 'region', 'address', 'phone', 'description',
+    'heroTitle', 'heroSubtitle', 'doctorName', 'doctorTitle', 'doctorBio',
+    'hoursWeekday', 'hoursSaturday', 'hoursSunday',
+    'consultUrl', 'kakaoUrl', 'naverBookingUrl', 'naverMapUrl',
+    'seoTitle', 'seoDescription', 'logoImage', 'heroImage', 'doctorImage',
+  ]
+
+  function setStatusMessage(message, isError = false) {
+    if (!setStatus) return
+    setStatus.textContent = message
+    setStatus.style.color = isError ? '#b91c1c' : ''
+    setStatus.hidden = false
+  }
+
+  // 진료 분야 행 (진료명 + 짧은 설명 + 삭제)
+  function serviceRow(value = { title: '', summary: '' }) {
+    const row = document.createElement('div')
+    row.className = 'dash-service-row'
+    row.style.cssText = 'display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-start;'
+    const titleInput = document.createElement('input')
+    titleInput.type = 'text'
+    titleInput.maxLength = 40
+    titleInput.placeholder = '진료명'
+    titleInput.value = value.title ?? ''
+    titleInput.setAttribute('aria-label', '진료명')
+    titleInput.style.cssText = 'flex: 1;'
+    const summaryInput = document.createElement('input')
+    summaryInput.type = 'text'
+    summaryInput.maxLength = 120
+    summaryInput.placeholder = '짧은 설명'
+    summaryInput.value = value.summary ?? ''
+    summaryInput.setAttribute('aria-label', '진료 분야 설명')
+    summaryInput.style.cssText = 'flex: 2;'
+    for (const el of [titleInput, summaryInput]) {
+      el.style.font = 'inherit'
+      el.style.fontSize = '13px'
+      el.style.padding = '8px 10px'
+      el.style.border = '1px solid var(--border)'
+      el.style.borderRadius = '8px'
+    }
+    const removeBtn = document.createElement('button')
+    removeBtn.type = 'button'
+    removeBtn.className = 'dash-action-btn'
+    removeBtn.textContent = '삭제'
+    removeBtn.addEventListener('click', () => {
+      if (servicesHolder.querySelectorAll('.dash-service-row').length <= 1) {
+        setStatusMessage('주요 진료 분야는 최소 1개가 필요합니다.', true)
+        return
+      }
+      row.remove()
+    })
+    row.append(titleInput, summaryInput, removeBtn)
+    return row
+  }
+
+  document.getElementById('set-add-service')?.addEventListener('click', () => {
+    if (servicesHolder.querySelectorAll('.dash-service-row').length >= 10) {
+      setStatusMessage('주요 진료 분야는 최대 10개까지 입력할 수 있습니다.', true)
+      return
+    }
+    servicesHolder.appendChild(serviceRow())
+  })
+
+  function fillSettings(settings) {
+    for (const key of SET_TEXT_FIELDS) {
+      const el = document.getElementById(`set-${key}`)
+      if (el) el.value = settings[key] ?? ''
+    }
+    const kw = document.getElementById('set-seoKeywords')
+    if (kw) kw.value = Array.isArray(settings.seoKeywords) ? settings.seoKeywords.join(', ') : ''
+    servicesHolder.innerHTML = ''
+    const services = Array.isArray(settings.services) && settings.services.length > 0 ? settings.services : [{ title: '', summary: '' }]
+    for (const svc of services.slice(0, 10)) servicesHolder.appendChild(serviceRow(svc))
+  }
+
+  // preserveStatus: 저장 완료 메시지를 유지한 채 값만 새로 불러올 때 true
+  async function loadSettings(preserveStatus = false) {
+    const site = setSiteSelect?.value ?? 'aiseolab'
+    if (!preserveStatus) setStatusMessage('설정을 불러오는 중...')
+    try {
+      const response = await fetch(`/api/site-settings?site=${encodeURIComponent(site)}`)
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data.ok) { setStatusMessage(data.error ?? '설정을 불러오지 못했습니다.', true); return }
+      settingsSha = data.sha ?? ''
+      fillSettings(data.settings)
+      if (setOpenSite && typeof data.siteUrl === 'string' && /^https?:\/\//.test(data.siteUrl)) {
+        setOpenSite.href = data.siteUrl
+        setOpenSite.hidden = false
+      } else if (setOpenSite) {
+        setOpenSite.hidden = true
+      }
+      if (!preserveStatus) setStatusMessage('현재 저장된 설정을 불러왔습니다.')
+    } catch {
+      setStatusMessage('설정을 불러오지 못했습니다. (서버 연결 실패)', true)
+    }
+  }
+  setSiteSelect?.addEventListener('change', loadSettings)
+
+  settingsForm?.addEventListener('submit', async (event) => {
+    event.preventDefault()
+    const saveBtn = document.getElementById('set-save')
+    if (saveBtn?.disabled) return
+    const settings = {}
+    for (const key of SET_TEXT_FIELDS) {
+      settings[key] = document.getElementById(`set-${key}`)?.value ?? ''
+    }
+    settings.seoKeywords = document.getElementById('set-seoKeywords')?.value ?? ''
+    settings.services = [...servicesHolder.querySelectorAll('.dash-service-row')].map((row) => {
+      const [titleInput, summaryInput] = row.querySelectorAll('input')
+      return { title: titleInput?.value ?? '', summary: summaryInput?.value ?? '' }
+    })
+    saveBtn.disabled = true
+    setStatusMessage('저장 중... (GitHub 커밋 생성)')
+    try {
+      const response = await fetch('/api/site-settings', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ site: setSiteSelect?.value ?? 'aiseolab', sha: settingsSha, settings }),
+      })
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok) {
+        settingsSha = ''
+        setStatusMessage(`저장 완료 — 커밋 ${String(data.commitSha ?? '').slice(0, 7)} · 재배포(1~2분) 후 반영됩니다.`)
+        loadSettings(true) // 최신 sha·값 갱신 (완료 메시지는 유지)
+      } else {
+        setStatusMessage(data.error ?? '저장에 실패했습니다.', true)
+      }
+    } catch {
+      setStatusMessage('서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.', true)
+    } finally {
+      saveBtn.disabled = false
+    }
+  })
 </script>
