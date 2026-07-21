@@ -137,6 +137,7 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
       </select>
       <a id="set-open-site" class="dash-action-btn" href="/" target="_blank" rel="noopener" hidden>홈페이지 열기 →</a>
       <button type="button" class="dash-action-btn" id="wizard-open">＋ 새 사이트 만들기</button>
+      <button type="button" class="dash-action-btn dash-publish-btn" id="ai-gen-open">AI로 홈페이지 초안 만들기</button>
     </div>
     <p class="dash-meta" id="site-list" style="margin: 0 0 12px; font-size: 13px; color: var(--muted);">사이트 목록을 불러오는 중...</p>
 
@@ -173,6 +174,29 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
         </div>
       </div>
       <p id="wiz-status" class="dash-meta" hidden style="margin: 8px 0 0;"></p>
+    </div>
+
+    <div id="ai-generator" class="dash-preview" hidden style="max-height: none; margin-bottom: 16px;">
+      <h3 style="margin-top: 0;">AI로 홈페이지 초안 만들기</h3>
+      <p class="dash-meta" style="margin: 0 0 8px;">입력한 정보만 사용해 문구를 생성합니다. 생성 결과는 검토·수정 후 "적용"을 눌러야 저장됩니다.</p>
+      <div class="dash-edit-form" id="ai-input-form">
+        <label><span id="ai-l-name">업체명</span> <span class="required">*</span><input type="text" id="ai-name" maxlength="60" /></label>
+        <label>지역<input type="text" id="ai-region" maxlength="50" placeholder="예: 광주광역시" /></label>
+        <label><span id="ai-l-services">핵심 서비스/전문 분야 (콤마 구분)</span><input type="text" id="ai-services" maxlength="300" /></label>
+        <label><span id="ai-l-audience">주요 고객</span><input type="text" id="ai-audience" maxlength="200" /></label>
+        <label><span id="ai-l-features">업체의 특징</span><textarea id="ai-features" maxlength="300" style="min-height: 60px; white-space: normal; font-family: inherit;"></textarea></label>
+        <label>원하는 분위기<input type="text" id="ai-tone" maxlength="100" placeholder="예: 신뢰감 있고 차분한" /></label>
+        <label>전화번호 (비우면 기존 값 유지)<input type="text" id="ai-phone" maxlength="30" /></label>
+        <label>주소 (비우면 기존 값 유지)<input type="text" id="ai-address" maxlength="120" /></label>
+        <label>상담/예약 URL (비우면 기존 값 유지)<input type="url" id="ai-consult" maxlength="300" /></label>
+        <label>추가 전달사항<textarea id="ai-notes" maxlength="500" style="min-height: 50px; white-space: normal; font-family: inherit;"></textarea></label>
+        <div class="dash-edit-actions">
+          <button type="button" class="dash-action-btn dash-publish-btn" id="ai-generate">AI 초안 생성</button>
+          <button type="button" class="dash-action-btn" id="ai-close">닫기</button>
+        </div>
+      </div>
+      <p id="ai-status" class="dash-meta" hidden style="margin: 8px 0 0;"></p>
+      <div id="ai-review" hidden style="margin-top: 12px;"></div>
     </div>
 
     <form id="settings-form" class="dash-edit-form" style="max-width: 640px;">
@@ -1379,6 +1403,7 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
       const data = await response.json().catch(() => ({}))
       if (!response.ok || !data.ok) { setStatusMessage(data.error ?? '설정을 불러오지 못했습니다.', true); return }
       settingsSha = data.sha ?? ''
+      lastSettings = data.settings
       fillSettings(data.settings)
       if (setOpenSite && typeof data.siteUrl === 'string' && /^https?:\/\//.test(data.siteUrl)) {
         setOpenSite.href = data.siteUrl
@@ -1419,6 +1444,7 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
         return
       }
       wizardTemplates = data.templates ?? []
+      sitesData = data.sites ?? []
       if (siteListLine) {
         const parts = data.sites.map((s) => `${s.id} (${s.name}${s.id === data.defaultSite ? ' · 기본' : ''})`)
         siteListLine.textContent = `사이트 ${data.sites.length}개: ${parts.join(' / ')}`
@@ -1509,6 +1535,242 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
       createBtn.disabled = false
     }
   })
+
+  // ==================================================================
+  // Phase 12 — AI Website Generator (생성 → 검토·수정 → 적용)
+  // ==================================================================
+  const aiBox = document.getElementById('ai-generator')
+  const aiStatus = document.getElementById('ai-status')
+  const aiReview = document.getElementById('ai-review')
+  let lastSettings = null // loadSettings가 채움 — 적용 시 "기존 값 유지"의 기준
+  let sitesData = []
+
+  // 업종별 입력 라벨 (Template Registry의 id 기준 — 구조 변경 없음)
+  const AI_LABELS = {
+    medical: { name: '병원명', services: '진료과목 (콤마 구분)', audience: '주요 환자군', features: '진료 철학' },
+    restaurant: { name: '음식점명', services: '대표 메뉴 (콤마 구분)', audience: '주요 고객층', features: '음식 특징' },
+    lawyer: { name: '사무소명', services: '전문 분야 (콤마 구분)', audience: '상담 대상', features: '업무 원칙' },
+    academy: { name: '학원명', services: '교육과정 (콤마 구분)', audience: '대상 학생', features: '교육 방식' },
+    shopping: { name: '브랜드명', services: '상품군 (콤마 구분)', audience: '주요 고객', features: '상품 특징' },
+  }
+
+  function aiStatusMessage(message, isError = false) {
+    if (!aiStatus) return
+    aiStatus.textContent = message
+    aiStatus.style.color = isError ? '#b91c1c' : ''
+    aiStatus.hidden = false
+  }
+
+  function currentSiteTemplate() {
+    const site = setSiteSelect?.value ?? 'aiseolab'
+    return sitesData.find((s) => s.id === site)?.template ?? 'medical'
+  }
+
+  function applyAiLabels() {
+    const labels = AI_LABELS[currentSiteTemplate()] ?? AI_LABELS.medical
+    const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text }
+    set('ai-l-name', labels.name)
+    set('ai-l-services', labels.services)
+    set('ai-l-audience', labels.audience)
+    set('ai-l-features', labels.features)
+  }
+
+  document.getElementById('ai-gen-open')?.addEventListener('click', () => {
+    aiBox.hidden = !aiBox.hidden
+    if (!aiBox.hidden) {
+      applyAiLabels()
+      aiStatus.hidden = true
+      aiReview.hidden = true
+      aiReview.innerHTML = ''
+    }
+  })
+  document.getElementById('ai-close')?.addEventListener('click', () => { aiBox.hidden = true })
+
+  const aiValue = (id) => document.getElementById(id)?.value?.trim() ?? ''
+
+  document.getElementById('ai-generate')?.addEventListener('click', async () => {
+    const generateBtn = document.getElementById('ai-generate')
+    if (generateBtn.disabled) return
+    if (aiValue('ai-name') === '') { aiStatusMessage('업체명을 입력해 주세요.', true); return }
+    generateBtn.disabled = true
+    aiStatusMessage('AI가 초안을 생성하는 중... (최대 1~2분)')
+    aiReview.hidden = true
+    aiReview.innerHTML = ''
+    try {
+      const response = await fetch('/api/site-content/generate', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          site: setSiteSelect?.value ?? 'aiseolab',
+          template: currentSiteTemplate(),
+          input: {
+            name: aiValue('ai-name'), region: aiValue('ai-region'), services: aiValue('ai-services'),
+            audience: aiValue('ai-audience'), features: aiValue('ai-features'), tone: aiValue('ai-tone'),
+            phone: aiValue('ai-phone'), address: aiValue('ai-address'),
+            consultationUrl: aiValue('ai-consult'), notes: aiValue('ai-notes'),
+          },
+        }),
+      })
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok) {
+        aiStatusMessage('초안이 생성되었습니다. 아래에서 검토·수정한 뒤 적용해 주세요.')
+        buildAiReview(data.draft, data.warnings ?? [])
+      } else {
+        aiStatusMessage(data.error ?? '생성에 실패했습니다. 잠시 후 다시 시도해 주세요.', true)
+      }
+    } catch {
+      aiStatusMessage('서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.', true)
+    } finally {
+      generateBtn.disabled = false
+    }
+  })
+
+  // ---------- 검토·수정 폼 (전부 textContent/DOM 생성 — innerHTML 미사용) ----------
+  function aiField(labelText, value, { textarea = false, max = 200 } = {}) {
+    const label = document.createElement('label')
+    label.textContent = labelText
+    const el = document.createElement(textarea ? 'textarea' : 'input')
+    if (!textarea) el.type = 'text'
+    el.maxLength = max
+    el.value = value ?? ''
+    if (textarea) { el.style.minHeight = '60px'; el.style.whiteSpace = 'normal'; el.style.fontFamily = 'inherit' }
+    label.appendChild(el)
+    return { label, el }
+  }
+
+  // 추가/삭제 가능한 2필드 행 목록 (서비스·FAQ 공용)
+  function aiRowList(items, { p1, p2, max1, max2, maxRows, addLabel }) {
+    const holder = document.createElement('div')
+    const makeRow = (v = {}) => {
+      const row = document.createElement('div')
+      row.className = 'ai-row'
+      row.style.cssText = 'display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-start;'
+      const first = document.createElement('input')
+      first.type = 'text'; first.maxLength = max1; first.placeholder = p1
+      first.value = v[Object.keys(v)[0]] ?? Object.values(v)[0] ?? ''
+      const second = document.createElement('input')
+      second.type = 'text'; second.maxLength = max2; second.placeholder = p2
+      second.value = Object.values(v)[1] ?? ''
+      for (const el of [first, second]) {
+        el.style.cssText += 'font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;'
+      }
+      first.style.flex = '1'; second.style.flex = '2'
+      const removeBtn = textEl('button', '삭제', 'dash-action-btn')
+      removeBtn.type = 'button'
+      removeBtn.addEventListener('click', () => row.remove())
+      row.append(first, second, removeBtn)
+      return row
+    }
+    for (const item of items) holder.appendChild(makeRow(item))
+    const addBtn = textEl('button', addLabel, 'dash-action-btn')
+    addBtn.type = 'button'
+    addBtn.addEventListener('click', () => {
+      if (holder.querySelectorAll('.ai-row').length >= maxRows) return
+      holder.insertBefore(makeRow(), addBtn)
+    })
+    holder.appendChild(addBtn)
+    const values = () => [...holder.querySelectorAll('.ai-row')].map((row) => {
+      const [a, b] = row.querySelectorAll('input')
+      return [a?.value?.trim() ?? '', b?.value?.trim() ?? '']
+    }).filter(([a]) => a !== '')
+    return { holder, values }
+  }
+
+  function buildAiReview(draft, warnings) {
+    aiReview.innerHTML = ''
+    aiReview.hidden = false
+    const form = document.createElement('div')
+    form.className = 'dash-edit-form'
+
+    for (const warning of warnings) {
+      form.appendChild(textEl('p', `⚠ ${warning}`, 'dash-edit-error'))
+    }
+
+    const heroTitle = aiField('Hero 대표 문구', draft.hero?.title, { max: 80 })
+    const heroSubtitle = aiField('Hero 보조 문구', draft.hero?.subtitle, { max: 160 })
+    const aboutDesc = aiField('소개 문구', draft.about?.description, { textarea: true, max: 500 })
+    const servicesList = aiRowList((draft.services ?? []).map((s) => ({ a: s.title, b: s.summary })),
+      { p1: '서비스명', p2: '짧은 설명', max1: 40, max2: 120, maxRows: 10, addLabel: '+ 서비스 추가' })
+    const repName = aiField('대표자 이름 (직접 입력 — AI 생성 금지 항목)', '', { max: 30 })
+    const repTitle = aiField('대표자 직함', draft.representative?.title || '대표', { max: 30 })
+    const repBio = aiField('대표자 소개', draft.representative?.bio, { textarea: true, max: 500 })
+    const ctaLabel = aiField('CTA 버튼 문구', draft.cta?.buttonLabel || draft.cta?.title, { max: 30 })
+    const ctaDesc = aiField('CTA 설명', draft.cta?.description, { max: 160 })
+    const faqList = aiRowList((draft.faq ?? []).map((f) => ({ a: f.question, b: f.answer })),
+      { p1: '질문', p2: '답변', max1: 120, max2: 300, maxRows: 10, addLabel: '+ FAQ 추가' })
+    const seoTitle = aiField('SEO 제목', draft.seo?.title, { max: 70 })
+    const seoDesc = aiField('SEO 설명', draft.seo?.description, { textarea: true, max: 200 })
+    const seoKeywords = aiField('SEO 키워드 (콤마 구분)', (draft.seo?.keywords ?? []).join(', '), { max: 300 })
+
+    form.append(
+      heroTitle.label, heroSubtitle.label, aboutDesc.label,
+      textEl('p', '서비스 / 전문 분야', 'dash-meta'), servicesList.holder,
+      repName.label, repTitle.label, repBio.label,
+      ctaLabel.label, ctaDesc.label,
+      textEl('p', 'FAQ', 'dash-meta'), faqList.holder,
+      seoTitle.label, seoDesc.label, seoKeywords.label,
+    )
+
+    const notice = textEl('p', '※ 적용하면 현재 사이트 설정의 해당 항목(문구·서비스·FAQ·SEO 등)이 위 내용으로 변경됩니다. 아티클·메뉴·이미지 등 나머지는 보존됩니다.', 'dash-publish-warn')
+    const actions = document.createElement('div')
+    actions.className = 'dash-edit-actions'
+    const applyBtn = textEl('button', '현재 사이트 설정에 적용', 'dash-action-btn dash-publish-btn')
+    applyBtn.type = 'button'
+    applyBtn.addEventListener('click', async () => {
+      if (!window.confirm('검토를 마쳤으며, 현재 사이트 설정에 적용합니다. 기존 문구가 변경됩니다. 진행할까요?')) return
+      if (applyBtn.disabled) return
+      applyBtn.disabled = true
+      aiStatusMessage('적용 중... (GitHub 커밋 생성)')
+      try {
+        const base = lastSettings ?? {}
+        const services = servicesList.values().map(([title, summary]) => ({ title, summary }))
+        const faq = faqList.values().map(([question, answer]) => ({ question, answer }))
+        const settings = {
+          ...base,
+          name: aiValue('ai-name') || base.name,
+          region: aiValue('ai-region') || base.region,
+          heroTitle: heroTitle.el.value.trim() || base.heroTitle,
+          heroSubtitle: heroSubtitle.el.value.trim(),
+          description: aboutDesc.el.value.trim() || base.description,
+          services: services.length > 0 ? services : base.services,
+          doctorName: repName.el.value.trim() || base.doctorName,
+          doctorTitle: repTitle.el.value.trim() || base.doctorTitle,
+          doctorBio: repBio.el.value.trim() || base.doctorBio,
+          seoTitle: seoTitle.el.value.trim(),
+          seoDescription: seoDesc.el.value.trim(),
+          seoKeywords: seoKeywords.el.value.trim(),
+          // 연락처: AI 입력에서 비워 둔 값은 기존 값 유지
+          phone: aiValue('ai-phone') || base.phone,
+          address: aiValue('ai-address') || base.address,
+          consultUrl: aiValue('ai-consult') || base.consultUrl,
+        }
+        if (faq.length > 0) settings.faq = faq
+        if (ctaLabel.el.value.trim() !== '') {
+          settings.cta = { label: ctaLabel.el.value.trim(), description: ctaDesc.el.value.trim() }
+        }
+        const response = await fetch('/api/site-settings', {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ site: setSiteSelect?.value ?? 'aiseolab', sha: settingsSha, settings }),
+        })
+        if (response.status === 401) { location.href = '/login'; return }
+        const data = await response.json().catch(() => ({}))
+        if (response.ok && data.ok) {
+          aiStatusMessage(`적용 완료 — 커밋 ${String(data.commitSha ?? '').slice(0, 7)} · 재배포(1~2분) 후 홈페이지에 반영됩니다. 상단의 "홈페이지 열기"로 확인하세요.`)
+          loadSettings(true)
+        } else {
+          aiStatusMessage(data.error ?? '적용에 실패했습니다.', true)
+        }
+      } catch {
+        aiStatusMessage('서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.', true)
+      } finally {
+        applyBtn.disabled = false
+      }
+    })
+    actions.appendChild(applyBtn)
+    aiReview.append(form, notice, actions)
+  }
 
   settingsForm?.addEventListener('submit', async (event) => {
     event.preventDefault()

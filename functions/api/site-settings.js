@@ -100,6 +100,23 @@ export function validateSettings(input) {
     summary: textField(errors, item?.summary, `진료 분야 ${index + 1}의 설명`, { max: 120 }),
   }))
 
+  // (Phase 12) optional: FAQ / CTA — 전달된 경우에만 검증·적용, 미전달 시 기존 값 유지
+  if (s.faq !== undefined) {
+    const faq = Array.isArray(s.faq) ? s.faq : []
+    if (faq.length < 1 || faq.length > 10) errors.push('FAQ는 1~10개여야 합니다.')
+    out.faq = faq.slice(0, 10).map((item, index) => ({
+      question: textField(errors, item?.question, `FAQ ${index + 1} 질문`, { max: 120, required: true }),
+      answer: textField(errors, item?.answer, `FAQ ${index + 1} 답변`, { max: 300, required: true }),
+    }))
+  }
+  if (s.cta !== undefined) {
+    const cta = s.cta && typeof s.cta === 'object' ? s.cta : {}
+    out.cta = {
+      label: textField(errors, cta.label, 'CTA 버튼 문구', { max: 30, required: true }),
+      description: textField(errors, cta.description, 'CTA 설명', { max: 160 }),
+    }
+  }
+
   return errors.length > 0 ? { errors } : { settings: out }
 }
 
@@ -139,6 +156,14 @@ export function extractSettings(hospital) {
       title: svc?.title ?? '',
       summary: svc?.summary ?? '',
     })),
+    faq: (Array.isArray(hospital.faq) ? hospital.faq : []).map((item) => ({
+      question: item?.question ?? '',
+      answer: item?.answer ?? '',
+    })),
+    cta: {
+      label: hospital.cta?.label ?? '',
+      description: hospital.cta?.description ?? '',
+    },
   }
 }
 
@@ -198,6 +223,13 @@ export function mergeSettings(hospital, s) {
     const match = existing.find((svc) => svc?.title === item.title && typeof svc?.slug === 'string')
     return { slug: match?.slug ?? `service-${index + 1}`, title: item.title, summary: item.summary }
   })
+
+  // (Phase 12) optional: FAQ / CTA — 전달된 경우에만 교체 (미전달 시 기존 유지)
+  if (s.faq) next.faq = s.faq
+  if (s.cta) {
+    next.cta = { ...(next.cta ?? {}), label: s.cta.label }
+    if (s.cta.description) next.cta.description = s.cta.description
+  }
 
   return next
 }
