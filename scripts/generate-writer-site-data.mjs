@@ -13,9 +13,10 @@
 // - 생성 결과는 .gitignore 대상이며 직접 수정하지 않습니다.
 // ============================================================
 
-import { readdirSync, writeFileSync, mkdirSync } from 'node:fs'
+import { readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { loadHospital } from '../src/lib/load-hospital.js'
+import { getTemplates } from '../src/lib/templates.js'
 
 const root = process.cwd()
 const sitesDir = join(root, 'sites')
@@ -39,6 +40,18 @@ const banner = [
   '',
 ].join('\n')
 
+// Template Registry(Phase 10)와 사이트 스캐폴드(create-site용)도 함께 번들에 포함
+// → Functions(사이트 생성 마법사)가 파일시스템 없이 템플릿·스캐폴드를 사용 가능
+const templates = {}
+for (const template of getTemplates({ rootDir: root })) templates[template.id] = template
+const scaffold = JSON.parse(readFileSync(join(root, 'templates', 'hospital', 'hospital.json'), 'utf-8'))
+
 mkdirSync(join(root, 'functions', '_lib'), { recursive: true })
-writeFileSync(outPath, `${banner}export const SITE_DATA = ${JSON.stringify(data, null, 2)}\n`, 'utf-8')
-console.log(`✔ functions/_lib/site-data.generated.js 생성 완료 (사이트: ${siteIds.join(', ')})`)
+writeFileSync(
+  outPath,
+  `${banner}export const SITE_DATA = ${JSON.stringify(data, null, 2)}\n\n` +
+    `export const TEMPLATES = ${JSON.stringify(templates, null, 2)}\n\n` +
+    `export const SITE_SCAFFOLD = ${JSON.stringify(scaffold, null, 2)}\n`,
+  'utf-8'
+)
+console.log(`✔ functions/_lib/site-data.generated.js 생성 완료 (사이트: ${siteIds.join(', ')} / 템플릿: ${Object.keys(templates).join(', ')})`)

@@ -12,7 +12,10 @@ const SESSION_MAX_AGE_SECONDS = 60 * 60 * 8 // 8시간
 
 // 허용 사이트 목록 (sites/ 폴더 기준 — 새 사이트 추가 시 함께 갱신)
 // TODO(확장): 빌드 시 sites/ 폴더에서 자동 생성하거나 D1로 이전
-export const ALLOWED_SITES = ['aiseolab', 'andrology']
+// 허용 사이트 목록 — sites/ 폴더 기준으로 빌드 시 생성되는 번들에서 파생 (Phase 11)
+// 새 사이트를 생성하면 커밋 → 재배포 후 자동으로 이 목록에 포함됩니다.
+import { SITE_DATA } from './site-data.generated.js'
+export const ALLOWED_SITES = Object.keys(SITE_DATA).sort()
 
 // ---------- 응답 도우미 ----------
 export function jsonResponse(data, status = 200, headers = {}) {

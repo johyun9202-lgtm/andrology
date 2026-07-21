@@ -136,6 +136,43 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
         ))}
       </select>
       <a id="set-open-site" class="dash-action-btn" href="/" target="_blank" rel="noopener" hidden>홈페이지 열기 →</a>
+      <button type="button" class="dash-action-btn" id="wizard-open">＋ 새 사이트 만들기</button>
+    </div>
+    <p class="dash-meta" id="site-list" style="margin: 0 0 12px; font-size: 13px; color: var(--muted);">사이트 목록을 불러오는 중...</p>
+
+    <div id="site-wizard" class="dash-preview" hidden style="max-height: none; margin-bottom: 16px;">
+      <h3 style="margin-top: 0;">새 사이트 만들기</h3>
+      <div class="dash-edit-form" id="wizard-step-1">
+        <label>1단계 — 사이트 이름<input type="text" id="wiz-name" maxlength="60" placeholder="예: 밝은 치과" /></label>
+        <div class="dash-edit-actions">
+          <button type="button" class="dash-action-btn" id="wiz-next-1">다음 →</button>
+          <button type="button" class="dash-action-btn" id="wiz-cancel">닫기</button>
+        </div>
+      </div>
+      <div class="dash-edit-form" id="wizard-step-2" hidden>
+        <p style="margin: 0; font-weight: 600; font-size: 13px;">2단계 — 업종 선택</p>
+        <div id="wiz-templates" role="radiogroup" aria-label="업종 선택"></div>
+        <div class="dash-edit-actions">
+          <button type="button" class="dash-action-btn" id="wiz-back-2">← 이전</button>
+          <button type="button" class="dash-action-btn" id="wiz-next-2">다음 →</button>
+        </div>
+      </div>
+      <div class="dash-edit-form" id="wizard-step-3" hidden>
+        <label>3단계 — siteId (영문 소문자·숫자·하이픈, 2~30자)<input type="text" id="wiz-siteid" maxlength="30" placeholder="예: bright-dental" /></label>
+        <div class="dash-edit-actions">
+          <button type="button" class="dash-action-btn" id="wiz-back-3">← 이전</button>
+          <button type="button" class="dash-action-btn" id="wiz-next-3">다음 →</button>
+        </div>
+      </div>
+      <div class="dash-edit-form" id="wizard-step-4" hidden>
+        <p style="margin: 0; font-weight: 600; font-size: 13px;">4단계 — 확인 후 생성</p>
+        <p id="wiz-summary" class="dash-meta" style="margin: 0;"></p>
+        <div class="dash-edit-actions">
+          <button type="button" class="dash-action-btn" id="wiz-back-4">← 이전</button>
+          <button type="button" class="dash-action-btn dash-publish-btn" id="wiz-create">사이트 생성</button>
+        </div>
+      </div>
+      <p id="wiz-status" class="dash-meta" hidden style="margin: 8px 0 0;"></p>
     </div>
 
     <form id="settings-form" class="dash-edit-form" style="max-width: 640px;">
@@ -966,7 +1003,7 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
       if (button) button.classList.toggle('active', key === name)
     }
     if (name === 'published') loadPublished()
-    if (name === 'settings') loadSettings()
+    if (name === 'settings') { loadSettings(); loadSites() }
   }
   TAB_PANELS.create[1]?.addEventListener('click', () => switchTab('create'))
   TAB_PANELS.published[1]?.addEventListener('click', () => switchTab('published'))
@@ -1355,6 +1392,123 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     }
   }
   setSiteSelect?.addEventListener('change', loadSettings)
+
+  // ==================================================================
+  // Phase 11 — 사이트 목록 + 새 사이트 만들기 마법사
+  // ==================================================================
+  const siteListLine = document.getElementById('site-list')
+  const wizard = document.getElementById('site-wizard')
+  const wizStatus = document.getElementById('wiz-status')
+  const wizTemplatesHolder = document.getElementById('wiz-templates')
+  let wizardTemplates = []
+
+  function wizStatusMessage(message, isError = false) {
+    if (!wizStatus) return
+    wizStatus.textContent = message
+    wizStatus.style.color = isError ? '#b91c1c' : ''
+    wizStatus.hidden = false
+  }
+
+  async function loadSites() {
+    try {
+      const response = await fetch('/api/sites')
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data.ok) {
+        if (siteListLine) siteListLine.textContent = data.error ?? '사이트 목록을 불러오지 못했습니다.'
+        return
+      }
+      wizardTemplates = data.templates ?? []
+      if (siteListLine) {
+        const parts = data.sites.map((s) => `${s.id} (${s.name}${s.id === data.defaultSite ? ' · 기본' : ''})`)
+        siteListLine.textContent = `사이트 ${data.sites.length}개: ${parts.join(' / ')}`
+      }
+      // 업종 라디오 구성
+      if (wizTemplatesHolder) {
+        wizTemplatesHolder.innerHTML = ''
+        for (const t of wizardTemplates) {
+          const label = document.createElement('label')
+          label.style.cssText = 'display: flex; gap: 8px; align-items: flex-start; font-weight: 400; font-size: 13px; margin-bottom: 6px;'
+          const radio = document.createElement('input')
+          radio.type = 'radio'
+          radio.name = 'wiz-template'
+          radio.value = t.id
+          if (t.id === 'medical') radio.checked = true
+          const span = document.createElement('span')
+          span.textContent = `${t.name} (${t.id}) — ${t.description ?? ''}`
+          label.append(radio, span)
+          wizTemplatesHolder.appendChild(label)
+        }
+      }
+    } catch {
+      if (siteListLine) siteListLine.textContent = '사이트 목록을 불러오지 못했습니다. (서버 연결 실패)'
+    }
+  }
+
+  const wizStep = (n) => {
+    for (const i of [1, 2, 3, 4]) {
+      const el = document.getElementById(`wizard-step-${i}`)
+      if (el) el.hidden = i !== n
+    }
+  }
+  const wizValue = (id) => document.getElementById(id)?.value?.trim() ?? ''
+  const wizTemplate = () => document.querySelector('input[name="wiz-template"]:checked')?.value ?? ''
+
+  document.getElementById('wizard-open')?.addEventListener('click', () => {
+    wizard.hidden = !wizard.hidden
+    if (!wizard.hidden) { wizStep(1); wizStatus.hidden = true }
+  })
+  document.getElementById('wiz-cancel')?.addEventListener('click', () => { wizard.hidden = true })
+  document.getElementById('wiz-next-1')?.addEventListener('click', () => {
+    if (wizValue('wiz-name') === '') { wizStatusMessage('사이트 이름을 입력해 주세요.', true); return }
+    wizStatus.hidden = true
+    wizStep(2)
+  })
+  document.getElementById('wiz-back-2')?.addEventListener('click', () => wizStep(1))
+  document.getElementById('wiz-next-2')?.addEventListener('click', () => {
+    if (wizTemplate() === '') { wizStatusMessage('업종을 선택해 주세요.', true); return }
+    wizStatus.hidden = true
+    wizStep(3)
+  })
+  document.getElementById('wiz-back-3')?.addEventListener('click', () => wizStep(2))
+  document.getElementById('wiz-next-3')?.addEventListener('click', () => {
+    const siteId = wizValue('wiz-siteid')
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(siteId) || siteId.length < 2) {
+      wizStatusMessage('siteId는 영문 소문자·숫자·하이픈 2~30자여야 합니다. (예: bright-dental)', true)
+      return
+    }
+    wizStatus.hidden = true
+    const templateName = wizardTemplates.find((t) => t.id === wizTemplate())?.name ?? wizTemplate()
+    const summary = document.getElementById('wiz-summary')
+    if (summary) summary.textContent = `이름: ${wizValue('wiz-name')} · 업종: ${templateName} · siteId: ${siteId} — 저장소에 sites/${siteId}/ 폴더가 생성됩니다.`
+    wizStep(4)
+  })
+  document.getElementById('wiz-back-4')?.addEventListener('click', () => wizStep(3))
+  document.getElementById('wiz-create')?.addEventListener('click', async () => {
+    const createBtn = document.getElementById('wiz-create')
+    if (createBtn.disabled) return
+    createBtn.disabled = true
+    wizStatusMessage('생성 중... (GitHub 커밋)')
+    try {
+      const response = await fetch('/api/sites', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: wizValue('wiz-name'), template: wizTemplate(), siteId: wizValue('wiz-siteid') }),
+      })
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok) {
+        wizStatusMessage(`생성 완료 — 커밋 ${String(data.commitSha ?? '').slice(0, 7)} · ${data.note ?? ''}`)
+        loadSites()
+      } else {
+        wizStatusMessage(data.error ?? '생성에 실패했습니다.', true)
+      }
+    } catch {
+      wizStatusMessage('서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.', true)
+    } finally {
+      createBtn.disabled = false
+    }
+  })
 
   settingsForm?.addEventListener('submit', async (event) => {
     event.preventDefault()
