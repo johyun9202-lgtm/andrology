@@ -1,0 +1,7 @@
+{
+  "id": "lawyer",
+  "name": "법률사무소",
+  "icon": "scale",
+  "description": "변호사·법률사무소용 템플릿 (전용 UI는 향후 Phase)",
+  "sections": ["hero", "practice-areas", "about", "attorney", "articles", "cta"]
+}

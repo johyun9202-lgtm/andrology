@@ -6,12 +6,19 @@ import FaqList from '../components/FaqList.astro'
 import ContactBox from '../components/ContactBox.astro'
 import { siteData as hospital } from '../lib/site-data.js'
 import { buildFaqSchema, isReal, isValidHttpUrl } from '../lib/schema.js'
+import { getTemplate } from '../lib/templates.js'
 
 const faqPreview = hospital.faq.slice(0, 3)
 const faqSchema = buildFaqSchema(hospital.faq)
 
 // 사이트 데이터의 home 설정으로 홈 섹션 제목·구성을 바꿀 수 있습니다. (없으면 기존 그대로)
 const home = hospital.home ?? {}
+
+// ---------- 업종 템플릿 (Phase 10) ----------
+// 로더가 결정한 template(없으면 'medical')을 Registry에서 읽어옵니다.
+// 현재는 모든 템플릿이 아래의 medical 렌더링을 공유하며(출력 완전 동일),
+// 업종별 전용 UI 분기는 template.sections를 기준으로 향후 Phase에서 추가됩니다.
+const template = getTemplate(hospital.template ?? 'medical')
 
 // ---------- SEO (Phase 9A) ----------
 // seo 필드가 있으면 사용하고, 없으면 병원명·지역·진료 유형 기반 안전한 fallback.

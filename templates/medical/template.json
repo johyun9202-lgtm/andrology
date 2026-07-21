@@ -1,0 +1,7 @@
+{
+  "id": "medical",
+  "name": "병원",
+  "icon": "hospital",
+  "description": "병원·의원용 기본 템플릿 (기본값 — 기존 사이트와 동일한 구성)",
+  "sections": ["hero", "about", "services", "doctor", "articles", "hours", "faq", "cta"]
+}

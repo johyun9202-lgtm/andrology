@@ -1,0 +1,7 @@
+{
+  "id": "academy",
+  "name": "학원",
+  "icon": "book",
+  "description": "학원·교육기관용 템플릿 (전용 UI는 향후 Phase)",
+  "sections": ["hero", "courses", "about", "instructor", "articles", "hours", "cta"]
+}

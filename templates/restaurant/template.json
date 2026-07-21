@@ -1,0 +1,7 @@
+{
+  "id": "restaurant",
+  "name": "음식점",
+  "icon": "restaurant",
+  "description": "음식점·카페용 템플릿 (전용 UI는 향후 Phase)",
+  "sections": ["hero", "menu", "about", "articles", "hours", "cta"]
+}

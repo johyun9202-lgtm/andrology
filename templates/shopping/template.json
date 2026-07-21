@@ -1,0 +1,7 @@
+{
+  "id": "shopping",
+  "name": "쇼핑몰",
+  "icon": "cart",
+  "description": "쇼핑몰·스토어용 템플릿 (전용 UI는 향후 Phase)",
+  "sections": ["hero", "products", "about", "articles", "cta"]
+}

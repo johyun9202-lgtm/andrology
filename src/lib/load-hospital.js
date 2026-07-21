@@ -18,6 +18,7 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { validateArticle } from '../../scripts/lib/article-validator.mjs'
+import { resolveTemplateId, getTemplate } from './templates.js'
 
 export function loadHospital(siteId, { rootDir = process.cwd() } = {}) {
   const siteDir = join(rootDir, 'sites', siteId)
@@ -86,5 +87,14 @@ export function loadHospital(siteId, { rootDir = process.cwd() } = {}) {
     seen.set(slug, source)
   })
 
-  return { ...hospital, articles: merged }
+  // ---------- 템플릿 결정 (Phase 10) ----------
+  // template 필드가 없으면 기본 'medical' → 기존 사이트는 동작이 전혀 바뀌지 않음.
+  // (기본값일 때는 Registry 조회를 하지 않아 기존 로더 사용처와 완전 호환)
+  // template을 명시한 경우에만 검증 — 등록되지 않은 값은 명확한 오류로 빌드 중단.
+  const templateId = resolveTemplateId(hospital.template)
+  if (typeof hospital.template === 'string' && hospital.template.trim() !== '') {
+    getTemplate(templateId, { rootDir }) // 존재·구조 검증
+  }
+
+  return { ...hospital, articles: merged, template: templateId }
 }
