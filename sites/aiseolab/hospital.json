@@ -10,25 +10,33 @@
     "primary": "#2563eb"
   },
   "images": {
-    "logo": ""
+    "logo": "",
+    "hero": "",
+    "doctor": ""
   },
-  "description": "AI SEO Lab는 콘텐츠 생성부터 SEO 검증, 멀티사이트 운영까지 자동화하는 AI SEO 플랫폼입니다.",
-  "phone": "미정",
+  "description": "남성 전문 비뇨기과 입니다.",
+  "phone": "062-123-1234",
   "channels": {
     "phone": "",
     "kakao": "",
-    "naverBooking": ""
+    "naverBooking": "",
+    "consult": "",
+    "naverMap": ""
   },
-  "address": "미정",
+  "address": "서구 치평동 1234",
   "hours": {
     "weekday": "미정",
     "saturday": "미정",
     "sundayHoliday": "미정"
   },
-  "doctor": "미정",
+  "doctor": {
+    "name": "김아무개",
+    "title": "대표원장",
+    "bio": "10년 경력"
+  },
   "hero": {
-    "title": "AI SEO 자동화 플랫폼",
-    "subtitle": "AI가 콘텐츠를 생성하고, SEO를 자동 검증하며, 여러 사이트를 하나의 엔진으로 운영합니다.",
+    "title": "남성 전문 비뇨기과",
+    "subtitle": "자신감을 찾으세요",
     "buttons": [
       {
         "label": "데모 보기",
@@ -139,5 +147,7 @@
   },
   "footer": {
     "tagline": "AI SEO Automation Platform"
-  }
+  },
+  "hospitalType": "비뇨기과",
+  "region": "광주광역시"
 }
