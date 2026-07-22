@@ -1,0 +1,119 @@
+---
+// 진료과 상세 페이지 (Phase 13) — 실제 입력된 정보만 렌더링합니다.
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { siteData as hospital } from '../../lib/site-data.js'
+import { site } from '../../config/site.js'
+import { isReal, isValidHttpUrl } from '../../lib/schema.js'
+import {
+  buildBreadcrumbSchema,
+  buildItemListSchema,
+  buildDepartmentSchema,
+  entityArrays,
+} from '../../lib/schema/entity-schema.js'
+
+export function getStaticPaths() {
+  const { departments } = entityArrays(hospital)
+  return departments.map((department) => ({ params: { slug: department.id }, props: { department } }))
+}
+
+const { department } = Astro.props
+const { departments, doctors } = entityArrays(hospital)
+
+const members = doctors.filter((doc) => (department.doctorIds ?? []).includes(doc.id))
+const otherDepartments = departments.filter((d) => d.id !== department.id).slice(0, 6)
+const consultUrl = isValidHttpUrl(department.consultationUrl) ? department.consultationUrl.trim() : null
+const seo = department.seo ?? {}
+const pageTitle = (typeof seo.title === 'string' && seo.title.trim()) || `${department.name} 안내`
+const pageDescription =
+  (typeof seo.description === 'string' && seo.description.trim()) ||
+  (isReal(department.shortDescription) ? department.shortDescription : `${hospital.name} ${department.name} 진료 안내`)
+const keywords = Array.isArray(seo.keywords) ? seo.keywords : []
+const ogImage = isValidHttpUrl(department.image) ? department.image.trim() : undefined
+
+const schemas = [
+  buildDepartmentSchema(department, hospital, site.siteUrl),
+  buildBreadcrumbSchema(site.siteUrl, [
+    { name: '홈', path: '/' },
+    { name: '진료과 안내', path: '/departments/' },
+    { name: department.name, path: `/departments/${department.id}/` },
+  ]),
+]
+if (members.length > 0) {
+  schemas.push(buildItemListSchema(site.siteUrl, members.map((doc) => ({ name: doc.name, path: `/doctors/${doc.id}/`, image: doc.image }))))
+}
+---
+
+<BaseLayout title={pageTitle} description={pageDescription} jsonLd={schemas} keywords={keywords} ogImage={ogImage}>
+  <nav aria-label="breadcrumb" style="font-size: 13px; color: var(--muted); margin: 16px 0 0;">
+    <a href="/">홈</a> › <a href="/departments/">진료과 안내</a> › {department.name}
+  </nav>
+
+  <div class="page-title">
+    <h1>{department.name}</h1>
+    {isReal(department.shortDescription) && <p>{department.shortDescription}</p>}
+  </div>
+
+  {isValidHttpUrl(department.image) && (
+    <img
+      src={department.image.trim()}
+      alt={`${department.name} 대표 이미지`}
+      loading="lazy"
+      style="max-width: 100%; border-radius: 12px; margin-bottom: 24px;"
+    />
+  )}
+
+  {isReal(department.description) && (
+    <section class="section">
+      <h2>진료 안내</h2>
+      <p style="white-space: pre-line;">{department.description}</p>
+    </section>
+  )}
+
+  {(isReal(department.phone) || consultUrl) && (
+    <section class="section">
+      <div class="channel-buttons" style="margin: 0;">
+        {isReal(department.phone) && (
+          <a href={`tel:${department.phone.trim().replace(/\s+/g, '')}`} class="channel-btn primary">전화 상담 {department.phone}</a>
+        )}
+        {consultUrl && <a href={consultUrl} target="_blank" rel="noopener" class="channel-btn secondary">상담 신청 →</a>}
+      </div>
+    </section>
+  )}
+
+  {members.length > 0 && (
+    <section class="section">
+      <h2>{department.name} 의료진</h2>
+      <div class="card-grid">
+        {members.map((doc) => (
+          <a href={`/doctors/${doc.id}/`} class="article-item-link">
+            <article class="article-item" style="display: flex; gap: 14px; align-items: center;">
+              {isValidHttpUrl(doc.image) ? (
+                <img src={doc.image.trim()} alt={doc.imageAlt || `${doc.name} ${doc.title || '의료진'} 사진`} loading="lazy" style="width: 72px; height: 72px; object-fit: cover; border-radius: 12px; flex-shrink: 0;" />
+              ) : (
+                <div aria-hidden="true" style="width: 72px; height: 72px; border-radius: 12px; flex-shrink: 0; background: var(--accent-bg, #eff6ff); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700;">{doc.name.slice(0, 1)}</div>
+              )}
+              <div>
+                <h3 style="margin: 0 0 4px;">{doc.name}</h3>
+                {isReal(doc.title) && <p style="margin: 0; font-size: 14px; color: var(--muted);">{doc.title}</p>}
+              </div>
+            </article>
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+
+  {otherDepartments.length > 0 && (
+    <section class="section">
+      <h2>다른 진료과 보기</h2>
+      <p>
+        {otherDepartments.map((d, index) => (
+          <>
+            {index > 0 && ' · '}
+            <a href={`/departments/${d.id}/`}>{d.name}</a>
+          </>
+        ))}
+      </p>
+    </section>
+  )}
+</BaseLayout>

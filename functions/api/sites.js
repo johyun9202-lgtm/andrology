@@ -7,11 +7,18 @@
 //   sites/<siteId>/hospital.json + sites/<siteId>/articles/.gitkeep 커밋
 // - 사이트 목록·템플릿·스캐폴드는 빌드 시 번들(site-data.generated.js) 기준이며,
 //   생성된 사이트는 커밋 → 재배포 후 목록·설정·게시에서 사용 가능해집니다.
+// - (Phase 14A) body.onboarding이 있으면 검증 후 D1(site_onboarding)에 온보딩
+//   레코드를 함께 생성합니다. 전환정보(전화·예약·지도·카카오)는 초기
+//   hospital.json에도 반영됩니다. D1 저장 실패는 사이트 생성 자체를 되돌리지
+//   않고 응답의 onboardingSaved=false 로 알립니다.
 
 import { jsonResponse, methodNotAllowed, readJsonBody, isAuthenticated, ALLOWED_SITES } from '../_lib/auth.js'
 import { SITE_DATA, TEMPLATES, SITE_SCAFFOLD } from '../_lib/site-data.generated.js'
 import { resolveGitHubConfig, githubFetch, githubErrorMessage, utf8ToBase64 } from '../_lib/publisher.js'
 import { safeErrorMessage } from '../_lib/ai-writer.js'
+import { validateOnboardingInput } from '../_lib/onboarding.js'
+import { insertOnboarding } from '../_lib/onboarding-repository.js'
+import { getDb } from '../_lib/db.js'
 
 const SITE_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const MAX_SITE_ID_LENGTH = 30
@@ -41,7 +48,7 @@ export async function onRequestPost(context) {
   if (!(await isAuthenticated(context))) {
     return jsonResponse({ ok: false, error: '로그인이 필요합니다.' }, 401)
   }
-  const body = await readJsonBody(context.request, 10_000)
+  const body = await readJsonBody(context.request, 20_000)
   if (body === null || typeof body !== 'object') {
     return jsonResponse({ ok: false, error: '요청 형식이 올바르지 않습니다. (JSON 필요)' }, 400)
   }
@@ -75,6 +82,16 @@ export async function onRequestPost(context) {
     )
   }
 
+  // (Phase 14A) 온보딩 정보 — 있으면 커밋 전에 먼저 검증 (실패 시 아무것도 생성하지 않음)
+  let onboardingValue = null
+  if (body.onboarding !== undefined && body.onboarding !== null) {
+    const validated = validateOnboardingInput({ ...body.onboarding, hospitalName: name })
+    if (validated.errors) {
+      return jsonResponse({ ok: false, error: validated.errors.join(' ') }, 400)
+    }
+    onboardingValue = validated.value
+  }
+
   const config = resolveGitHubConfig(context.env)
   if (!config.ok) return jsonResponse({ ok: false, error: config.error }, 500)
 
@@ -94,6 +111,7 @@ export async function onRequestPost(context) {
 
     // 3) 템플릿 기반 hospital.json 구성 (스캐폴드 복사 + 최소 커스터마이즈)
     const hospital = buildInitialHospital(name, template)
+    if (onboardingValue) applyConversionInfo(hospital, onboardingValue)
 
     // 4) 생성 전용 PUT 2회 — sha 없음 = 새 파일만 가능 (동시 생성 충돌은 409/422)
     const hospitalContent = JSON.stringify(hospital, null, 2) + '\n'
@@ -131,18 +149,51 @@ export async function onRequestPost(context) {
       console.error(`[사이트 생성] articles/.gitkeep 생성 실패 site=${siteId} status=${keepResponse.status}`)
     }
 
+    // 5) (Phase 14A) 온보딩 레코드 저장 — 실패해도 이미 커밋된 사이트는 유지
+    let onboardingSaved = false
+    let onboardingRecord = null
+    if (onboardingValue) {
+      const db = getDb(context)
+      if (db) {
+        try {
+          onboardingRecord = await insertOnboarding(db, siteId, onboardingValue)
+          onboardingSaved = true
+        } catch (dbError) {
+          console.error(`[사이트 생성] 온보딩 저장 실패 site=${siteId}: ${dbError?.message ?? dbError}`)
+        }
+      } else {
+        console.error(`[사이트 생성] D1 바인딩 없음 — 온보딩 저장 생략 site=${siteId}`)
+      }
+    }
+
     return jsonResponse({
       ok: true,
       siteId,
       template: template.id,
       commitSha,
-      note: '사이트가 저장소에 생성되었습니다. 재배포(1~2분) 후 대시보드 목록·설정에서 선택할 수 있습니다.',
+      onboardingSaved,
+      onboarding: onboardingRecord,
+      note:
+        '사이트가 저장소에 생성되었습니다. 재배포(1~2분) 후 대시보드 목록·설정에서 선택할 수 있습니다.' +
+        (onboardingValue && !onboardingSaved
+          ? ' (주의: 온보딩 정보 저장에 실패했습니다 — 온보딩 탭에서 다시 저장해 주세요)'
+          : ''),
     })
   } catch (e) {
     const message = safeErrorMessage(e)
     console.error(`[사이트 생성 실패] siteId=${siteId} message=${message}`)
     return jsonResponse({ ok: false, error: message }, 500)
   }
+}
+
+// (Phase 14A) 전환정보를 초기 hospital.json에 반영 — 입력된 값만 채우고
+// 비어 있으면 스캐폴드 기본값을 유지합니다. (검증은 validateOnboardingInput에서 완료)
+function applyConversionInfo(hospital, value) {
+  if (value.phone) hospital.phone = value.phone
+  hospital.channels = hospital.channels ?? {}
+  if (value.reservationUrl) hospital.channels.naverBooking = value.reservationUrl
+  if (value.naverMapUrl) hospital.channels.naverMap = value.naverMapUrl
+  if (value.kakaoChannelUrl) hospital.channels.kakao = value.kakaoChannelUrl
 }
 
 // 스캐폴드 복사 + 이름/템플릿 반영. 비의료 업종은 병원 전용 예시 문구를 중립 문구로 교체.

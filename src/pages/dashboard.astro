@@ -29,6 +29,9 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     <button type="button" class="dash-tab active" id="tab-btn-create">생성 작업</button>
     <button type="button" class="dash-tab" id="tab-btn-published">게시된 글</button>
     <button type="button" class="dash-tab" id="tab-btn-settings">사이트 설정</button>
+    <button type="button" class="dash-tab" id="tab-btn-entities">SEO 엔티티</button>
+    <button type="button" class="dash-tab" id="tab-btn-onboarding">온보딩</button>
+    <button type="button" class="dash-tab" id="tab-btn-seoops">SEO 운영센터</button>
   </div>
 
   <div id="tab-create">
@@ -142,34 +145,65 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     <p class="dash-meta" id="site-list" style="margin: 0 0 12px; font-size: 13px; color: var(--muted);">사이트 목록을 불러오는 중...</p>
 
     <div id="site-wizard" class="dash-preview" hidden style="max-height: none; margin-bottom: 16px;">
-      <h3 style="margin-top: 0;">새 사이트 만들기</h3>
+      <h3 style="margin-top: 0;">새 사이트 만들기 — 클라이언트 온보딩</h3>
       <div class="dash-edit-form" id="wizard-step-1">
-        <label>1단계 — 사이트 이름<input type="text" id="wiz-name" maxlength="60" placeholder="예: 밝은 치과" /></label>
+        <p style="margin: 0; font-weight: 600; font-size: 13px;">1단계 — 기본정보</p>
+        <label>병원명(사이트 이름) <span class="required">*</span><input type="text" id="wiz-name" maxlength="60" placeholder="예: 밝은 치과" /></label>
+        <label>담당자<input type="text" id="wiz-manager" maxlength="30" placeholder="예: 김담당 실장" /></label>
+        <label>담당자 연락처<input type="text" id="wiz-manager-phone" maxlength="30" placeholder="예: 010-1234-5678" /></label>
+        <label>담당자 이메일<input type="text" id="wiz-manager-email" maxlength="80" placeholder="예: manager@example.com" /></label>
         <div class="dash-edit-actions">
           <button type="button" class="dash-action-btn" id="wiz-next-1">다음 →</button>
           <button type="button" class="dash-action-btn" id="wiz-cancel">닫기</button>
         </div>
       </div>
       <div class="dash-edit-form" id="wizard-step-2" hidden>
-        <p style="margin: 0; font-weight: 600; font-size: 13px;">2단계 — 업종 선택</p>
+        <p style="margin: 0; font-weight: 600; font-size: 13px;">2단계 — 업종 · siteId</p>
         <div id="wiz-templates" role="radiogroup" aria-label="업종 선택"></div>
+        <label>siteId (영문 소문자·숫자·하이픈, 2~30자) <span class="required">*</span><input type="text" id="wiz-siteid" maxlength="30" placeholder="예: bright-dental" /></label>
         <div class="dash-edit-actions">
           <button type="button" class="dash-action-btn" id="wiz-back-2">← 이전</button>
           <button type="button" class="dash-action-btn" id="wiz-next-2">다음 →</button>
         </div>
       </div>
       <div class="dash-edit-form" id="wizard-step-3" hidden>
-        <label>3단계 — siteId (영문 소문자·숫자·하이픈, 2~30자)<input type="text" id="wiz-siteid" maxlength="30" placeholder="예: bright-dental" /></label>
+        <p style="margin: 0; font-weight: 600; font-size: 13px;">3단계 — 운영방식 · 기존 홈페이지</p>
+        <div id="wiz-modes" role="radiogroup" aria-label="운영방식 선택"></div>
+        <label>기존 홈페이지 URL (있는 경우 — 이후 Import 단계에서 사용)<input type="text" id="wiz-existing-url" maxlength="300" placeholder="예: https://old-homepage.co.kr" /></label>
         <div class="dash-edit-actions">
           <button type="button" class="dash-action-btn" id="wiz-back-3">← 이전</button>
           <button type="button" class="dash-action-btn" id="wiz-next-3">다음 →</button>
         </div>
       </div>
       <div class="dash-edit-form" id="wizard-step-4" hidden>
-        <p style="margin: 0; font-weight: 600; font-size: 13px;">4단계 — 확인 후 생성</p>
-        <p id="wiz-summary" class="dash-meta" style="margin: 0;"></p>
+        <p style="margin: 0; font-weight: 600; font-size: 13px;">4단계 — 전환정보 (예약·상담 채널)</p>
+        <label>예약 URL<input type="text" id="wiz-reservation" maxlength="300" placeholder="예: https://booking.naver.com/..." /></label>
+        <label>전화번호<input type="text" id="wiz-phone" maxlength="30" placeholder="예: 062-123-4567" /></label>
+        <label>네이버지도 URL<input type="text" id="wiz-navermap" maxlength="300" placeholder="예: https://naver.me/..." /></label>
+        <label>카카오채널 URL<input type="text" id="wiz-kakao" maxlength="300" placeholder="예: https://pf.kakao.com/..." /></label>
+        <p class="dash-meta" style="margin: 0;">입력한 전환정보는 새 사이트의 초기 연락처·상담 채널에도 반영됩니다.</p>
         <div class="dash-edit-actions">
           <button type="button" class="dash-action-btn" id="wiz-back-4">← 이전</button>
+          <button type="button" class="dash-action-btn" id="wiz-next-4">다음 →</button>
+        </div>
+      </div>
+      <div class="dash-edit-form" id="wizard-step-5" hidden>
+        <p style="margin: 0; font-weight: 600; font-size: 13px;">5단계 — 새 도메인</p>
+        <label style="display: flex; gap: 8px; align-items: center; font-weight: 400; font-size: 13px;">
+          <input type="checkbox" id="wiz-domain-undecided" checked /> 도메인 미정 (나중에 결정)
+        </label>
+        <label>새 도메인<input type="text" id="wiz-domain" maxlength="100" placeholder="예: brightclinic.co.kr" disabled /></label>
+        <div class="dash-edit-actions">
+          <button type="button" class="dash-action-btn" id="wiz-back-5">← 이전</button>
+          <button type="button" class="dash-action-btn" id="wiz-next-5">다음 →</button>
+        </div>
+      </div>
+      <div class="dash-edit-form" id="wizard-step-6" hidden>
+        <p style="margin: 0; font-weight: 600; font-size: 13px;">6단계 — 작업 체크 · 확인 후 생성</p>
+        <div id="wiz-checklist" style="display: grid; gap: 6px;"></div>
+        <p id="wiz-summary" class="dash-meta" style="margin: 0;"></p>
+        <div class="dash-edit-actions">
+          <button type="button" class="dash-action-btn" id="wiz-back-6">← 이전</button>
           <button type="button" class="dash-action-btn dash-publish-btn" id="wiz-create">사이트 생성</button>
         </div>
       </div>
@@ -248,6 +282,110 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
       <p id="set-status" class="dash-meta" hidden></p>
     </form>
     <p class="dash-note">※ 저장하면 GitHub에 설정 커밋이 생성되고, Cloudflare 재배포(1~2분) 후 실제 홈페이지에 반영됩니다. 아티클·메뉴 등 이 폼에 없는 설정은 그대로 보존됩니다.</p>
+  </section>
+
+  <section class="section" id="tab-entities" hidden>
+    <h2>SEO 엔티티 — 진료과 · 의료진</h2>
+    <p class="dash-meta" style="margin: 0 0 12px;">운영자가 입력한 실제 정보만 페이지와 구조화 데이터에 반영됩니다. 검색엔진이 병원·진료과·의료진 관계를 이해할 수 있는 기반을 만드는 내부 SEO 운영 도구입니다.</p>
+    <div class="dash-pub-filter">
+      <label for="ent-site" style="font-size: 13px; font-weight: 600; align-self: center;">사이트</label>
+      <select id="ent-site">
+        {siteIds.map((id) => (
+          <option value={id} selected={id === DEFAULT_DASHBOARD_SITE}>{id}</option>
+        ))}
+      </select>
+      <button type="button" class="dash-action-btn" id="ent-add-dept">＋ 진료과 추가</button>
+      <button type="button" class="dash-action-btn" id="ent-add-doc">＋ 의료진 추가</button>
+      <button type="button" class="dash-action-btn dash-publish-btn" id="ent-save">전체 저장</button>
+    </div>
+    <p id="ent-status" class="dash-meta" hidden style="margin: 0 0 12px;"></p>
+    <h3 style="margin: 12px 0 8px;">진료과</h3>
+    <div id="ent-dept-list" class="article-list"></div>
+    <h3 style="margin: 16px 0 8px;">의료진</h3>
+    <div id="ent-doc-list" class="article-list"></div>
+    <div id="ent-editor" hidden style="margin-top: 16px;"></div>
+    <p class="dash-note">※ "전체 저장"을 눌러야 GitHub에 커밋됩니다. 재배포(1~2분) 후 /departments·/doctors 페이지가 생성·갱신되며, 삭제된 항목의 페이지는 다음 배포에서 제거됩니다.</p>
+  </section>
+
+  <section class="section" id="tab-onboarding" hidden>
+    <h2>클라이언트 온보딩</h2>
+    <p class="dash-meta" style="margin: 0 0 12px;">병원 계약 후 진행 상황을 관리합니다. 새 병원은 "사이트 설정 → 새 사이트 만들기"에서 생성하며, 재배포 전에 만든 사이트도 이 목록에 바로 표시됩니다.</p>
+    <p id="ob-status" class="dash-meta" hidden style="margin: 0 0 12px;"></p>
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>병원명</th>
+            <th>siteId</th>
+            <th>담당자</th>
+            <th>운영방식</th>
+            <th>진행률</th>
+            <th>작업</th>
+          </tr>
+        </thead>
+        <tbody id="ob-body">
+          <tr><td colspan="6" class="dash-empty">온보딩 목록을 불러오는 중...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="ob-editor" hidden style="margin-top: 16px;"></div>
+    <div id="imp-panel" hidden style="margin-top: 16px;"></div>
+    <div id="dom-panel" hidden style="margin-top: 16px;"></div>
+    <div id="dep-panel" hidden style="margin-top: 16px;"></div>
+    <p class="dash-note">※ 진행률은 작업 체크(로고·사진·예약링크·지도·전화·도메인) 완료 기준입니다. 담당자 정보는 내부 운영용으로 사이트에는 표시되지 않습니다. Import는 수집 결과를 저장만 하며, 검토 화면에서 선택한 항목만 [선택 항목 적용]으로 hospital.json에 반영됩니다.</p>
+  </section>
+
+  <section class="section" id="tab-seoops" hidden>
+    <h2>SEO 운영센터</h2>
+    <p class="dash-meta" style="margin: 0 0 12px;">운영 중(operating) 병원 사이트를 점검하고 오늘 할 일을 우선순위로 제시합니다. 점수·지표는 실제 점검 결과만으로 계산하며, 검색순위·검색량 추정치는 표시하지 않습니다.</p>
+    <p id="so-metrics" class="dash-meta" style="margin: 0 0 10px; font-weight: 600;">현황을 불러오는 중...</p>
+    <p id="so-status" class="dash-meta" hidden style="margin: 0 0 10px;"></p>
+
+    <div id="so-today" style="margin-bottom: 14px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;">
+      <h3 style="margin: 0 0 6px;">오늘의 할 일</h3>
+      <div id="so-today-list" style="display: grid; gap: 4px; font-size: 13px;">불러오는 중...</div>
+    </div>
+
+    <div class="dash-pub-filter">
+      <select id="so-filter">
+        <option value="">전체</option>
+        <option value="ok">정상</option>
+        <option value="warning">주의</option>
+        <option value="critical">심각</option>
+        <option value="check_failed">점검 실패</option>
+        <option value="tasks">작업 미처리</option>
+      </select>
+      <select id="so-sort">
+        <option value="risk">위험도 높은 순</option>
+        <option value="score">Health 낮은 순</option>
+        <option value="tasks">미처리 작업 많은 순</option>
+        <option value="stale">마지막 점검 오래된 순</option>
+      </select>
+      <input type="search" id="so-search" placeholder="병원명·siteId 검색" maxlength="60" />
+      <button type="button" class="dash-action-btn dash-publish-btn" id="so-run-all">전체 점검</button>
+      <button type="button" class="dash-action-btn" id="so-reload">새로고침</button>
+    </div>
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>병원</th>
+            <th>상태</th>
+            <th>Health</th>
+            <th>영역 점수</th>
+            <th>마지막 점검</th>
+            <th>작업</th>
+            <th>가장 심각한 문제</th>
+            <th>실행</th>
+          </tr>
+        </thead>
+        <tbody id="so-body">
+          <tr><td colspan="8" class="dash-empty">불러오는 중...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="so-detail" hidden style="margin-top: 16px;"></div>
+    <p class="dash-note">※ 점검은 대표 페이지와 sitemap의 우선순위 페이지만 제한적으로 확인합니다(무제한 크롤링 없음). "완료"는 완료 표시일 뿐, 다음 점검에서 문제가 사라져야 해결이 확정됩니다. 콘텐츠 기회는 내부 데이터 기준이며 검색량 데이터가 아닙니다.</p>
   </section>
 </BaseLayout>
 
@@ -1019,6 +1157,9 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     create: [document.getElementById('tab-create'), document.getElementById('tab-btn-create')],
     published: [document.getElementById('tab-published'), document.getElementById('tab-btn-published')],
     settings: [document.getElementById('tab-settings'), document.getElementById('tab-btn-settings')],
+    entities: [document.getElementById('tab-entities'), document.getElementById('tab-btn-entities')],
+    onboarding: [document.getElementById('tab-onboarding'), document.getElementById('tab-btn-onboarding')],
+    seoops: [document.getElementById('tab-seoops'), document.getElementById('tab-btn-seoops')],
   }
 
   function switchTab(name) {
@@ -1028,10 +1169,16 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     }
     if (name === 'published') loadPublished()
     if (name === 'settings') { loadSettings(); loadSites() }
+    if (name === 'entities') loadEntities()
+    if (name === 'onboarding') loadOnboarding()
+    if (name === 'seoops') loadSeoOps()
   }
   TAB_PANELS.create[1]?.addEventListener('click', () => switchTab('create'))
   TAB_PANELS.published[1]?.addEventListener('click', () => switchTab('published'))
   TAB_PANELS.settings[1]?.addEventListener('click', () => switchTab('settings'))
+  TAB_PANELS.entities[1]?.addEventListener('click', () => switchTab('entities'))
+  TAB_PANELS.onboarding[1]?.addEventListener('click', () => switchTab('onboarding'))
+  TAB_PANELS.seoops[1]?.addEventListener('click', () => switchTab('seoops'))
 
   const pubBody = document.getElementById('pub-body')
   const pubFilter = document.getElementById('pub-filter')
@@ -1471,14 +1618,66 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     }
   }
 
+  // (Phase 14A) 운영방식·작업 체크 라벨 — 검증 기준은 서버(functions/_lib/onboarding.js)
+  const OB_MODES = { independent: '독립 SEO 홍보사이트', replace: '기존 홈페이지 교체', subdomain: '서브도메인 운영' }
+  const OB_CHECKLIST = [
+    ['logo', '로고'], ['photos', '사진'], ['reservation', '예약링크'],
+    ['map', '지도'], ['phone', '전화'], ['domain', '도메인'],
+  ]
+
   const wizStep = (n) => {
-    for (const i of [1, 2, 3, 4]) {
+    for (const i of [1, 2, 3, 4, 5, 6]) {
       const el = document.getElementById(`wizard-step-${i}`)
       if (el) el.hidden = i !== n
     }
   }
   const wizValue = (id) => document.getElementById(id)?.value?.trim() ?? ''
   const wizTemplate = () => document.querySelector('input[name="wiz-template"]:checked')?.value ?? ''
+  const wizMode = () => document.querySelector('input[name="wiz-mode"]:checked')?.value ?? 'independent'
+
+  // 라디오/체크박스 1회 구성 (운영방식 기본값: 독립 SEO 홍보사이트)
+  function buildRadioLabel(name, value, text, checked) {
+    const label = document.createElement('label')
+    label.style.cssText = 'display: flex; gap: 8px; align-items: flex-start; font-weight: 400; font-size: 13px; margin-bottom: 6px;'
+    const radio = document.createElement('input')
+    radio.type = 'radio'
+    radio.name = name
+    radio.value = value
+    radio.checked = checked
+    const span = document.createElement('span')
+    span.textContent = text
+    label.append(radio, span)
+    return label
+  }
+  const wizModesHolder = document.getElementById('wiz-modes')
+  if (wizModesHolder) {
+    for (const [value, text] of Object.entries(OB_MODES)) {
+      wizModesHolder.appendChild(buildRadioLabel('wiz-mode', value, text, value === 'independent'))
+    }
+  }
+  const wizChecklistHolder = document.getElementById('wiz-checklist')
+  if (wizChecklistHolder) {
+    for (const [key, text] of OB_CHECKLIST) {
+      const label = document.createElement('label')
+      label.style.cssText = 'display: flex; gap: 8px; align-items: center; font-weight: 400; font-size: 13px;'
+      const box = document.createElement('input')
+      box.type = 'checkbox'
+      box.id = `wiz-check-${key}`
+      const span = document.createElement('span')
+      span.textContent = `${text} 준비 완료`
+      label.append(box, span)
+      wizChecklistHolder.appendChild(label)
+    }
+  }
+  // 도메인 미정 체크 시 입력 비활성화
+  const wizDomainUndecided = document.getElementById('wiz-domain-undecided')
+  const wizDomainInput = document.getElementById('wiz-domain')
+  wizDomainUndecided?.addEventListener('change', () => {
+    if (wizDomainInput) {
+      wizDomainInput.disabled = wizDomainUndecided.checked
+      if (wizDomainUndecided.checked) wizDomainInput.value = ''
+    }
+  })
 
   document.getElementById('wizard-open')?.addEventListener('click', () => {
     wizard.hidden = !wizard.hidden
@@ -1486,40 +1685,96 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
   })
   document.getElementById('wiz-cancel')?.addEventListener('click', () => { wizard.hidden = true })
   document.getElementById('wiz-next-1')?.addEventListener('click', () => {
-    if (wizValue('wiz-name') === '') { wizStatusMessage('사이트 이름을 입력해 주세요.', true); return }
+    if (wizValue('wiz-name') === '') { wizStatusMessage('병원명(사이트 이름)을 입력해 주세요.', true); return }
+    const email = wizValue('wiz-manager-email')
+    if (email !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      wizStatusMessage('담당자 이메일 형식이 올바르지 않습니다.', true)
+      return
+    }
     wizStatus.hidden = true
     wizStep(2)
   })
   document.getElementById('wiz-back-2')?.addEventListener('click', () => wizStep(1))
   document.getElementById('wiz-next-2')?.addEventListener('click', () => {
     if (wizTemplate() === '') { wizStatusMessage('업종을 선택해 주세요.', true); return }
-    wizStatus.hidden = true
-    wizStep(3)
-  })
-  document.getElementById('wiz-back-3')?.addEventListener('click', () => wizStep(2))
-  document.getElementById('wiz-next-3')?.addEventListener('click', () => {
     const siteId = wizValue('wiz-siteid')
     if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(siteId) || siteId.length < 2) {
       wizStatusMessage('siteId는 영문 소문자·숫자·하이픈 2~30자여야 합니다. (예: bright-dental)', true)
       return
     }
     wizStatus.hidden = true
-    const templateName = wizardTemplates.find((t) => t.id === wizTemplate())?.name ?? wizTemplate()
-    const summary = document.getElementById('wiz-summary')
-    if (summary) summary.textContent = `이름: ${wizValue('wiz-name')} · 업종: ${templateName} · siteId: ${siteId} — 저장소에 sites/${siteId}/ 폴더가 생성됩니다.`
+    wizStep(3)
+  })
+  document.getElementById('wiz-back-3')?.addEventListener('click', () => wizStep(2))
+  document.getElementById('wiz-next-3')?.addEventListener('click', () => {
+    const url = wizValue('wiz-existing-url')
+    if (url !== '' && !/^https?:\/\//.test(url)) {
+      wizStatusMessage('기존 홈페이지 URL은 http:// 또는 https:// 로 시작해야 합니다.', true)
+      return
+    }
+    wizStatus.hidden = true
     wizStep(4)
   })
   document.getElementById('wiz-back-4')?.addEventListener('click', () => wizStep(3))
+  document.getElementById('wiz-next-4')?.addEventListener('click', () => {
+    for (const [id, label] of [['wiz-reservation', '예약 URL'], ['wiz-navermap', '네이버지도 URL'], ['wiz-kakao', '카카오채널 URL']]) {
+      const url = wizValue(id)
+      if (url !== '' && !/^https?:\/\//.test(url)) {
+        wizStatusMessage(`${label}은 http:// 또는 https:// 로 시작해야 합니다.`, true)
+        return
+      }
+    }
+    wizStatus.hidden = true
+    wizStep(5)
+  })
+  document.getElementById('wiz-back-5')?.addEventListener('click', () => wizStep(4))
+  document.getElementById('wiz-next-5')?.addEventListener('click', () => {
+    if (!wizDomainUndecided?.checked && wizValue('wiz-domain') === '') {
+      wizStatusMessage('새 도메인을 입력하거나 "도메인 미정"을 선택해 주세요.', true)
+      return
+    }
+    wizStatus.hidden = true
+    const templateName = wizardTemplates.find((t) => t.id === wizTemplate())?.name ?? wizTemplate()
+    const domainText = wizDomainUndecided?.checked ? '미정' : wizValue('wiz-domain')
+    const summary = document.getElementById('wiz-summary')
+    if (summary) {
+      summary.textContent =
+        `병원명: ${wizValue('wiz-name')} · 업종: ${templateName} · siteId: ${wizValue('wiz-siteid')} · ` +
+        `운영방식: ${OB_MODES[wizMode()] ?? wizMode()} · 도메인: ${domainText} — ` +
+        `저장소에 sites/${wizValue('wiz-siteid')}/ 폴더가 생성되고 온보딩 정보가 저장됩니다.`
+    }
+    wizStep(6)
+  })
+  document.getElementById('wiz-back-6')?.addEventListener('click', () => wizStep(5))
   document.getElementById('wiz-create')?.addEventListener('click', async () => {
     const createBtn = document.getElementById('wiz-create')
     if (createBtn.disabled) return
     createBtn.disabled = true
     wizStatusMessage('생성 중... (GitHub 커밋)')
+    const checklist = {}
+    for (const [key] of OB_CHECKLIST) checklist[key] = document.getElementById(`wiz-check-${key}`)?.checked === true
     try {
       const response = await fetch('/api/sites', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name: wizValue('wiz-name'), template: wizTemplate(), siteId: wizValue('wiz-siteid') }),
+        body: JSON.stringify({
+          name: wizValue('wiz-name'),
+          template: wizTemplate(),
+          siteId: wizValue('wiz-siteid'),
+          onboarding: {
+            managerName: wizValue('wiz-manager'),
+            managerPhone: wizValue('wiz-manager-phone'),
+            managerEmail: wizValue('wiz-manager-email'),
+            operationMode: wizMode(),
+            existingUrl: wizValue('wiz-existing-url'),
+            reservationUrl: wizValue('wiz-reservation'),
+            phone: wizValue('wiz-phone'),
+            naverMapUrl: wizValue('wiz-navermap'),
+            kakaoChannelUrl: wizValue('wiz-kakao'),
+            newDomain: wizDomainUndecided?.checked ? '' : wizValue('wiz-domain'),
+            checklist,
+          },
+        }),
       })
       if (response.status === 401) { location.href = '/login'; return }
       const data = await response.json().catch(() => ({}))
@@ -1772,6 +2027,285 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     aiReview.append(form, notice, actions)
   }
 
+  // ==================================================================
+  // Phase 13 — SEO 엔티티 (진료과·의료진) 관리
+  // ==================================================================
+  const entState = { departments: [], doctors: [], sha: '', siteUrl: '' }
+  const entStatus = document.getElementById('ent-status')
+  const entEditor = document.getElementById('ent-editor')
+  const entSiteSelect = document.getElementById('ent-site')
+
+  function entMessage(message, isError = false) {
+    if (!entStatus) return
+    entStatus.textContent = message
+    entStatus.style.color = isError ? '#b91c1c' : ''
+    entStatus.hidden = false
+  }
+
+  async function loadEntities(preserveStatus = false) {
+    const site = entSiteSelect?.value ?? 'aiseolab'
+    if (!preserveStatus) entMessage('불러오는 중...')
+    entEditor.hidden = true
+    try {
+      const response = await fetch(`/api/entities?site=${encodeURIComponent(site)}`)
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data.ok) { entMessage(data.error ?? '불러오지 못했습니다.', true); return }
+      entState.departments = data.departments
+      entState.doctors = data.doctors
+      entState.sha = data.sha
+      entState.siteUrl = data.siteUrl ?? ''
+      renderEntities()
+      if (!preserveStatus) entMessage(`불러왔습니다. 진료과 ${data.departments.length}개 · 의료진 ${data.doctors.length}명`)
+    } catch {
+      entMessage('불러오지 못했습니다. (서버 연결 실패)', true)
+    }
+  }
+  entSiteSelect?.addEventListener('change', loadEntities)
+
+  function entRow(kind, item, index) {
+    const row = document.createElement('div')
+    row.className = 'article-item'
+    row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;'
+    const info = document.createElement('div')
+    const linked = kind === 'dept'
+      ? `연결 의료진 ${(item.doctorIds ?? []).length}명`
+      : `소속 진료과 ${(item.departmentIds ?? []).length}개`
+    const path = kind === 'dept' ? `/departments/${item.id}/` : `/doctors/${item.id}/`
+    info.appendChild(textEl('h3', `${item.name}${kind === 'doc' && item.title ? ` · ${item.title}` : ''}`, ''))
+    info.querySelector('h3').style.cssText = 'margin: 0 0 4px; font-size: 15px;'
+    info.appendChild(textEl('p', `${linked} · 페이지: ${entState.siteUrl || ''}${path}`, 'dash-meta'))
+    info.querySelector('p').style.margin = '0'
+    const actions = document.createElement('div')
+    const editBtn = textEl('button', '수정', 'dash-action-btn')
+    editBtn.type = 'button'
+    editBtn.addEventListener('click', () => openEntityEditor(kind, index))
+    const delBtn = textEl('button', '삭제', 'dash-action-btn')
+    delBtn.type = 'button'
+    delBtn.addEventListener('click', () => {
+      const hasLinks = kind === 'dept' ? (item.doctorIds ?? []).length > 0 : (item.departmentIds ?? []).length > 0
+      const warning = hasLinks ? ' 연결된 항목이 있습니다 — 연결도 함께 해제됩니다.' : ''
+      if (!window.confirm(`"${item.name}"을(를) 목록에서 삭제합니다.${warning} 전체 저장 시 반영됩니다. 계속할까요?`)) return
+      if (kind === 'dept') {
+        entState.departments.splice(index, 1)
+        for (const doc of entState.doctors) doc.departmentIds = (doc.departmentIds ?? []).filter((id) => id !== item.id)
+      } else {
+        entState.doctors.splice(index, 1)
+        for (const dept of entState.departments) dept.doctorIds = (dept.doctorIds ?? []).filter((id) => id !== item.id)
+      }
+      renderEntities()
+    })
+    actions.append(editBtn, ' ', delBtn)
+    row.append(info, actions)
+    return row
+  }
+
+  function renderEntities() {
+    const deptList = document.getElementById('ent-dept-list')
+    const docList = document.getElementById('ent-doc-list')
+    deptList.innerHTML = ''
+    docList.innerHTML = ''
+    if (entState.departments.length === 0) deptList.appendChild(textEl('p', '등록된 진료과가 없습니다.', 'dash-meta'))
+    entState.departments.forEach((item, index) => deptList.appendChild(entRow('dept', item, index)))
+    if (entState.doctors.length === 0) docList.appendChild(textEl('p', '등록된 의료진이 없습니다.', 'dash-meta'))
+    entState.doctors.forEach((item, index) => docList.appendChild(entRow('doc', item, index)))
+  }
+
+  // ---------- 편집 폼 (진료과/의료진 공용 헬퍼) ----------
+  function entField(labelText, value, { textarea = false, max = 200, placeholder = '' } = {}) {
+    const label = document.createElement('label')
+    label.textContent = labelText
+    const el = document.createElement(textarea ? 'textarea' : 'input')
+    if (!textarea) el.type = 'text'
+    el.maxLength = max
+    el.value = value ?? ''
+    el.placeholder = placeholder
+    if (textarea) { el.style.minHeight = '70px'; el.style.whiteSpace = 'normal'; el.style.fontFamily = 'inherit' }
+    label.appendChild(el)
+    return { label, el }
+  }
+
+  // 이미지 URL + 미리보기 (로드 실패 시 오류 표시)
+  function entImageField(labelText, value) {
+    const field = entField(labelText, value, { max: 300, placeholder: 'https://...' })
+    const preview = document.createElement('img')
+    preview.alt = '이미지 미리보기'
+    preview.style.cssText = 'width: 96px; height: 96px; object-fit: cover; border-radius: 12px; margin-top: 6px; display: none;'
+    const errorLine = textEl('p', '이미지를 불러올 수 없습니다. URL을 확인해 주세요.', 'dash-edit-error')
+    errorLine.hidden = true
+    const refresh = () => {
+      const src = field.el.value.trim()
+      errorLine.hidden = true
+      if (/^https?:\/\//.test(src)) { preview.src = src; preview.style.display = 'block' }
+      else { preview.style.display = 'none' }
+    }
+    preview.addEventListener('error', () => { preview.style.display = 'none'; errorLine.hidden = false })
+    field.el.addEventListener('change', refresh)
+    refresh()
+    field.label.append(preview, errorLine)
+    return field
+  }
+
+  function entCheckboxes(items, checkedIds, ariaLabel) {
+    const holder = document.createElement('div')
+    holder.setAttribute('role', 'group')
+    holder.setAttribute('aria-label', ariaLabel)
+    if (items.length === 0) holder.appendChild(textEl('p', '(연결할 항목이 아직 없습니다)', 'dash-meta'))
+    for (const item of items) {
+      const label = document.createElement('label')
+      label.style.cssText = 'display: inline-flex; gap: 6px; align-items: center; font-weight: 400; font-size: 13px; margin: 0 12px 6px 0;'
+      const box = document.createElement('input')
+      box.type = 'checkbox'
+      box.value = item.id
+      box.checked = (checkedIds ?? []).includes(item.id)
+      label.append(box, document.createTextNode(`${item.name} (${item.id})`))
+      holder.appendChild(label)
+    }
+    return { holder, values: () => [...holder.querySelectorAll('input:checked')].map((b) => b.value) }
+  }
+
+  const linesOf = (el) => el.value.split('\n').map((v) => v.trim()).filter((v) => v !== '')
+
+  function openEntityEditor(kind, index) {
+    const isNew = index === -1
+    const item = isNew
+      ? (kind === 'dept'
+        ? { id: '', name: '', shortDescription: '', description: '', image: '', phone: '', consultationUrl: '', doctorIds: [], seo: { title: '', description: '', keywords: [] } }
+        : { id: '', name: '', title: '', departmentIds: [], specialties: [], bio: '', career: [], education: [], certifications: [], image: '', imageAlt: '', consultationUrl: '', seo: { title: '', description: '', keywords: [] } })
+      : (kind === 'dept' ? entState.departments[index] : entState.doctors[index])
+
+    entEditor.innerHTML = ''
+    entEditor.hidden = false
+    const box = document.createElement('div')
+    box.className = 'dash-preview'
+    box.style.maxHeight = 'none'
+    box.appendChild(textEl('h3', `${kind === 'dept' ? '진료과' : '의료진'} ${isNew ? '추가' : '수정'}`, ''))
+
+    const form = document.createElement('div')
+    form.className = 'dash-edit-form'
+    const f = {}
+    f.name = entField(kind === 'dept' ? '진료과명 (필수)' : '이름 (필수)', item.name, { max: 40 })
+    f.id = entField('slug (영문 소문자·숫자·하이픈, 페이지 주소)', item.id, { max: 40, placeholder: kind === 'dept' ? '예: urology-center' : '예: doctor-hong' })
+    form.append(f.name.label, f.id.label)
+    let links
+    if (kind === 'dept') {
+      f.shortDescription = entField('짧은 설명', item.shortDescription, { max: 120 })
+      f.description = entField('상세 설명', item.description, { textarea: true, max: 2000 })
+      f.image = entImageField('대표 이미지 URL', item.image)
+      f.phone = entField('전화번호', item.phone, { max: 30 })
+      f.consultationUrl = entField('상담 URL', item.consultationUrl, { max: 300, placeholder: 'https://...' })
+      links = entCheckboxes(entState.doctors, item.doctorIds, '연결 의료진 선택')
+      form.append(f.shortDescription.label, f.description.label, f.image.label, f.phone.label, f.consultationUrl.label,
+        textEl('p', '연결 의료진', 'dash-meta'), links.holder)
+    } else {
+      f.title = entField('직책 (예: 대표원장)', item.title, { max: 40 })
+      links = entCheckboxes(entState.departments, item.departmentIds, '소속 진료과 선택')
+      f.specialties = entField('전문 분야 (콤마 구분)', (item.specialties ?? []).join(', '), { max: 300 })
+      f.bio = entField('소개', item.bio, { textarea: true, max: 2000 })
+      f.career = entField('경력 (한 줄에 하나 — 실제 경력만 입력)', (item.career ?? []).join('\n'), { textarea: true, max: 2000 })
+      f.education = entField('학력 (한 줄에 하나)', (item.education ?? []).join('\n'), { textarea: true, max: 2000 })
+      f.certifications = entField('자격 (한 줄에 하나)', (item.certifications ?? []).join('\n'), { textarea: true, max: 2000 })
+      f.image = entImageField('사진 URL', item.image)
+      f.imageAlt = entField('사진 설명 (alt)', item.imageAlt, { max: 120, placeholder: '예: 홍길동 대표원장 사진' })
+      f.consultationUrl = entField('상담 URL', item.consultationUrl, { max: 300, placeholder: 'https://...' })
+      form.append(f.title.label, textEl('p', '소속 진료과 (다중 선택)', 'dash-meta'), links.holder,
+        f.specialties.label, f.bio.label, f.career.label, f.education.label, f.certifications.label,
+        f.image.label, f.imageAlt.label, f.consultationUrl.label)
+    }
+    f.seoTitle = entField('SEO 제목', item.seo?.title, { max: 70 })
+    f.seoDescription = entField('SEO 설명', item.seo?.description, { max: 200 })
+    f.seoKeywords = entField('SEO 키워드 (콤마 구분)', (item.seo?.keywords ?? []).join(', '), { max: 300 })
+    form.append(f.seoTitle.label, f.seoDescription.label, f.seoKeywords.label)
+
+    const errorLine = textEl('p', '', 'dash-edit-error')
+    errorLine.hidden = true
+    const actions = document.createElement('div')
+    actions.className = 'dash-edit-actions'
+    const applyBtn = textEl('button', '목록에 반영', 'dash-action-btn dash-publish-btn')
+    applyBtn.type = 'button'
+    applyBtn.addEventListener('click', () => {
+      const id = f.id.el.value.trim()
+      const name = f.name.el.value.trim()
+      if (name === '' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id)) {
+        errorLine.textContent = '이름과 올바른 slug(영문 소문자·숫자·하이픈)를 입력해 주세요.'
+        errorLine.hidden = false
+        return
+      }
+      const csv = (el) => el.value.split(',').map((v) => v.trim()).filter((v) => v !== '')
+      const seo = { title: f.seoTitle.el.value.trim(), description: f.seoDescription.el.value.trim(), keywords: csv(f.seoKeywords.el) }
+      let next
+      if (kind === 'dept') {
+        next = {
+          id, name,
+          shortDescription: f.shortDescription.el.value.trim(),
+          description: f.description.el.value.trim(),
+          image: f.image.el.value.trim(),
+          phone: f.phone.el.value.trim(),
+          consultationUrl: f.consultationUrl.el.value.trim(),
+          doctorIds: links.values(), seo,
+        }
+        if (isNew) entState.departments.push(next)
+        else entState.departments[index] = next
+      } else {
+        next = {
+          id, name,
+          title: f.title.el.value.trim(),
+          departmentIds: links.values(),
+          specialties: csv(f.specialties.el),
+          bio: f.bio.el.value.trim(),
+          career: linesOf(f.career.el),
+          education: linesOf(f.education.el),
+          certifications: linesOf(f.certifications.el),
+          image: f.image.el.value.trim(),
+          imageAlt: f.imageAlt.el.value.trim(),
+          consultationUrl: f.consultationUrl.el.value.trim(),
+          seo,
+        }
+        if (isNew) entState.doctors.push(next)
+        else entState.doctors[index] = next
+      }
+      entEditor.hidden = true
+      renderEntities()
+      entMessage(`목록에 반영되었습니다. 생성될 페이지: ${entState.siteUrl}${kind === 'dept' ? '/departments/' : '/doctors/'}${id}/ — "전체 저장"을 눌러야 커밋됩니다.`)
+    })
+    const cancelBtn = textEl('button', '취소', 'dash-action-btn')
+    cancelBtn.type = 'button'
+    cancelBtn.addEventListener('click', () => { entEditor.hidden = true })
+    actions.append(applyBtn, cancelBtn)
+    box.append(form, errorLine, actions)
+    entEditor.appendChild(box)
+    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }
+
+  document.getElementById('ent-add-dept')?.addEventListener('click', () => openEntityEditor('dept', -1))
+  document.getElementById('ent-add-doc')?.addEventListener('click', () => openEntityEditor('doc', -1))
+  document.getElementById('ent-save')?.addEventListener('click', async () => {
+    const saveBtn = document.getElementById('ent-save')
+    if (saveBtn.disabled) return
+    saveBtn.disabled = true
+    entMessage('저장 중... (GitHub 커밋)')
+    try {
+      const response = await fetch('/api/entities', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ site: entSiteSelect?.value ?? 'aiseolab', sha: entState.sha, departments: entState.departments, doctors: entState.doctors }),
+      })
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok) {
+        entState.sha = ''
+        entMessage(`저장 완료 — 커밋 ${String(data.commitSha ?? '').slice(0, 7)} · ${data.note ?? ''}`)
+        loadEntities(true)
+      } else {
+        entMessage(data.error ?? '저장에 실패했습니다.', true)
+      }
+    } catch {
+      entMessage('서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.', true)
+    } finally {
+      saveBtn.disabled = false
+    }
+  })
+
   settingsForm?.addEventListener('submit', async (event) => {
     event.preventDefault()
     const saveBtn = document.getElementById('set-save')
@@ -1808,4 +2342,1917 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
       saveBtn.disabled = false
     }
   })
+
+  // ==================================================================
+  // Phase 14A — 클라이언트 온보딩 탭 (병원별 진행률 + 온보딩 정보 관리)
+  // ==================================================================
+  const obBody = document.getElementById('ob-body')
+  const obStatus = document.getElementById('ob-status')
+  const obEditor = document.getElementById('ob-editor')
+  let obModes = OB_MODES
+  let obChecklistItems = OB_CHECKLIST.map(([key, label]) => ({ key, label }))
+
+  function obMessage(message, isError = false) {
+    if (!obStatus) return
+    obStatus.textContent = message
+    obStatus.style.color = isError ? '#b91c1c' : ''
+    obStatus.hidden = false
+  }
+
+  function obEmpty(message) {
+    if (!obBody) return
+    obBody.innerHTML = ''
+    const row = document.createElement('tr')
+    const td = document.createElement('td')
+    td.colSpan = 6
+    td.className = 'dash-empty'
+    td.textContent = message
+    row.appendChild(td)
+    obBody.appendChild(row)
+  }
+
+  function buildProgressCell(progress) {
+    const td = document.createElement('td')
+    const percent = Math.max(0, Math.min(100, progress?.percent ?? 0))
+    const wrap = document.createElement('div')
+    wrap.style.cssText = 'display: flex; align-items: center; gap: 8px; min-width: 140px;'
+    const bar = document.createElement('div')
+    bar.style.cssText = 'flex: 1; height: 8px; border-radius: 4px; background: var(--border); overflow: hidden;'
+    const fill = document.createElement('div')
+    fill.style.cssText = `width: ${percent}%; height: 100%; border-radius: 4px; background: ${percent >= 100 ? '#16a34a' : 'var(--accent)'};`
+    bar.appendChild(fill)
+    const text = document.createElement('span')
+    text.style.cssText = 'font-size: 12px; font-weight: 600; min-width: 34px; text-align: right;'
+    text.textContent = `${percent}%`
+    wrap.append(bar, text)
+    td.appendChild(wrap)
+    return td
+  }
+
+  async function loadOnboarding(preserveStatus = false) {
+    if (!preserveStatus && obStatus) obStatus.hidden = true
+    try {
+      const response = await fetch('/api/onboarding')
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data.ok) {
+        obEmpty(data.error ?? '온보딩 목록을 불러오지 못했습니다.')
+        return
+      }
+      if (data.operationModes) obModes = data.operationModes
+      if (Array.isArray(data.checklistItems) && data.checklistItems.length > 0) obChecklistItems = data.checklistItems
+      const records = data.records ?? []
+      if (records.length === 0) {
+        obEmpty('온보딩 중인 병원이 없습니다. "사이트 설정 → 새 사이트 만들기"로 시작해 주세요.')
+        return
+      }
+      obBody.innerHTML = ''
+      for (const record of records) {
+        const row = document.createElement('tr')
+        const nameTd = document.createElement('td')
+        nameTd.textContent = record.hospitalName
+        const siteTd = document.createElement('td')
+        siteTd.textContent = record.siteId
+        const managerTd = document.createElement('td')
+        managerTd.textContent = record.managerName || '-'
+        const modeTd = document.createElement('td')
+        modeTd.textContent = obModes[record.operationMode] ?? record.operationMode
+        const actionTd = document.createElement('td')
+        actionTd.style.cssText = 'display: flex; gap: 6px;'
+        const manageBtn = document.createElement('button')
+        manageBtn.type = 'button'
+        manageBtn.className = 'dash-action-btn'
+        manageBtn.textContent = '관리'
+        manageBtn.addEventListener('click', () => openOnboardingEditor(record))
+        const importBtn = document.createElement('button')
+        importBtn.type = 'button'
+        importBtn.className = 'dash-action-btn'
+        importBtn.textContent = 'Import'
+        importBtn.addEventListener('click', () => openImportPanel(record))
+        const domainBtn = document.createElement('button')
+        domainBtn.type = 'button'
+        domainBtn.className = 'dash-action-btn'
+        domainBtn.textContent = '도메인'
+        domainBtn.addEventListener('click', () => openDomainPanel(record))
+        const deployBtn = document.createElement('button')
+        deployBtn.type = 'button'
+        deployBtn.className = 'dash-action-btn'
+        deployBtn.textContent = '배포'
+        deployBtn.addEventListener('click', () => openDeployPanel(record))
+        actionTd.append(manageBtn, importBtn, domainBtn, deployBtn)
+        row.append(nameTd, siteTd, managerTd, modeTd, buildProgressCell(record.progress), actionTd)
+        obBody.appendChild(row)
+      }
+    } catch {
+      obEmpty('온보딩 목록을 불러오지 못했습니다. (서버 연결 실패)')
+    }
+  }
+
+  // 편집 폼 — 모든 요소를 DOM API로 생성 (textContent만 사용, XSS 안전)
+  function obField(labelText, id, value, maxLength, placeholder = '') {
+    const label = document.createElement('label')
+    label.textContent = labelText
+    const input = document.createElement('input')
+    input.type = 'text'
+    input.id = id
+    input.maxLength = maxLength
+    input.value = value ?? ''
+    input.placeholder = placeholder
+    label.appendChild(input)
+    return label
+  }
+
+  function obSectionTitle(text) {
+    const p = document.createElement('p')
+    p.style.cssText = 'margin: 8px 0 0; font-weight: 600; font-size: 13px;'
+    p.textContent = text
+    return p
+  }
+
+  function openOnboardingEditor(record) {
+    if (!obEditor) return
+    obEditor.innerHTML = ''
+    obEditor.hidden = false
+    const box = document.createElement('div')
+    box.className = 'dash-edit-form'
+
+    const title = document.createElement('h3')
+    title.style.cssText = 'margin: 0;'
+    title.textContent = `온보딩 관리 — ${record.hospitalName} (${record.siteId})`
+    box.appendChild(title)
+
+    box.appendChild(obSectionTitle('기본정보'))
+    box.appendChild(obField('병원명', 'ob-f-name', record.hospitalName, 60))
+    box.appendChild(obField('담당자', 'ob-f-manager', record.managerName, 30))
+    box.appendChild(obField('담당자 연락처', 'ob-f-manager-phone', record.managerPhone, 30, '예: 010-1234-5678'))
+    box.appendChild(obField('담당자 이메일', 'ob-f-manager-email', record.managerEmail, 80))
+
+    box.appendChild(obSectionTitle('운영방식'))
+    const modeHolder = document.createElement('div')
+    modeHolder.setAttribute('role', 'radiogroup')
+    for (const [value, text] of Object.entries(obModes)) {
+      const label = document.createElement('label')
+      label.style.cssText = 'display: flex; gap: 8px; align-items: center; font-weight: 400; font-size: 13px; margin-bottom: 4px;'
+      const radio = document.createElement('input')
+      radio.type = 'radio'
+      radio.name = 'ob-f-mode'
+      radio.value = value
+      radio.checked = value === record.operationMode
+      const span = document.createElement('span')
+      span.textContent = text
+      label.append(radio, span)
+      modeHolder.appendChild(label)
+    }
+    box.appendChild(modeHolder)
+
+    box.appendChild(obSectionTitle('기존 홈페이지'))
+    box.appendChild(obField('기존 홈페이지 URL', 'ob-f-existing', record.existingUrl, 300, '예: https://old-homepage.co.kr'))
+
+    box.appendChild(obSectionTitle('전환정보'))
+    box.appendChild(obField('예약 URL', 'ob-f-reservation', record.reservationUrl, 300))
+    box.appendChild(obField('전화번호', 'ob-f-phone', record.phone, 30))
+    box.appendChild(obField('네이버지도 URL', 'ob-f-navermap', record.naverMapUrl, 300))
+    box.appendChild(obField('카카오채널 URL', 'ob-f-kakao', record.kakaoChannelUrl, 300))
+
+    box.appendChild(obSectionTitle('새 도메인'))
+    const undecidedLabel = document.createElement('label')
+    undecidedLabel.style.cssText = 'display: flex; gap: 8px; align-items: center; font-weight: 400; font-size: 13px;'
+    const undecidedBox = document.createElement('input')
+    undecidedBox.type = 'checkbox'
+    undecidedBox.id = 'ob-f-domain-undecided'
+    undecidedBox.checked = record.domainStatus !== 'decided'
+    const undecidedSpan = document.createElement('span')
+    undecidedSpan.textContent = '도메인 미정 (나중에 결정)'
+    undecidedLabel.append(undecidedBox, undecidedSpan)
+    box.appendChild(undecidedLabel)
+    const domainField = obField('새 도메인', 'ob-f-domain', record.newDomain, 100, '예: brightclinic.co.kr')
+    box.appendChild(domainField)
+    const domainInput = domainField.querySelector('input')
+    domainInput.disabled = undecidedBox.checked
+    undecidedBox.addEventListener('change', () => {
+      domainInput.disabled = undecidedBox.checked
+      if (undecidedBox.checked) domainInput.value = ''
+    })
+
+    box.appendChild(obSectionTitle('작업 체크'))
+    const checkHolder = document.createElement('div')
+    checkHolder.style.cssText = 'display: grid; gap: 6px;'
+    for (const item of obChecklistItems) {
+      const label = document.createElement('label')
+      label.style.cssText = 'display: flex; gap: 8px; align-items: center; font-weight: 400; font-size: 13px;'
+      const boxInput = document.createElement('input')
+      boxInput.type = 'checkbox'
+      boxInput.id = `ob-f-check-${item.key}`
+      boxInput.checked = record.checklist?.[item.key] === true
+      const span = document.createElement('span')
+      span.textContent = `${item.label} 준비 완료`
+      label.append(boxInput, span)
+      checkHolder.appendChild(label)
+    }
+    box.appendChild(checkHolder)
+
+    const actions = document.createElement('div')
+    actions.className = 'dash-edit-actions'
+    const saveBtn = document.createElement('button')
+    saveBtn.type = 'button'
+    saveBtn.className = 'dash-action-btn dash-publish-btn'
+    saveBtn.id = 'ob-save'
+    saveBtn.textContent = '저장'
+    const closeBtn = document.createElement('button')
+    closeBtn.type = 'button'
+    closeBtn.className = 'dash-action-btn'
+    closeBtn.textContent = '닫기'
+    closeBtn.addEventListener('click', () => { obEditor.hidden = true })
+    actions.append(saveBtn, closeBtn)
+    box.appendChild(actions)
+    obEditor.appendChild(box)
+
+    const fieldValue = (id) => document.getElementById(id)?.value?.trim() ?? ''
+    saveBtn.addEventListener('click', async () => {
+      if (saveBtn.disabled) return
+      saveBtn.disabled = true
+      obMessage('저장 중...')
+      const checklist = {}
+      for (const item of obChecklistItems) {
+        checklist[item.key] = document.getElementById(`ob-f-check-${item.key}`)?.checked === true
+      }
+      try {
+        const response = await fetch(`/api/onboarding/${encodeURIComponent(record.siteId)}`, {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            hospitalName: fieldValue('ob-f-name'),
+            managerName: fieldValue('ob-f-manager'),
+            managerPhone: fieldValue('ob-f-manager-phone'),
+            managerEmail: fieldValue('ob-f-manager-email'),
+            operationMode: document.querySelector('input[name="ob-f-mode"]:checked')?.value ?? 'independent',
+            existingUrl: fieldValue('ob-f-existing'),
+            reservationUrl: fieldValue('ob-f-reservation'),
+            phone: fieldValue('ob-f-phone'),
+            naverMapUrl: fieldValue('ob-f-navermap'),
+            kakaoChannelUrl: fieldValue('ob-f-kakao'),
+            newDomain: undecidedBox.checked ? '' : fieldValue('ob-f-domain'),
+            checklist,
+          }),
+        })
+        if (response.status === 401) { location.href = '/login'; return }
+        const data = await response.json().catch(() => ({}))
+        if (response.ok && data.ok) {
+          const percent = data.record?.progress?.percent ?? 0
+          obMessage(`저장 완료 — ${record.siteId} 진행률 ${percent}%`)
+          obEditor.hidden = true
+          loadOnboarding(true)
+        } else {
+          obMessage(data.error ?? '저장에 실패했습니다.', true)
+        }
+      } catch {
+        obMessage('서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.', true)
+      } finally {
+        saveBtn.disabled = false
+      }
+    })
+  }
+
+  // ==================================================================
+  // Phase 14B — Hospital Import (수집 → 검토 → 선택 적용)
+  // ==================================================================
+  const impPanel = document.getElementById('imp-panel')
+  // [fieldKey(적용 API 키), 라벨, site-settings의 현재값 키]
+  const IMP_FIELDS = [
+    ['name', '병원명', 'name'], ['description', '병원 소개', 'description'],
+    ['phone', '전화번호', 'phone'], ['address', '주소', 'address'],
+    ['hoursWeekday', '평일 진료시간', 'hoursWeekday'], ['hoursSaturday', '토요일 진료시간', 'hoursSaturday'],
+    ['hoursSunday', '일·공휴일 진료시간', 'hoursSunday'], ['reservationUrl', '예약 URL', 'naverBookingUrl'],
+    ['naverMapUrl', '네이버지도 URL', 'naverMapUrl'], ['kakaoUrl', '카카오채널 URL', 'kakaoUrl'],
+    ['logoImage', '로고 이미지', 'logoImage'], ['heroImage', '대표 이미지', 'heroImage'],
+  ]
+  const IMP_CONFIDENCE = { high: '높음', medium: '중간', low: '낮음' }
+  const impState = { siteId: '', name: '', record: null, settings: null, sha: '', defaultSourceUrl: '' }
+
+  function el(tag, style, text) {
+    const node = document.createElement(tag)
+    if (style) node.style.cssText = style
+    if (text !== undefined) node.textContent = text
+    return node
+  }
+
+  function impLink(url, label) {
+    const a = document.createElement('a')
+    if (typeof url === 'string' && /^https?:\/\//.test(url)) {
+      a.href = url
+      a.target = '_blank'
+      a.rel = 'noopener noreferrer'
+    }
+    a.textContent = label ?? url
+    return a
+  }
+
+  let impStatusLine = null
+  function impMessage(message, isError = false) {
+    if (!impStatusLine) return
+    impStatusLine.textContent = message
+    impStatusLine.style.color = isError ? '#b91c1c' : ''
+    impStatusLine.hidden = false
+  }
+
+  function openImportPanel(obRecord) {
+    impState.siteId = obRecord.siteId
+    impState.name = obRecord.hospitalName
+    impState.defaultSourceUrl = obRecord.existingUrl ?? ''
+    if (obEditor) obEditor.hidden = true
+    impPanel.hidden = false
+    renderImportShell('불러오는 중...')
+    loadImportData()
+  }
+
+  function renderImportShell(statusText) {
+    impPanel.innerHTML = ''
+    const box = el('div')
+    box.className = 'dash-edit-form'
+    const title = el('h3', 'margin: 0;', `기존 홈페이지 Import — ${impState.name} (${impState.siteId})`)
+    box.appendChild(title)
+    box.appendChild(el('p', 'margin: 0; font-size: 13px; color: var(--muted);',
+      '수집 결과는 기록으로만 저장됩니다. 아래에서 검토·수정 후 [선택 항목 적용]을 눌러야 사이트 설정에 반영됩니다.'))
+
+    const controls = el('div', 'display: flex; gap: 8px; flex-wrap: wrap; align-items: center;')
+    const urlInput = document.createElement('input')
+    urlInput.type = 'text'
+    urlInput.id = 'imp-source-url'
+    urlInput.maxLength = 300
+    urlInput.placeholder = '기존 홈페이지 URL (예: https://old-hospital.co.kr)'
+    urlInput.style.cssText = 'flex: 1; min-width: 240px;'
+    urlInput.value = impState.defaultSourceUrl
+    const runBtn = document.createElement('button')
+    runBtn.type = 'button'
+    runBtn.className = 'dash-action-btn dash-publish-btn'
+    runBtn.id = 'imp-run'
+    runBtn.textContent = impState.record ? '다시 실행' : 'Import 실행'
+    runBtn.addEventListener('click', runImportNow)
+    const closeBtn = document.createElement('button')
+    closeBtn.type = 'button'
+    closeBtn.className = 'dash-action-btn'
+    closeBtn.textContent = '닫기'
+    closeBtn.addEventListener('click', () => { impPanel.hidden = true })
+    controls.append(urlInput, runBtn, closeBtn)
+    box.appendChild(controls)
+
+    impStatusLine = el('p', 'margin: 0; font-size: 13px;')
+    impStatusLine.className = 'dash-meta'
+    impStatusLine.id = 'imp-status'
+    if (statusText) impStatusLine.textContent = statusText
+    box.appendChild(impStatusLine)
+
+    const review = el('div')
+    review.id = 'imp-review'
+    box.appendChild(review)
+    impPanel.appendChild(box)
+  }
+
+  async function loadImportData() {
+    try {
+      const [importRes, settingsRes] = await Promise.all([
+        fetch(`/api/import?site=${encodeURIComponent(impState.siteId)}`),
+        fetch(`/api/site-settings?site=${encodeURIComponent(impState.siteId)}`),
+      ])
+      if (importRes.status === 401) { location.href = '/login'; return }
+      const importData = await importRes.json().catch(() => ({}))
+      const settingsData = await settingsRes.json().catch(() => ({}))
+      if (!importRes.ok || !importData.ok) {
+        renderImportShell('')
+        impMessage(importData.error ?? 'Import 이력을 불러오지 못했습니다.', true)
+        return
+      }
+      impState.record = importData.latest
+      impState.history = importData.history ?? []
+      impState.settings = settingsData.ok ? settingsData.settings : null
+      impState.sha = settingsData.ok ? settingsData.sha : ''
+      if (importData.defaultSourceUrl) impState.defaultSourceUrl = importData.defaultSourceUrl
+      if (impState.record?.sourceUrl) impState.defaultSourceUrl = impState.record.sourceUrl
+      renderImportShell('')
+      if (!settingsData.ok) impMessage('현재 사이트 설정을 불러오지 못해 기존 값 비교 없이 표시합니다. (재배포 전 신규 사이트일 수 있음)', true)
+      renderImportResult()
+    } catch {
+      impMessage('서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.', true)
+    }
+  }
+
+  async function runImportNow() {
+    const runBtn = document.getElementById('imp-run')
+    const sourceUrl = document.getElementById('imp-source-url')?.value?.trim() ?? ''
+    if (sourceUrl !== '' && !/^https?:\/\//.test(sourceUrl)) {
+      impMessage('URL은 http:// 또는 https:// 로 시작해야 합니다.', true)
+      return
+    }
+    if (runBtn.disabled) return
+    runBtn.disabled = true
+    impMessage('수집 중... 같은 도메인의 주요 페이지를 제한적으로 읽습니다. (최대 1분)')
+    try {
+      const response = await fetch('/api/import', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ site: impState.siteId, sourceUrl }),
+      })
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok) {
+        impState.record = data.record
+        renderImportShell('')
+        if (data.record.status === 'failed') {
+          impMessage(`Import 실패 — ${data.record.errorMessage ?? '원인 미상'}`, true)
+        } else {
+          impMessage(`수집 완료 — ${data.record.pagesScanned}페이지 (실패 ${data.record.pagesFailed}) · Import Score ${data.record.score}%`)
+        }
+        renderImportResult()
+        loadOnboarding(true)
+      } else {
+        impMessage(data.error ?? 'Import 실행에 실패했습니다.', true)
+      }
+    } catch {
+      impMessage('서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.', true)
+    } finally {
+      const btn = document.getElementById('imp-run')
+      if (btn) btn.disabled = false
+    }
+  }
+
+  function impCurrentValue(settingsKey) {
+    const raw = impState.settings?.[settingsKey]
+    const value = typeof raw === 'string' ? raw.trim() : ''
+    return value === '미정' ? '' : value
+  }
+
+  function renderImportResult() {
+    const review = document.getElementById('imp-review')
+    if (!review) return
+    review.innerHTML = ''
+    const record = impState.record
+    if (!record) {
+      review.appendChild(el('p', 'font-size: 13px; color: var(--muted);', '아직 Import 이력이 없습니다. URL을 확인하고 [Import 실행]을 눌러주세요.'))
+      return
+    }
+
+    // ----- 상태 요약 -----
+    const statusLabel = { running: '실행 중', completed: '완료', partial_success: '부분 성공', failed: '실패' }
+    const summary = el('p', 'margin: 8px 0 0; font-size: 13px;')
+    summary.id = 'imp-summary'
+    summary.textContent =
+      `마지막 Import: ${(record.completedAt ?? record.createdAt ?? '').replace('T', ' ').slice(0, 16)} · ` +
+      `상태: ${statusLabel[record.status] ?? record.status} · 페이지 ${record.pagesScanned}개 (성공 ${record.pagesScanned - record.pagesFailed} / 실패 ${record.pagesFailed})` +
+      (record.appliedAt ? ` · 적용 이력 있음 (${record.appliedFields.join(', ')})` : '')
+    review.appendChild(summary)
+    if (record.status === 'failed') {
+      review.appendChild(el('p', 'margin: 6px 0 0; font-size: 13px; color: #b91c1c;', `실패 사유: ${record.errorMessage ?? '원인 미상'}`))
+      return
+    }
+    const result = record.result ?? {}
+    if (result.warning) review.appendChild(el('p', 'margin: 6px 0 0; font-size: 13px; color: #b45309;', `주의: ${result.warning}`))
+
+    // ----- Import Score -----
+    const scoreBox = el('div', 'margin-top: 10px;')
+    scoreBox.appendChild(el('p', 'margin: 0 0 4px; font-weight: 700;', `Import Score ${record.score}%`))
+    const breakdown = el('p', 'margin: 0; font-size: 12px; color: var(--muted);')
+    breakdown.id = 'imp-breakdown'
+    breakdown.textContent = (result.score?.breakdown ?? [])
+      .map((item) => `${item.label}: ${item.found ? item.detail : '누락'}`)
+      .join(' · ')
+    scoreBox.appendChild(breakdown)
+    review.appendChild(scoreBox)
+
+    // ----- 누락 → 병원에 추가 요청할 자료 -----
+    const missing = result.missing ?? []
+    if (missing.length > 0) {
+      const missBox = el('div', 'margin-top: 8px; padding: 8px 10px; border: 1px dashed var(--border); border-radius: 8px;')
+      missBox.id = 'imp-missing'
+      missBox.appendChild(el('p', 'margin: 0 0 2px; font-weight: 600; font-size: 13px;', '추가로 필요한 자료 (병원에 요청)'))
+      missBox.appendChild(el('p', 'margin: 0; font-size: 13px;', missing.join(', ')))
+      review.appendChild(missBox)
+    }
+
+    // ----- 탐색 페이지 목록 -----
+    const pagesBox = el('details', 'margin-top: 8px; font-size: 12px;')
+    const pagesSummary = el('summary', 'cursor: pointer;', `탐색한 페이지 ${record.pagesScanned}개 보기`)
+    pagesBox.appendChild(pagesSummary)
+    for (const page of result.pages ?? []) {
+      const line = el('p', 'margin: 4px 0 0;')
+      line.appendChild(document.createTextNode(page.ok ? '성공 · ' : `실패(${page.error ?? ''}) · `))
+      line.appendChild(impLink(page.url))
+      pagesBox.appendChild(line)
+    }
+    review.appendChild(pagesBox)
+
+    // ----- 필드별 검토 테이블 -----
+    const candidates = new Map()
+    for (const candidate of result.candidates ?? []) candidates.set(candidate.fieldKey, candidate)
+
+    review.appendChild(el('h4', 'margin: 14px 0 6px;', '수집 항목 검토 · 적용 선택'))
+    const wrap = el('div')
+    wrap.className = 'dash-table-wrap'
+    const table = document.createElement('table')
+    table.className = 'dash-table'
+    table.id = 'imp-field-table'
+    const thead = document.createElement('thead')
+    const headRow = document.createElement('tr')
+    for (const label of ['적용', '항목', '상태', '추출값 (수정 가능)', '신뢰도', '기존 값', '출처']) {
+      headRow.appendChild(el('th', '', label))
+    }
+    thead.appendChild(headRow)
+    table.appendChild(thead)
+    const tbody = document.createElement('tbody')
+
+    for (const [fieldKey, label, settingsKey] of IMP_FIELDS) {
+      const candidate = candidates.get(fieldKey)
+      const current = impCurrentValue(settingsKey)
+      const row = document.createElement('tr')
+      const checkTd = document.createElement('td')
+      const valueTd = document.createElement('td')
+      let status = ''
+      if (record.appliedFields.includes(fieldKey)) status = '적용 완료'
+      if (!candidate) {
+        row.append(checkTd, el('td', '', label), el('td', '', status || '누락'), el('td', '', '—'), el('td', '', '—'),
+          el('td', 'max-width: 160px; overflow: hidden; text-overflow: ellipsis;', current || '—'), el('td', '', '—'))
+        tbody.appendChild(row)
+        continue
+      }
+      const extracted = String(candidate.value)
+      if (!status) {
+        if (current === '') status = '발견'
+        else if (current === extracted) status = '동일'
+        else status = '충돌'
+      }
+      const checkbox = document.createElement('input')
+      checkbox.type = 'checkbox'
+      checkbox.dataset.impField = fieldKey
+      checkbox.checked = status === '발견'
+      checkbox.disabled = status === '동일'
+      checkTd.appendChild(checkbox)
+      const input = document.createElement('input')
+      input.type = 'text'
+      input.value = extracted
+      input.dataset.impValue = fieldKey
+      input.style.cssText = 'width: 100%; min-width: 160px; font-size: 12px;'
+      valueTd.appendChild(input)
+      const statusTd = el('td', '', status)
+      if (status === '충돌') statusTd.style.color = '#b45309'
+      const sourceTd = document.createElement('td')
+      sourceTd.appendChild(impLink(candidate.sourceUrl, '원본 열기'))
+      sourceTd.appendChild(el('p', 'margin: 2px 0 0; font-size: 11px; color: var(--muted);', candidate.sourceText ?? ''))
+      row.append(checkTd, el('td', '', label), statusTd, valueTd,
+        el('td', '', IMP_CONFIDENCE[candidate.confidence] ?? candidate.confidence),
+        el('td', 'max-width: 160px; overflow: hidden; text-overflow: ellipsis;', current || '(없음)'), sourceTd)
+      tbody.appendChild(row)
+    }
+    table.appendChild(tbody)
+    wrap.appendChild(table)
+    review.appendChild(wrap)
+
+    // ----- FAQ (선택 시 교체) -----
+    const faq = candidates.get('faq')
+    if (faq) {
+      const faqBox = el('div', 'margin-top: 8px; font-size: 13px;')
+      const faqLabel = document.createElement('label')
+      faqLabel.style.cssText = 'display: flex; gap: 8px; align-items: center; font-weight: 400;'
+      const faqCheck = document.createElement('input')
+      faqCheck.type = 'checkbox'
+      faqCheck.id = 'imp-faq-check'
+      const applied = impState.record.appliedFields.includes('faq')
+      faqLabel.append(faqCheck, el('span', '', `FAQ ${faq.value.length}개 발견 — 적용 시 기존 FAQ를 교체합니다${applied ? ' (적용 완료)' : ''}`))
+      faqBox.appendChild(faqLabel)
+      faqBox.appendChild(el('p', 'margin: 2px 0 0 24px; font-size: 12px; color: var(--muted);', `예: ${faq.value[0].question}`))
+      review.appendChild(faqBox)
+    }
+
+    // ----- 의료진 (개별 선택 → 엔티티 추가) -----
+    const doctors = candidates.get('doctors')
+    if (doctors) {
+      review.appendChild(el('h4', 'margin: 12px 0 4px;', `의료진 후보 ${doctors.value.length}명 — 선택 시 SEO 엔티티(의료진)에 추가`))
+      review.appendChild(el('p', 'margin: 0 0 6px; font-size: 12px; color: var(--muted);', '이름·직책·사진만 추가되며, 약력·전문 분야는 반드시 SEO 엔티티 탭에서 실제 자료로 입력하세요. (수집된 정보 외 임의 생성 금지)'))
+      const list = el('div', 'display: grid; gap: 4px;')
+      list.id = 'imp-doctor-list'
+      doctors.value.forEach((doctor, index) => {
+        const line = el('div', 'display: flex; gap: 6px; align-items: center; font-size: 13px; flex-wrap: wrap;')
+        const checkbox = document.createElement('input')
+        checkbox.type = 'checkbox'
+        checkbox.dataset.impDoctor = String(index)
+        const nameInput = document.createElement('input')
+        nameInput.type = 'text'
+        nameInput.value = doctor.name
+        nameInput.dataset.impDoctorName = String(index)
+        nameInput.style.cssText = 'width: 90px;'
+        const titleInput = document.createElement('input')
+        titleInput.type = 'text'
+        titleInput.value = doctor.title || '원장'
+        titleInput.dataset.impDoctorTitle = String(index)
+        titleInput.style.cssText = 'width: 110px;'
+        line.append(checkbox, nameInput, titleInput,
+          el('span', 'font-size: 12px; color: var(--muted);', doctor.image ? '사진 있음' : '사진 없음'),
+          impLink(doctor.sourceUrl, '출처'))
+        line.appendChild(el('span', 'font-size: 11px; color: var(--muted);', doctor.sourceText ?? ''))
+        list.appendChild(line)
+      })
+      review.appendChild(list)
+    }
+
+    // ----- 참고 자료 (적용 대상 아님 — 설정·엔티티 탭에서 입력) -----
+    const referenceRules = [
+      ['services', '진료과목 후보', (v) => v.map((item) => item.title).join(', ')],
+      ['treatments', '시술·치료 후보', (v) => v.map((item) => item.title).join(', ')],
+      ['facilityImages', '시설 이미지', (v) => `${v.length}장 발견`],
+      ['snsLinks', 'SNS/블로그', (v) => v.map((item) => `${item.type}: ${item.url}`).join(' · ')],
+      ['detailPages', '진료 상세 페이지', (v) => `${v.length}개 발견`],
+      ['privacyUrl', '개인정보처리방침', (v) => v],
+      ['termsUrl', '이용약관', (v) => v],
+    ]
+    const referenceLines = []
+    for (const [key, label, format] of referenceRules) {
+      const candidate = candidates.get(key)
+      if (candidate) referenceLines.push([label, format(candidate.value), candidate.sourceUrl])
+    }
+    if (referenceLines.length > 0) {
+      const refBox = el('details', 'margin-top: 10px; font-size: 13px;')
+      refBox.id = 'imp-reference'
+      refBox.appendChild(el('summary', 'cursor: pointer; font-weight: 600;', `참고 자료 ${referenceLines.length}종 (직접 입력용 — 자동 적용되지 않음)`))
+      for (const [label, text, sourceUrl] of referenceLines) {
+        const line = el('p', 'margin: 4px 0 0;')
+        line.appendChild(el('strong', '', `${label}: `))
+        line.appendChild(document.createTextNode(String(text).slice(0, 300) + ' '))
+        line.appendChild(impLink(sourceUrl, '출처'))
+        refBox.appendChild(line)
+      }
+      review.appendChild(refBox)
+    }
+
+    // ----- 적용 버튼 -----
+    const actions = el('div', 'margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;')
+    const selectAll = document.createElement('button')
+    selectAll.type = 'button'
+    selectAll.className = 'dash-action-btn'
+    selectAll.textContent = '전체 선택'
+    selectAll.addEventListener('click', () => {
+      review.querySelectorAll('input[type="checkbox"]:not(:disabled)').forEach((box) => { box.checked = true })
+    })
+    const clearAll = document.createElement('button')
+    clearAll.type = 'button'
+    clearAll.className = 'dash-action-btn'
+    clearAll.textContent = '선택 해제'
+    clearAll.addEventListener('click', () => {
+      review.querySelectorAll('input[type="checkbox"]').forEach((box) => { box.checked = false })
+    })
+    const applyBtn = document.createElement('button')
+    applyBtn.type = 'button'
+    applyBtn.className = 'dash-action-btn dash-publish-btn'
+    applyBtn.id = 'imp-apply'
+    applyBtn.textContent = '선택 항목 적용'
+    applyBtn.addEventListener('click', applyImportNow)
+    actions.append(selectAll, clearAll, applyBtn)
+    review.appendChild(actions)
+  }
+
+  function collectImportSelections() {
+    const review = document.getElementById('imp-review')
+    const selections = {}
+    review.querySelectorAll('input[data-imp-field]').forEach((box) => {
+      if (!box.checked || box.disabled) return
+      const input = review.querySelector(`input[data-imp-value="${box.dataset.impField}"]`)
+      selections[box.dataset.impField] = input?.value?.trim() ?? ''
+    })
+    const faqCheck = document.getElementById('imp-faq-check')
+    if (faqCheck?.checked) {
+      const faq = (impState.record.result?.candidates ?? []).find((candidate) => candidate.fieldKey === 'faq')
+      if (faq) selections.faq = faq.value
+    }
+    const doctors = []
+    review.querySelectorAll('input[data-imp-doctor]').forEach((box) => {
+      if (!box.checked) return
+      const index = box.dataset.impDoctor
+      const source = (impState.record.result?.candidates ?? []).find((candidate) => candidate.fieldKey === 'doctors')?.value?.[Number(index)]
+      doctors.push({
+        name: review.querySelector(`input[data-imp-doctor-name="${index}"]`)?.value?.trim() ?? '',
+        title: review.querySelector(`input[data-imp-doctor-title="${index}"]`)?.value?.trim() ?? '',
+        image: source?.image ?? '',
+      })
+    })
+    if (doctors.length > 0) selections.doctors = doctors
+    return selections
+  }
+
+  async function applyImportNow() {
+    const applyBtn = document.getElementById('imp-apply')
+    const selections = collectImportSelections()
+    if (Object.keys(selections).length === 0) {
+      impMessage('적용할 항목을 선택해 주세요.', true)
+      return
+    }
+    if (!window.confirm(`선택한 ${Object.keys(selections).length}개 항목을 ${impState.siteId} 사이트 설정에 적용할까요?\n적용하면 GitHub에 커밋되며 재배포 후 사이트에 반영됩니다.`)) return
+    if (applyBtn.disabled) return
+    applyBtn.disabled = true
+    impMessage('적용 중... (GitHub 커밋)')
+    try {
+      const response = await fetch('/api/import/apply', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ site: impState.siteId, importId: impState.record.id, sha: impState.sha, selections }),
+      })
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok) {
+        await loadImportData() // 최신 sha·적용 이력 갱신 (아래에서 완료 메시지 재표시)
+        impMessage(`적용 완료 — ${data.appliedFields.length}개 항목 · 커밋 ${String(data.commitSha ?? '').slice(0, 7)} · ${data.note ?? ''}`)
+      } else {
+        impMessage(data.error ?? '적용에 실패했습니다.', true)
+      }
+    } catch {
+      impMessage('서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.', true)
+    } finally {
+      const btn = document.getElementById('imp-apply')
+      if (btn) btn.disabled = false
+    }
+  }
+
+  // ==================================================================
+  // Phase 14C — Domain Wizard (도메인 입력 → 관리 주체 → DNS 안내 → 검증 → 배포 준비)
+  // ==================================================================
+  const domPanel = document.getElementById('dom-panel')
+  const domState = { siteId: '', name: '', data: null }
+  let domStatusLine = null
+
+  function domMessage(message, isError = false) {
+    if (!domStatusLine) return
+    domStatusLine.textContent = message
+    domStatusLine.style.color = isError ? '#b91c1c' : ''
+    domStatusLine.hidden = false
+  }
+
+  function openDomainPanel(obRecord) {
+    domState.siteId = obRecord.siteId
+    domState.name = obRecord.hospitalName
+    if (obEditor) obEditor.hidden = true
+    if (impPanel) impPanel.hidden = true
+    domPanel.hidden = false
+    domPanel.innerHTML = ''
+    domPanel.appendChild(el('p', 'font-size: 13px; color: var(--muted);', '도메인 정보를 불러오는 중...'))
+    loadDomainPanel()
+  }
+
+  async function loadDomainPanel(statusMessage) {
+    try {
+      const response = await fetch(`/api/domains/${encodeURIComponent(domState.siteId)}`)
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data.ok) {
+        domPanel.innerHTML = ''
+        const box = el('div')
+        box.className = 'dash-edit-form'
+        box.appendChild(el('p', 'margin: 0; color: #b91c1c; font-size: 13px;', data.error ?? '도메인 정보를 불러오지 못했습니다.'))
+        domPanel.appendChild(box)
+        return
+      }
+      domState.data = data
+      renderDomainPanel()
+      if (statusMessage) domMessage(statusMessage)
+    } catch {
+      domPanel.innerHTML = ''
+      domPanel.appendChild(el('p', 'color: #b91c1c; font-size: 13px;', '서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.'))
+    }
+  }
+
+  function domActionButton(label, id, primary, handler) {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = primary ? 'dash-action-btn dash-publish-btn' : 'dash-action-btn'
+    if (id) button.id = id
+    button.textContent = label
+    if (handler) button.addEventListener('click', handler)
+    return button
+  }
+
+  async function domCopyText(text, button) {
+    try {
+      await navigator.clipboard.writeText(text)
+      const original = button.textContent
+      button.textContent = '복사됨'
+      setTimeout(() => { button.textContent = original }, 1500)
+    } catch {
+      domMessage('클립보드 복사에 실패했습니다. 값을 직접 선택해 복사해 주세요.', true)
+    }
+  }
+
+  function renderDomainPanel() {
+    const data = domState.data
+    const connection = data.connection
+    const mode = data.onboarding?.operationMode ?? 'independent'
+    const modeLabel = OB_MODES[mode] ?? mode
+    domPanel.innerHTML = ''
+    const box = el('div')
+    box.className = 'dash-edit-form'
+    box.appendChild(el('h3', 'margin: 0;', `Domain Wizard — ${domState.name} (${domState.siteId})`))
+
+    // ----- 상단 요약 -----
+    const summary = el('p', 'margin: 0; font-size: 13px;')
+    summary.id = 'dom-summary'
+    summary.textContent =
+      `운영방식: ${modeLabel} · 등록 도메인: ${connection?.domain ?? '미정'} · ` +
+      `상태: ${connection?.statusLabel ?? '미입력'} · 배포 준비: ${connection?.readiness?.ready ? '완료' : '미완료'}` +
+      (connection?.lastCheckedAt ? ` · 마지막 검증: ${connection.lastCheckedAt.replace('T', ' ').slice(0, 16)}` : '')
+    box.appendChild(summary)
+    if (data.onboarding?.existingUrl) {
+      const line = el('p', 'margin: 0; font-size: 12px; color: var(--muted);')
+      line.appendChild(document.createTextNode('기존 공식 홈페이지(Import 수집 출처): '))
+      line.appendChild(impLink(data.onboarding.existingUrl))
+      line.appendChild(document.createTextNode(' — 아래에 입력하는 도메인은 "새 SEO 사이트의 배포 대상"으로, 서로 다른 값입니다.'))
+      box.appendChild(line)
+    }
+
+    // ----- 진행 단계 (실제 연결 상태 기반) -----
+    const progress = connection?.progress ?? { percent: 0, steps: [{ label: '도메인 입력', done: false }, { label: '관리 주체 확인', done: false }, { label: 'DNS 기대값 생성', done: false }, { label: 'DNS 검증', done: false }, { label: 'HTTPS·Pages 확인', done: false }] }
+    const progressBox = el('div', 'display: flex; align-items: center; gap: 10px; flex-wrap: wrap;')
+    progressBox.id = 'dom-progress'
+    const bar = el('div', 'flex: 1; min-width: 160px; height: 8px; border-radius: 4px; background: var(--border); overflow: hidden;')
+    bar.appendChild(el('div', `width: ${progress.percent}%; height: 100%; background: ${progress.percent >= 100 ? '#16a34a' : 'var(--accent)'};`))
+    progressBox.appendChild(bar)
+    progressBox.appendChild(el('span', 'font-size: 12px; font-weight: 700;', `${progress.percent}%`))
+    box.appendChild(progressBox)
+    box.appendChild(el('p', 'margin: 0; font-size: 12px; color: var(--muted);',
+      progress.steps.map((step, index) => `${index + 1}. ${step.label} ${step.done ? '✓' : '·'}`).join('  ')))
+
+    // ----- replace 위험 경고 -----
+    if (mode === 'replace') {
+      const warn = el('div', 'padding: 10px 12px; border: 1px solid #f59e0b; background: #fffbeb; border-radius: 8px; font-size: 13px; color: #92400e;')
+      warn.id = 'dom-replace-warning'
+      warn.textContent = '기존 홈페이지 교체 모드입니다. DNS를 전환하면 기존 사이트 접속이 중단됩니다. 변경 전 기존 DNS 레코드를 반드시 기록(백업)하고, 아래 "전환 승인"을 체크해야 배포 준비가 완료됩니다. 최종 전환은 별도 확인 후 직접 실행하세요.'
+      box.appendChild(warn)
+    }
+
+    // ----- 경고 (운영방식·도메인 적합성) -----
+    for (const warning of data.warnings ?? []) {
+      box.appendChild(el('p', 'margin: 0; font-size: 12px; color: #b45309;', `주의: ${warning}`))
+    }
+
+    // ----- Step 1~3: 입력 폼 -----
+    box.appendChild(el('h4', 'margin: 8px 0 0;', '1. 도메인 · 2. 관리 주체'))
+    const undecidedLabel = el('label', 'display: flex; gap: 8px; align-items: center; font-weight: 400; font-size: 13px;')
+    const undecidedBox = document.createElement('input')
+    undecidedBox.type = 'checkbox'
+    undecidedBox.id = 'dom-undecided'
+    undecidedBox.checked = !connection
+    undecidedLabel.append(undecidedBox, el('span', '', '도메인 미정 (나중에 결정)'))
+    box.appendChild(undecidedLabel)
+
+    const domainField = obField('배포 도메인 (프로토콜 없이 — 예: brightclinic.co.kr, info.hospital.co.kr)', 'dom-domain', connection?.domain ?? '', 100)
+    box.appendChild(domainField)
+    const domainInput = domainField.querySelector('input')
+    domainInput.disabled = undecidedBox.checked
+    undecidedBox.addEventListener('change', () => {
+      domainInput.disabled = undecidedBox.checked
+      if (undecidedBox.checked) domainInput.value = ''
+    })
+
+    const mgmtHolder = el('div')
+    mgmtHolder.setAttribute('role', 'radiogroup')
+    const mgmtLabels = data.labels?.management ?? { client_managed: '병원(고객) 관리', company_managed: '우리 회사 관리', unknown: '미확인' }
+    for (const [value, text] of Object.entries(mgmtLabels)) {
+      const label = el('label', 'display: flex; gap: 8px; align-items: center; font-weight: 400; font-size: 13px; margin-bottom: 4px;')
+      const radio = document.createElement('input')
+      radio.type = 'radio'
+      radio.name = 'dom-mgmt'
+      radio.value = value
+      radio.checked = (connection?.managementType ?? 'unknown') === value
+      label.append(radio, el('span', '', `관리 주체: ${text}`))
+      mgmtHolder.appendChild(label)
+    }
+    box.appendChild(mgmtHolder)
+    box.appendChild(obField('등록기관 (registrar — 예: 가비아, Cloudflare)', 'dom-registrar', connection?.registrarName ?? '', 60))
+    box.appendChild(obField('도메인 만료일 (YYYY-MM-DD)', 'dom-expiry', connection?.expiryDate ?? '', 10))
+    const renewLabel = el('label', '', '자동 갱신')
+    const renewSelect = document.createElement('select')
+    renewSelect.id = 'dom-renew'
+    for (const [value, text] of [['unknown', '미확인'], ['on', '켜짐'], ['off', '꺼짐 — 만료 주의']]) {
+      const option = document.createElement('option')
+      option.value = value
+      option.textContent = text
+      option.selected = (connection?.autoRenewStatus ?? 'unknown') === value
+      renewSelect.appendChild(option)
+    }
+    renewLabel.appendChild(renewSelect)
+    box.appendChild(renewLabel)
+    box.appendChild(obField('네임서버 관리 주체 (예: Cloudflare, 가비아 기본)', 'dom-nameserver', connection?.nameserverStatus ?? '', 80))
+    box.appendChild(obField('메모 (비밀번호·인증 코드는 저장 금지)', 'dom-notes', connection?.notes ?? '', 500))
+
+    if (mode === 'replace') {
+      const approveLabel = el('label', 'display: flex; gap: 8px; align-items: center; font-weight: 600; font-size: 13px; color: #92400e;')
+      const approveBox = document.createElement('input')
+      approveBox.type = 'checkbox'
+      approveBox.id = 'dom-approve'
+      approveBox.checked = connection?.replacementApproved === true
+      approveLabel.append(approveBox, el('span', '', '전환 승인 — 기존 홈페이지 중단 위험을 확인했고 백업·롤백 계획이 있습니다'))
+      box.appendChild(approveLabel)
+    }
+
+    const saveActions = el('div')
+    saveActions.className = 'dash-edit-actions'
+    saveActions.append(
+      domActionButton('저장', 'dom-save', true, saveDomainNow),
+      domActionButton('닫기', null, false, () => { domPanel.hidden = true })
+    )
+    box.appendChild(saveActions)
+
+    domStatusLine = el('p', 'margin: 0; font-size: 13px;')
+    domStatusLine.className = 'dash-meta'
+    domStatusLine.id = 'dom-status'
+    domStatusLine.hidden = true
+    box.appendChild(domStatusLine)
+
+    // ----- Step 4: DNS 안내 -----
+    if (connection && (connection.expectedDnsRecords ?? []).length > 0) {
+      box.appendChild(el('h4', 'margin: 10px 0 0;', '3. DNS 설정 안내 (직접 등록 — 시스템이 DNS를 변경하지 않습니다)'))
+      if (!data.pagesHost) {
+        box.appendChild(el('p', 'margin: 0; font-size: 12px; color: #b45309;', '주의: CLOUDFLARE_PAGES_PROJECT(또는 DOMAIN_PAGES_HOST) 환경변수가 없어 연결 대상이 자리표시자로 표시됩니다. 설정 후 다시 저장하세요.'))
+      }
+      const wrap = el('div')
+      wrap.className = 'dash-table-wrap'
+      const table = document.createElement('table')
+      table.className = 'dash-table'
+      table.id = 'dom-dns-table'
+      const thead = document.createElement('thead')
+      const headRow = document.createElement('tr')
+      for (const label of ['Type', 'Name', 'Target', 'Proxy', 'TTL', '설명', '복사']) headRow.appendChild(el('th', '', label))
+      thead.appendChild(headRow)
+      table.appendChild(thead)
+      const tbody = document.createElement('tbody')
+      for (const record of connection.expectedDnsRecords) {
+        const row = document.createElement('tr')
+        row.append(el('td', '', record.type), el('td', '', record.name), el('td', 'word-break: break-all;', record.target),
+          el('td', '', record.proxy ?? ''), el('td', '', record.ttl ?? ''),
+          el('td', 'font-size: 12px; color: var(--muted); max-width: 260px;', record.description ?? ''))
+        const copyTd = document.createElement('td')
+        if (record.type !== 'INFO') {
+          const copyBtn = domActionButton('복사', null, false)
+          copyBtn.className = 'dash-action-btn dom-copy-btn'
+          copyBtn.addEventListener('click', () => domCopyText(`${record.type} ${record.name} ${record.target}`, copyBtn))
+          copyTd.appendChild(copyBtn)
+        }
+        row.appendChild(copyTd)
+        tbody.appendChild(row)
+      }
+      table.appendChild(tbody)
+      wrap.appendChild(table)
+      box.appendChild(wrap)
+
+      // ----- Step 5~6: 검증·연결 버튼 -----
+      const verifyActions = el('div', 'display: flex; gap: 8px; flex-wrap: wrap;')
+      verifyActions.append(
+        domActionButton(connection.lastCheckedAt ? '다시 검증' : '검증 실행', 'dom-verify', true, verifyDomainNow),
+        domActionButton('배포 준비 확인', 'dom-readiness', false, checkReadinessNow)
+      )
+      if (data.apiMode) {
+        verifyActions.append(domActionButton('Pages에 연결 (API)', 'dom-connect', false, connectPagesNow))
+      } else {
+        verifyActions.appendChild(el('span', 'font-size: 12px; color: var(--muted); align-self: center;', 'API Token 미설정 — Manual Mode (Cloudflare Dashboard에서 직접 연결)'))
+      }
+      const cfLink = document.createElement('a')
+      cfLink.href = 'https://dash.cloudflare.com/'
+      cfLink.target = '_blank'
+      cfLink.rel = 'noopener noreferrer'
+      cfLink.className = 'dash-action-btn'
+      cfLink.textContent = 'Cloudflare Dashboard 열기'
+      verifyActions.appendChild(cfLink)
+      box.appendChild(verifyActions)
+
+      // 검증 상태 요약
+      const statusLabels = data.labels?.verification ?? {}
+      const statusLine = el('p', 'margin: 0; font-size: 13px;')
+      statusLine.id = 'dom-verify-status'
+      statusLine.textContent =
+        `DNS: ${connection.dnsStatus} · HTTPS: ${connection.httpsStatus} · Pages: ${connection.pagesStatus} · ` +
+        `종합: ${statusLabels[connection.verificationStatus] ?? connection.verificationStatus}`
+      box.appendChild(statusLine)
+      const detailLine = el('div', 'font-size: 12px; color: var(--muted);')
+      detailLine.id = 'dom-verify-detail'
+      box.appendChild(detailLine)
+
+      // deploy_ready 표시
+      const readyLine = el('p', 'margin: 0; font-weight: 600; font-size: 13px;')
+      readyLine.id = 'dom-ready'
+      if (connection.readiness?.ready) {
+        readyLine.textContent = '배포 준비 완료 (deploy_ready) — Phase 15 Deploy Engine에서 사용할 수 있습니다.'
+        readyLine.style.color = '#16a34a'
+      } else {
+        readyLine.textContent = `배포 준비 미완료 — ${(connection.readiness?.reasons ?? []).join(' ')}`
+      }
+      box.appendChild(readyLine)
+    }
+
+    // ----- 이력 -----
+    if ((data.history ?? []).length > 1) {
+      const historyBox = el('details', 'font-size: 12px;')
+      historyBox.appendChild(el('summary', 'cursor: pointer;', `과거 도메인 이력 ${data.history.length}건`))
+      for (const item of data.history) {
+        historyBox.appendChild(el('p', 'margin: 4px 0 0;',
+          `${item.domain} · ${item.active ? '활성' : '비활성'} · ${item.verificationStatus} · ${(item.createdAt ?? '').slice(0, 10)}`))
+      }
+      box.appendChild(historyBox)
+    }
+
+    domPanel.appendChild(box)
+  }
+
+  async function saveDomainNow() {
+    const saveBtn = document.getElementById('dom-save')
+    if (saveBtn.disabled) return
+    const undecided = document.getElementById('dom-undecided')?.checked === true
+    const domain = undecided ? '' : (document.getElementById('dom-domain')?.value?.trim() ?? '')
+    if (!undecided && domain === '') {
+      domMessage('도메인을 입력하거나 "도메인 미정"을 선택해 주세요.', true)
+      return
+    }
+    saveBtn.disabled = true
+    domMessage('저장 중...')
+    try {
+      const response = await fetch(`/api/domains/${encodeURIComponent(domState.siteId)}`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          domain,
+          managementType: document.querySelector('input[name="dom-mgmt"]:checked')?.value ?? 'unknown',
+          registrarName: document.getElementById('dom-registrar')?.value?.trim() ?? '',
+          expiryDate: document.getElementById('dom-expiry')?.value?.trim() ?? '',
+          autoRenewStatus: document.getElementById('dom-renew')?.value ?? 'unknown',
+          nameserverStatus: document.getElementById('dom-nameserver')?.value?.trim() ?? '',
+          notes: document.getElementById('dom-notes')?.value?.trim() ?? '',
+          replacementApproved: document.getElementById('dom-approve')?.checked === true,
+        }),
+      })
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok) {
+        await loadDomainPanel(data.note ?? '저장되었습니다.')
+        loadOnboarding(true)
+      } else {
+        domMessage(data.error ?? '저장에 실패했습니다.', true)
+        const btn = document.getElementById('dom-save')
+        if (btn) btn.disabled = false
+      }
+    } catch {
+      domMessage('서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.', true)
+      const btn = document.getElementById('dom-save')
+      if (btn) btn.disabled = false
+    }
+  }
+
+  async function verifyDomainNow() {
+    const verifyBtn = document.getElementById('dom-verify')
+    if (verifyBtn.disabled) return
+    verifyBtn.disabled = true
+    domMessage('검증 중... (DNS 조회 → HTTPS 응답 → Pages 상태)')
+    try {
+      const response = await fetch(`/api/domains/${encodeURIComponent(domState.siteId)}/verify`, { method: 'POST' })
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok) {
+        await loadDomainPanel()
+        const detailHolder = document.getElementById('dom-verify-detail')
+        if (detailHolder && data.detail) {
+          detailHolder.innerHTML = ''
+          for (const [label, text] of [['DNS', data.detail.dns], ['HTTPS', data.detail.https], ['Pages', data.detail.pages]]) {
+            if (text) detailHolder.appendChild(el('p', 'margin: 2px 0 0;', `${label}: ${text}`))
+          }
+          if (data.detail.redirectTarget) {
+            detailHolder.appendChild(el('p', 'margin: 2px 0 0;', `리디렉션 대상: ${data.detail.redirectTarget}`))
+          }
+        }
+        const status = data.connection?.verificationStatus
+        domMessage(status === 'verified' ? '검증 완료 — 연결 완료 상태입니다.' : `검증을 기록했습니다. 현재 상태: ${data.connection?.statusLabel ?? status}`)
+      } else {
+        domMessage(data.error ?? '검증에 실패했습니다.', true)
+        const btn = document.getElementById('dom-verify')
+        if (btn) btn.disabled = false
+      }
+    } catch {
+      domMessage('서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.', true)
+      const btn = document.getElementById('dom-verify')
+      if (btn) btn.disabled = false
+    }
+  }
+
+  async function connectPagesNow() {
+    const connectBtn = document.getElementById('dom-connect')
+    if (connectBtn.disabled) return
+    if (!window.confirm(`Cloudflare Pages Custom Domain에 이 도메인을 추가할까요?\n(DNS는 변경하지 않으며, 추가만 요청합니다)`)) return
+    connectBtn.disabled = true
+    domMessage('Pages Custom Domain 추가 요청 중...')
+    try {
+      const response = await fetch(`/api/domains/${encodeURIComponent(domState.siteId)}/connect`, { method: 'POST' })
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok) {
+        await loadDomainPanel(data.note ?? '요청했습니다.')
+      } else {
+        domMessage(data.error ?? 'Pages 연결 요청에 실패했습니다.', true)
+        const btn = document.getElementById('dom-connect')
+        if (btn) btn.disabled = false
+      }
+    } catch {
+      domMessage('서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.', true)
+      const btn = document.getElementById('dom-connect')
+      if (btn) btn.disabled = false
+    }
+  }
+
+  async function checkReadinessNow() {
+    try {
+      const response = await fetch(`/api/domains/${encodeURIComponent(domState.siteId)}/readiness`)
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok) {
+        const r = data.readiness
+        domMessage(r.deployReady
+          ? `배포 준비 완료 — 대상 도메인 ${r.targetDomain} (Phase 15에서 사용 가능)`
+          : `배포 준비 미완료 — ${(r.validationErrors ?? []).join(' ')}`, !r.deployReady)
+      } else {
+        domMessage(data.error ?? '배포 준비 상태를 확인하지 못했습니다.', true)
+      }
+    } catch {
+      domMessage('서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.', true)
+    }
+  }
+
+  // ==================================================================
+  // Phase 15 — Deploy Engine (사전 검사 → 계획 → 승인 → 배포 → 검증 → 복구)
+  // ==================================================================
+  const depPanel = document.getElementById('dep-panel')
+  const depState = { siteId: '', name: '', data: null, preflight: null, jobId: '' }
+  let depStatusLine = null
+  const DEP_CHECK_COLORS = { pass: '#16a34a', warning: '#b45309', fail: '#b91c1c', skipped: 'var(--muted)' }
+  const DEP_CHECK_LABELS = { pass: '통과', warning: '경고', fail: '실패', skipped: '건너뜀' }
+
+  function depMessage(message, isError = false) {
+    if (!depStatusLine) return
+    depStatusLine.textContent = message
+    depStatusLine.style.color = isError ? '#b91c1c' : ''
+    depStatusLine.hidden = false
+  }
+
+  function openDeployPanel(obRecord) {
+    depState.siteId = obRecord.siteId
+    depState.name = obRecord.hospitalName
+    depState.preflight = null
+    depState.jobId = ''
+    if (obEditor) obEditor.hidden = true
+    if (impPanel) impPanel.hidden = true
+    if (domPanel) domPanel.hidden = true
+    depPanel.hidden = false
+    depPanel.innerHTML = ''
+    depPanel.appendChild(el('p', 'font-size: 13px; color: var(--muted);', '배포 정보를 불러오는 중...'))
+    loadDeployPanel()
+  }
+
+  async function loadDeployPanel(statusMessage) {
+    try {
+      const response = await fetch(`/api/deployments/${encodeURIComponent(depState.siteId)}`)
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data.ok) {
+        depPanel.innerHTML = ''
+        const box = el('div')
+        box.className = 'dash-edit-form'
+        box.appendChild(el('p', 'margin: 0; color: #b91c1c; font-size: 13px;', data.error ?? '배포 정보를 불러오지 못했습니다.'))
+        depPanel.appendChild(box)
+        return
+      }
+      depState.data = data
+      if (!depState.jobId && data.activeDeploy) depState.jobId = data.activeDeploy.id
+      renderDeployPanel()
+      if (statusMessage) depMessage(statusMessage)
+    } catch {
+      depPanel.innerHTML = ''
+      depPanel.appendChild(el('p', 'color: #b91c1c; font-size: 13px;', '서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.'))
+    }
+  }
+
+  function depButton(label, id, primary, handler) {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = primary ? 'dash-action-btn dash-publish-btn' : 'dash-action-btn'
+    if (id) button.id = id
+    button.textContent = label
+    if (handler) button.addEventListener('click', handler)
+    return button
+  }
+
+  function renderDeployPanel() {
+    const data = depState.data
+    const isReplace = data.operationMode === 'replace'
+    depPanel.innerHTML = ''
+    const box = el('div')
+    box.className = 'dash-edit-form'
+    box.appendChild(el('h3', 'margin: 0;', `Deploy — ${depState.name} (${depState.siteId})`))
+
+    // ----- 상단 요약 -----
+    const stageLabels = { onboarding: '온보딩', import: 'Import', domain: '도메인 연결', deploy: '배포 진행', operating: '운영 중', error: '오류 — 확인 필요', paused: '일시 중지' }
+    const summary = el('p', 'margin: 0; font-size: 13px;')
+    summary.id = 'dep-summary'
+    const latest = data.history?.[0]
+    summary.textContent =
+      `stage: ${stageLabels[data.stage] ?? data.stage} · 운영방식: ${OB_MODES[data.operationMode] ?? data.operationMode} · ` +
+      `마지막 성공 배포: ${data.lastSuccess ? (data.lastSuccess.completedAt ?? '').replace('T', ' ').slice(0, 16) : '없음'} · ` +
+      `최근 배포 상태: ${latest ? (data.statusLabels[latest.status] ?? latest.status) : '없음'} · ` +
+      `Pages 프로젝트: ${data.config.pagesProject || '(미설정)'} · ${data.apiMode ? 'API Mode' : 'Manual Mode'}`
+    box.appendChild(summary)
+    const linkLine = el('p', 'margin: 0; font-size: 12px;')
+    if (data.lastSuccess?.productionUrl) {
+      linkLine.appendChild(impLink(data.lastSuccess.productionUrl, '운영 사이트 열기 →'))
+      linkLine.appendChild(document.createTextNode('  '))
+    }
+    if (data.previewHost) linkLine.appendChild(impLink(`https://${data.previewHost}`, 'Preview(pages.dev) 열기 →'))
+    box.appendChild(linkLine)
+    if (data.config.deploymentStrategy === 'shared') {
+      box.appendChild(el('p', 'margin: 0; font-size: 12px; color: #b45309;', '주의: 공유 저장소·브랜치 구조입니다. 빌드는 같은 브랜치를 쓰는 다른 사이트 프로젝트에도 함께 반영됩니다.'))
+    }
+
+    depStatusLine = el('p', 'margin: 0; font-size: 13px;')
+    depStatusLine.className = 'dash-meta'
+    depStatusLine.id = 'dep-status'
+    depStatusLine.hidden = true
+    box.appendChild(depStatusLine)
+
+    // ----- 1단계: 사전 검사·계획 -----
+    const step1 = el('div', 'display: flex; gap: 8px; flex-wrap: wrap;')
+    step1.append(depButton('사전 검사 · 배포 계획 확인', 'dep-preflight', true, runDeployPreflight))
+    box.appendChild(step1)
+    const preflightBox = el('div')
+    preflightBox.id = 'dep-preflight-result'
+    box.appendChild(preflightBox)
+
+    // ----- 2단계: 승인·배포 실행 -----
+    const approveBox = el('div', 'display: grid; gap: 6px; border-top: 1px solid var(--border); padding-top: 10px;')
+    approveBox.id = 'dep-approve-box'
+    approveBox.appendChild(el('h4', 'margin: 0;', '배포 실행'))
+    if (isReplace) {
+      const warn = el('div', 'padding: 10px 12px; border: 1px solid #dc2626; background: #fef2f2; border-radius: 8px; font-size: 13px; color: #991b1b;')
+      warn.id = 'dep-replace-warning'
+      warn.textContent = '기존 홈페이지 교체(Replace) 배포입니다. 전환 시 기존 사이트 접속이 중단될 수 있습니다. 아래 항목을 모두 확인해야 실행됩니다.'
+      approveBox.appendChild(warn)
+      const items = [
+        ['hospitalApproved', '병원(고객) 승인을 받았습니다'],
+        ['dnsBackupConfirmed', '기존 DNS 레코드 백업을 완료했습니다'],
+        ['scheduleConfirmed', '전환 일정(시각)을 병원과 확인했습니다'],
+        ['rollbackUnderstood', 'rollback 절차를 확인했습니다'],
+        ['downtimeUnderstood', '기존 사이트 중단 가능성을 이해했습니다'],
+      ]
+      for (const [key, text] of items) {
+        const label = el('label', 'display: flex; gap: 8px; align-items: center; font-weight: 400; font-size: 13px;')
+        const boxInput = document.createElement('input')
+        boxInput.type = 'checkbox'
+        boxInput.dataset.depApproval = key
+        label.append(boxInput, el('span', '', text))
+        approveBox.appendChild(label)
+      }
+      approveBox.appendChild(obField('최종 확인 — 대상 도메인을 직접 입력', 'dep-confirm-text', '', 100, '예: hospital.co.kr'))
+    } else {
+      const label = el('label', 'display: flex; gap: 8px; align-items: center; font-weight: 400; font-size: 13px;')
+      const boxInput = document.createElement('input')
+      boxInput.type = 'checkbox'
+      boxInput.id = 'dep-prod-confirm'
+      label.append(boxInput, el('span', '', '대상 도메인에 실제 반영된다는 것을 확인했습니다'))
+      approveBox.appendChild(label)
+    }
+    approveBox.appendChild(obField('승인자(운영자) 이름', 'dep-approved-by', '', 40, '예: 홍운영'))
+    const deployActions = el('div', 'display: flex; gap: 8px; flex-wrap: wrap;')
+    const previewBtn = depButton('Preview 배포', 'dep-run-preview', false, () => createDeployment('preview'))
+    const prodBtn = isReplace
+      ? depButton('Replace 배포 (위험)', 'dep-run-replace', true, () => createDeployment('replace'))
+      : depButton('Production 배포', 'dep-run-production', true, () => createDeployment('production'))
+    if (isReplace) prodBtn.style.background = '#dc2626'
+    prodBtn.disabled = true // 사전 검사 통과 전 비활성 (서버도 재검증)
+    prodBtn.dataset.depMain = '1'
+    deployActions.append(previewBtn, prodBtn)
+    approveBox.appendChild(deployActions)
+    approveBox.appendChild(el('p', 'margin: 0; font-size: 12px; color: var(--muted);', 'Production/Replace 버튼은 사전 검사에서 fail이 없을 때 활성화됩니다. Preview는 운영 도메인에 반영되지 않습니다(내부 검수용).'))
+    box.appendChild(approveBox)
+
+    // ----- 3단계: 진행·검증·복구 -----
+    const jobBox = el('div', 'display: grid; gap: 6px; border-top: 1px solid var(--border); padding-top: 10px;')
+    jobBox.id = 'dep-job-box'
+    jobBox.appendChild(el('h4', 'margin: 0;', '진행 상태 · 배포 후 검증'))
+    const jobLine = el('p', 'margin: 0; font-size: 13px;')
+    jobLine.id = 'dep-job-line'
+    const active = data.activeDeploy
+    jobLine.textContent = active
+      ? `진행 중: ${active.deploymentType} · ${data.statusLabels[active.status] ?? active.status} · ${active.id.slice(0, 12)}…`
+      : latest
+        ? `최근: ${latest.deploymentType} · ${data.statusLabels[latest.status] ?? latest.status} · ${(latest.createdAt ?? '').replace('T', ' ').slice(0, 16)}`
+        : '배포 이력이 없습니다.'
+    if (!depState.jobId && latest) depState.jobId = latest.id
+    jobBox.appendChild(jobLine)
+    const jobActions = el('div', 'display: flex; gap: 8px; flex-wrap: wrap;')
+    jobActions.append(
+      depButton('상태 새로고침', 'dep-refresh', false, refreshDeployStatus),
+      depButton('배포 후 검증', 'dep-verify', false, verifyDeployNow),
+      depButton('이전 버전 확인 / Rollback', 'dep-rollback', false, rollbackDeployNow)
+    )
+    jobBox.appendChild(jobActions)
+    const verifyHolder = el('div', 'font-size: 12px;')
+    verifyHolder.id = 'dep-verify-result'
+    jobBox.appendChild(verifyHolder)
+    box.appendChild(jobBox)
+
+    // ----- 이력 -----
+    if ((data.history ?? []).length > 0) {
+      const historyBox = el('details', 'font-size: 12px;')
+      historyBox.id = 'dep-history'
+      historyBox.appendChild(el('summary', 'cursor: pointer;', `배포 이력 ${data.history.length}건`))
+      for (const item of data.history) {
+        historyBox.appendChild(el('p', 'margin: 4px 0 0;',
+          `${(item.createdAt ?? '').replace('T', ' ').slice(0, 16)} · ${item.deploymentType} · ${data.statusLabels[item.status] ?? item.status}` +
+          (item.approvedBy ? ` · 승인: ${item.approvedBy}` : '') + (item.errorCode ? ` · ${item.errorCode}` : '')))
+      }
+      box.appendChild(historyBox)
+    }
+    const closeRow = el('div')
+    closeRow.className = 'dash-edit-actions'
+    closeRow.appendChild(depButton('닫기', null, false, () => { depPanel.hidden = true }))
+    box.appendChild(closeRow)
+    depPanel.appendChild(box)
+  }
+
+  async function runDeployPreflight() {
+    const button = document.getElementById('dep-preflight')
+    if (button.disabled) return
+    button.disabled = true
+    depMessage('사전 검사 중...')
+    const type = depState.data.operationMode === 'replace' ? 'replace' : 'production'
+    try {
+      const response = await fetch(`/api/deployments/${encodeURIComponent(depState.siteId)}/preflight`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ type }),
+      })
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data.ok) {
+        depMessage(data.error ?? '사전 검사에 실패했습니다.', true)
+        return
+      }
+      depState.preflight = data
+      renderPreflightResult(data)
+      const mainBtn = document.querySelector('[data-dep-main]')
+      if (mainBtn) mainBtn.disabled = !data.summary.canDeploy
+      depMessage(data.summary.canDeploy
+        ? `사전 검사 완료 — 통과 ${data.summary.pass} / 경고 ${data.summary.warning} / 건너뜀 ${data.summary.skipped}. 배포를 진행할 수 있습니다.`
+        : `사전 검사 실패 — fail ${data.summary.fail}건. fail 항목을 해결해야 Production 배포가 가능합니다.`, !data.summary.canDeploy)
+    } catch {
+      depMessage('서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.', true)
+    } finally {
+      const btn = document.getElementById('dep-preflight')
+      if (btn) btn.disabled = false
+    }
+  }
+
+  function renderPreflightResult(data) {
+    const holder = document.getElementById('dep-preflight-result')
+    if (!holder) return
+    holder.innerHTML = ''
+    const list = el('div', 'display: grid; gap: 2px; font-size: 12px; margin-top: 6px;')
+    list.id = 'dep-check-list'
+    for (const check of data.checks) {
+      const line = el('p', 'margin: 0;')
+      const badge = el('strong', `color: ${DEP_CHECK_COLORS[check.status] ?? 'inherit'};`, `[${DEP_CHECK_LABELS[check.status] ?? check.status}] `)
+      line.append(badge, document.createTextNode(`${check.label} — ${check.detail}`))
+      list.appendChild(line)
+    }
+    holder.appendChild(list)
+
+    const plan = data.plan
+    const planBox = el('div', 'margin-top: 8px; padding: 8px 10px; border: 1px dashed var(--border); border-radius: 8px; font-size: 12px;')
+    planBox.id = 'dep-plan'
+    planBox.appendChild(el('p', 'margin: 0; font-weight: 600;', '배포 계획'))
+    planBox.appendChild(el('p', 'margin: 2px 0 0;',
+      `${plan.hospitalName} (${plan.siteId}) · 모드 ${plan.deploymentType}/${plan.operationMode} · 대상 ${plan.targetDomain || '(도메인 미정)'} · 현재 URL ${plan.currentUrl || '-'}`))
+    const changes = plan.changes
+    planBox.appendChild(el('p', 'margin: 2px 0 0;',
+      `변경 요약: hospital.json ${changes.hospitalJsonChanged ? `변경(${changes.changedFields.join(', ')})` : '변경 없음'} · ` +
+      `의료진 ${changes.doctorsDelta >= 0 ? '+' : ''}${changes.doctorsDelta} · 진료과 ${changes.departmentsDelta >= 0 ? '+' : ''}${changes.departmentsDelta} · ` +
+      `템플릿 ${changes.templateChanged ? '변경' : '동일'} · 이미지 ${changes.imagesChanged ? '변경' : '동일'} · Schema ${changes.schemaChanged ? '변경' : '동일'} · 콘텐츠 ${changes.articlesInBundle}개`))
+    if (plan.recentImport?.appliedAt) {
+      planBox.appendChild(el('p', 'margin: 2px 0 0;', `최근 Import 적용: ${plan.recentImport.appliedFields.join(', ')} (${(plan.recentImport.appliedAt ?? '').slice(0, 10)})`))
+    }
+    planBox.appendChild(el('p', 'margin: 2px 0 0;', `배포 후 작업: ${plan.postDeployTasks.join(' → ')}`))
+    holder.appendChild(planBox)
+  }
+
+  async function createDeployment(type) {
+    const buttonId = type === 'preview' ? 'dep-run-preview' : type === 'replace' ? 'dep-run-replace' : 'dep-run-production'
+    const button = document.getElementById(buttonId)
+    if (!button || button.disabled) return
+    const approvedBy = document.getElementById('dep-approved-by')?.value?.trim() ?? ''
+    const payload = { type, approvedBy, approvals: {} }
+    if (type === 'production') {
+      payload.approvals.productionConfirmed = document.getElementById('dep-prod-confirm')?.checked === true
+      if (!payload.approvals.productionConfirmed || approvedBy === '') {
+        depMessage('Production 배포는 확인 체크와 승인자 이름이 필요합니다.', true)
+        return
+      }
+      if (!window.confirm(`대상 도메인에 실제 반영됩니다.\n${depState.siteId} 사이트를 Production 배포할까요?`)) return
+    }
+    if (type === 'replace') {
+      document.querySelectorAll('[data-dep-approval]').forEach((boxInput) => { payload.approvals[boxInput.dataset.depApproval] = boxInput.checked })
+      payload.confirmText = document.getElementById('dep-confirm-text')?.value?.trim() ?? ''
+      if (Object.values(payload.approvals).some((value) => value !== true) || approvedBy === '' || payload.confirmText === '') {
+        depMessage('Replace 배포는 5개 확인 항목 체크 + 승인자 + 대상 도메인 입력이 모두 필요합니다.', true)
+        return
+      }
+      if (!window.confirm(`⚠ 기존 홈페이지 교체 배포입니다.\n기존 사이트 접속이 중단될 수 있습니다. 정말 진행할까요?`)) return
+    }
+    button.disabled = true
+    depMessage(`${type} 배포 생성 중...`)
+    try {
+      const response = await fetch(`/api/deployments/${encodeURIComponent(depState.siteId)}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok) {
+        depState.jobId = data.job.id
+        await loadDeployPanel(data.manualMode
+          ? '배포 작업을 기록했습니다 (Manual Mode) — 수동 배포 후 [배포 후 검증]을 실행해 주세요.'
+          : '배포를 시작했습니다. [상태 새로고침]으로 진행 상황을 확인하세요.')
+        loadOnboarding(true)
+      } else {
+        depMessage(data.error ?? '배포 생성에 실패했습니다.', true)
+        button.disabled = false
+      }
+    } catch {
+      depMessage('서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.', true)
+      button.disabled = false
+    }
+  }
+
+  async function refreshDeployStatus() {
+    if (!depState.jobId) { depMessage('조회할 배포가 없습니다.', true); return }
+    try {
+      const response = await fetch(`/api/deployments/${encodeURIComponent(depState.siteId)}/status?id=${encodeURIComponent(depState.jobId)}`)
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok) {
+        await loadDeployPanel(`상태: ${depState.data.statusLabels[data.job.status] ?? data.job.status}` +
+          (data.job.status === 'verifying' ? ' — [배포 후 검증]을 실행해 주세요.' : ''))
+      } else {
+        depMessage(data.error ?? '상태를 확인하지 못했습니다.', true)
+      }
+    } catch {
+      depMessage('서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.', true)
+    }
+  }
+
+  async function verifyDeployNow() {
+    if (!depState.jobId) { depMessage('검증할 배포가 없습니다.', true); return }
+    const button = document.getElementById('dep-verify')
+    button.disabled = true
+    depMessage('배포 후 검증 중... (대표 페이지·robots·sitemap 확인)')
+    try {
+      const response = await fetch(`/api/deployments/${encodeURIComponent(depState.siteId)}/verify`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: depState.jobId }),
+      })
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok) {
+        await loadDeployPanel()
+        const holder = document.getElementById('dep-verify-result')
+        if (holder) {
+          holder.innerHTML = ''
+          for (const check of data.verification.checks) {
+            const line = el('p', 'margin: 2px 0 0;')
+            line.append(el('strong', `color: ${DEP_CHECK_COLORS[check.status] ?? 'inherit'};`, `[${DEP_CHECK_LABELS[check.status] ?? check.status}] `),
+              document.createTextNode(`${check.label} — ${check.detail}`))
+            holder.appendChild(line)
+          }
+        }
+        const statusText = { success: '검증 성공 — 배포가 완료되었습니다.', partial_success: '부분 성공 — 경고 항목을 확인해 주세요.', failed: '검증 실패 — 실패 항목을 확인하고 필요 시 이전 버전 복구를 검토해 주세요.' }
+        depMessage(statusText[data.verification.status] ?? data.verification.status, data.verification.status === 'failed')
+      } else {
+        depMessage(data.error ?? '검증에 실패했습니다.', true)
+      }
+    } catch {
+      depMessage('서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.', true)
+    } finally {
+      const btn = document.getElementById('dep-verify')
+      if (btn) btn.disabled = false
+    }
+  }
+
+  async function rollbackDeployNow() {
+    if (!depState.jobId) { depMessage('대상 배포가 없습니다.', true); return }
+    // 1차: 정보 조회 (confirm 없이 → 이전 버전 정보 표시)
+    try {
+      let response = await fetch(`/api/deployments/${encodeURIComponent(depState.siteId)}/rollback`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: depState.jobId }),
+      })
+      if (response.status === 401) { location.href = '/login'; return }
+      let data = await response.json().catch(() => ({}))
+      const info = data.rollbackInfo
+      if (!info) { depMessage(data.error ?? '롤백 정보를 확인하지 못했습니다.', true); return }
+      const holder = document.getElementById('dep-verify-result')
+      if (holder) {
+        holder.innerHTML = ''
+        holder.appendChild(el('p', 'margin: 4px 0 0; font-weight: 600;', '이전 버전 · 복구 안내'))
+        holder.appendChild(el('p', 'margin: 2px 0 0;', info.previousDeploy
+          ? `직전 성공 배포: ${(info.previousDeploy.completedAt ?? '').replace('T', ' ').slice(0, 16)} · 커밋 ${String(info.previousDeploy.gitCommitSha).slice(0, 7)}`
+          : '직전 성공 배포 기록이 없습니다 — 수동 복구만 가능합니다.'))
+        for (const step of info.manualSteps ?? []) holder.appendChild(el('p', 'margin: 2px 0 0;', `· ${step}`))
+        if (info.replaceRecovery) {
+          holder.appendChild(el('p', 'margin: 4px 0 0; font-weight: 600; color: #991b1b;', 'Replace 복구 (기존 홈페이지)'))
+          if (info.replaceRecovery.previousSiteUrl) holder.appendChild(el('p', 'margin: 2px 0 0;', `이전 운영 URL: ${info.replaceRecovery.previousSiteUrl}`))
+          for (const step of info.replaceRecovery.steps ?? []) holder.appendChild(el('p', 'margin: 2px 0 0;', step))
+        }
+      }
+      if (!info.previousDeploy) { depMessage('되돌릴 이전 성공 배포가 없어 수동 복구 절차를 표시했습니다.', true); return }
+      // 2차: 실행 여부 확인
+      const reason = window.prompt('Rollback을 실행하려면 사유를 입력하세요. (취소하면 안내만 표시)')
+      if (!reason || reason.trim() === '') { depMessage('이전 버전 정보를 표시했습니다. (실행 안 함)'); return }
+      response = await fetch(`/api/deployments/${encodeURIComponent(depState.siteId)}/rollback`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: depState.jobId, confirm: true, reason: reason.trim() }),
+      })
+      data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok) {
+        await loadDeployPanel(data.note ?? (data.executed ? '롤백을 실행했습니다.' : '수동 복구 절차를 확인해 주세요.'))
+      } else {
+        depMessage(data.error ?? '롤백에 실패했습니다.', true)
+      }
+    } catch {
+      depMessage('서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.', true)
+    }
+  }
+
+  // ==================================================================
+  // Phase 16 — SEO 운영센터 (현황판 · 오늘의 할 일 · 병원별 상세 · Action Center)
+  // ==================================================================
+  const soState = { sites: [], labels: {}, detailSite: '' }
+  const soStatusLine = document.getElementById('so-status')
+  const SO_SEV_COLORS = { critical: '#b91c1c', high: '#c2410c', medium: '#b45309', low: '#525252', info: 'var(--muted)' }
+  const SO_STATUS_COLORS = { healthy: '#16a34a', good: '#16a34a', warning: '#b45309', critical: '#b91c1c', error: '#b91c1c', check_failed: '#b91c1c' }
+  const SO_MODULE_TAB = { onboarding: 'onboarding', import: 'onboarding', domain: 'onboarding', deploy: 'onboarding', entity: 'entities', settings: 'settings', content: 'create' }
+
+  function soMessage(message, isError = false) {
+    if (!soStatusLine) return
+    soStatusLine.textContent = message
+    soStatusLine.style.color = isError ? '#b91c1c' : ''
+    soStatusLine.hidden = false
+  }
+
+  async function loadSeoOps(preserveStatus = false) {
+    if (!preserveStatus && soStatusLine) soStatusLine.hidden = true
+    try {
+      const [overviewRes, tasksRes] = await Promise.all([
+        fetch('/api/seo-operations'),
+        fetch('/api/seo-operations/tasks?perSiteCap=3&limit=8'),
+      ])
+      if (overviewRes.status === 401) { location.href = '/login'; return }
+      const overview = await overviewRes.json().catch(() => ({}))
+      const tasksData = await tasksRes.json().catch(() => ({}))
+      if (!overviewRes.ok || !overview.ok) {
+        document.getElementById('so-metrics').textContent = overview.error ?? '현황을 불러오지 못했습니다.'
+        return
+      }
+      soState.sites = overview.sites ?? []
+      soState.labels = overview.labels ?? {}
+      const m = overview.metrics
+      document.getElementById('so-metrics').textContent =
+        `운영 중 ${m.operatingCount} · 정상 ${m.healthyCount} · 주의 ${m.warningCount} · 심각 ${m.criticalCount} · ` +
+        `오늘 생성 작업 ${m.tasksCreatedToday} · 미처리 작업 ${m.openTasksTotal} · ` +
+        `7일 점검 성공률 ${m.checkSuccessRate7d === null ? '기록 없음' : m.checkSuccessRate7d + '%'} · ` +
+        `7일 배포 성공률 ${m.deploySuccessRate7d === null ? '기록 없음' : m.deploySuccessRate7d + '%'}`
+      renderTodayTasks(tasksData.ok ? tasksData.tasks : [])
+      renderSeoSites()
+    } catch {
+      document.getElementById('so-metrics').textContent = '서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.'
+    }
+  }
+
+  function renderTodayTasks(tasks) {
+    const holder = document.getElementById('so-today-list')
+    holder.innerHTML = ''
+    if (tasks.length === 0) {
+      holder.appendChild(el('p', 'margin: 0; color: var(--muted);', '미처리 작업이 없습니다. 새 병원 점검은 [전체 점검]으로 시작하세요.'))
+      return
+    }
+    holder.appendChild(el('p', 'margin: 0 0 2px; font-weight: 600;', `오늘 처리할 작업 ${tasks.length}개`))
+    for (const task of tasks) {
+      const line = el('div', 'display: flex; gap: 8px; align-items: center; flex-wrap: wrap;')
+      line.appendChild(el('strong', `color: ${SO_SEV_COLORS[task.severity] ?? 'inherit'}; min-width: 34px;`, soState.labels.severity?.[task.severity] ?? task.severity))
+      line.appendChild(el('span', '', `[${task.siteId}] ${task.title} — ${task.description.slice(0, 60)}`))
+      const openBtn = document.createElement('button')
+      openBtn.type = 'button'
+      openBtn.className = 'dash-action-btn'
+      openBtn.textContent = '상세'
+      openBtn.addEventListener('click', () => openSeoDetail(task.siteId))
+      line.appendChild(openBtn)
+      holder.appendChild(line)
+    }
+  }
+
+  function renderSeoSites() {
+    const body = document.getElementById('so-body')
+    const filter = document.getElementById('so-filter')?.value ?? ''
+    const sort = document.getElementById('so-sort')?.value ?? 'risk'
+    const query = (document.getElementById('so-search')?.value ?? '').trim().toLowerCase()
+    let sites = [...soState.sites]
+    if (query !== '') sites = sites.filter((site) => site.siteId.includes(query) || site.hospitalName.toLowerCase().includes(query))
+    if (filter === 'ok') sites = sites.filter((site) => ['healthy', 'good'].includes(site.status))
+    if (filter === 'warning') sites = sites.filter((site) => site.status === 'warning')
+    if (filter === 'critical') sites = sites.filter((site) => ['critical', 'error'].includes(site.status))
+    if (filter === 'check_failed') sites = sites.filter((site) => site.status === 'check_failed')
+    if (filter === 'tasks') sites = sites.filter((site) => site.openTasks > 0)
+    const riskRank = { check_failed: 0, error: 0, critical: 1, warning: 2, unchecked: 3, good: 4, healthy: 5 }
+    if (sort === 'risk') sites.sort((a, b) => (riskRank[a.status] ?? 3) - (riskRank[b.status] ?? 3) || (a.healthScore ?? 101) - (b.healthScore ?? 101))
+    if (sort === 'score') sites.sort((a, b) => (a.healthScore ?? 101) - (b.healthScore ?? 101))
+    if (sort === 'tasks') sites.sort((a, b) => b.openTasks - a.openTasks)
+    if (sort === 'stale') sites.sort((a, b) => String(a.lastCheckedAt ?? '').localeCompare(String(b.lastCheckedAt ?? '')))
+
+    body.innerHTML = ''
+    if (sites.length === 0) {
+      const row = document.createElement('tr')
+      const td = document.createElement('td')
+      td.colSpan = 8
+      td.className = 'dash-empty'
+      td.textContent = '조건에 맞는 병원이 없습니다.'
+      row.appendChild(td)
+      body.appendChild(row)
+      return
+    }
+    for (const site of sites) {
+      const row = document.createElement('tr')
+      const nameTd = document.createElement('td')
+      nameTd.appendChild(el('div', 'font-weight: 600;', site.hospitalName))
+      nameTd.appendChild(el('div', 'font-size: 11px; color: var(--muted);', site.siteId))
+      if (site.operatingUrl) nameTd.appendChild(impLink(site.operatingUrl, '운영 사이트 →'))
+      const statusTd = document.createElement('td')
+      const statusBadge = el('span', `font-weight: 700; color: ${SO_STATUS_COLORS[site.status] ?? 'inherit'};`, soState.labels.siteStatus?.[site.status] ?? site.status)
+      statusTd.appendChild(statusBadge)
+      if (!site.checkable && site.reason) statusTd.appendChild(el('div', 'font-size: 11px; color: var(--muted);', site.reason))
+      const healthTd = el('td', 'font-weight: 700;', site.healthScore === null ? '—' : String(site.healthScore))
+      const scoresTd = el('td', 'font-size: 11px; color: var(--muted);', site.scores
+        ? `T${site.scores.technical} C${site.scores.content} E${site.scores.entity} V${site.scores.conversion} O${site.scores.operations}`
+        : '—')
+      const checkedTd = el('td', 'font-size: 12px;', site.lastCheckedAt ? site.lastCheckedAt.replace('T', ' ').slice(0, 16) : '미점검')
+      const tasksTd = el('td', '', site.openTasks > 0 ? `${site.openTasks}개${site.criticalTasks > 0 ? ` (긴급 ${site.criticalTasks})` : ''}` : '-')
+      const worstTd = el('td', 'font-size: 12px; max-width: 200px;', site.worstFinding ? `[${soState.labels.severity?.[site.worstFinding.severity] ?? site.worstFinding.severity}] ${site.worstFinding.title}` : '-')
+      const actionTd = document.createElement('td')
+      actionTd.style.cssText = 'display: flex; gap: 6px;'
+      const checkBtn = document.createElement('button')
+      checkBtn.type = 'button'
+      checkBtn.className = 'dash-action-btn'
+      checkBtn.textContent = '지금 점검'
+      checkBtn.disabled = !site.checkable
+      checkBtn.addEventListener('click', () => runSeoCheckNow(site.siteId, checkBtn))
+      const detailBtn = document.createElement('button')
+      detailBtn.type = 'button'
+      detailBtn.className = 'dash-action-btn'
+      detailBtn.textContent = '상세'
+      detailBtn.addEventListener('click', () => openSeoDetail(site.siteId))
+      actionTd.append(checkBtn, detailBtn)
+      row.append(nameTd, statusTd, healthTd, scoresTd, checkedTd, tasksTd, worstTd, actionTd)
+      body.appendChild(row)
+    }
+  }
+
+  document.getElementById('so-filter')?.addEventListener('change', renderSeoSites)
+  document.getElementById('so-sort')?.addEventListener('change', renderSeoSites)
+  document.getElementById('so-search')?.addEventListener('input', renderSeoSites)
+  document.getElementById('so-reload')?.addEventListener('click', () => loadSeoOps())
+  document.getElementById('so-run-all')?.addEventListener('click', async () => {
+    const button = document.getElementById('so-run-all')
+    if (button.disabled) return
+    button.disabled = true
+    soMessage('전체 점검 실행 중... (순차 batch — 사이트당 수 초에서 최대 1분)')
+    try {
+      const response = await fetch('/api/seo-operations/run-all', { method: 'POST' })
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok) {
+        await loadSeoOps(true)
+        soMessage(`점검 완료: ${data.checked.map((r) => `${r.siteId} ${r.status === 'failed' ? '실패' : r.score + '점'}`).join(' · ') || '대상 없음'} — ${data.note}`)
+      } else {
+        soMessage(data.error ?? '전체 점검에 실패했습니다.', true)
+      }
+    } catch {
+      soMessage('서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.', true)
+    } finally {
+      button.disabled = false
+    }
+  })
+
+  async function runSeoCheckNow(siteId, button) {
+    if (button?.disabled) return
+    if (button) button.disabled = true
+    soMessage(`${siteId} 점검 중... (제한 수집 — 최대 1분)`)
+    try {
+      const response = await fetch('/api/seo-operations/run', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ site: siteId }),
+      })
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.ok) {
+        await loadSeoOps(true)
+        soMessage(`${siteId} 점검 완료 — Health ${data.run.overallScore}점 · 발견 ${data.run.findingsCount}건 (긴급 ${data.run.criticalCount})`)
+        openSeoDetail(siteId)
+      } else {
+        soMessage(data.error ?? '점검에 실패했습니다.', true)
+      }
+    } catch {
+      soMessage('서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.', true)
+    } finally {
+      if (button) button.disabled = false
+    }
+  }
+
+  async function openSeoDetail(siteId) {
+    soState.detailSite = siteId
+    const holder = document.getElementById('so-detail')
+    holder.hidden = false
+    holder.innerHTML = ''
+    holder.appendChild(el('p', 'font-size: 13px; color: var(--muted);', '상세 정보를 불러오는 중...'))
+    try {
+      const response = await fetch(`/api/seo-operations/${encodeURIComponent(siteId)}`)
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data.ok) {
+        holder.innerHTML = ''
+        holder.appendChild(el('p', 'color: #b91c1c; font-size: 13px;', data.error ?? '상세 정보를 불러오지 못했습니다.'))
+        return
+      }
+      renderSeoDetail(data)
+    } catch {
+      holder.innerHTML = ''
+      holder.appendChild(el('p', 'color: #b91c1c; font-size: 13px;', '서버에 연결하지 못했습니다.'))
+    }
+  }
+
+  function soTaskButtons(task, reload) {
+    const wrap = el('span', 'display: inline-flex; gap: 4px;')
+    const act = async (status, promptText, requireNote) => {
+      let note = ''
+      if (promptText) {
+        const input = window.prompt(promptText)
+        if (input === null) return
+        note = input.trim()
+        if (requireNote && note === '') { soMessage('critical 작업은 사유를 입력해야 무시할 수 있습니다.', true); return }
+      }
+      try {
+        const response = await fetch(`/api/seo-operations/tasks/${encodeURIComponent(task.id)}`, {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ status, note }),
+        })
+        const data = await response.json().catch(() => ({}))
+        if (response.ok && data.ok) {
+          soMessage(data.note ?? '작업 상태를 변경했습니다.')
+          reload()
+        } else {
+          soMessage(data.error ?? '작업 상태 변경에 실패했습니다.', true)
+        }
+      } catch {
+        soMessage('서버에 연결하지 못했습니다.', true)
+      }
+    }
+    const make = (label, handler) => {
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.className = 'dash-action-btn'
+      button.style.fontSize = '11px'
+      button.textContent = label
+      button.addEventListener('click', handler)
+      return button
+    }
+    const targetTab = SO_MODULE_TAB[task.targetModule]
+    if (targetTab) wrap.appendChild(make('이동', () => switchTab(targetTab)))
+    if (['open', 'acknowledged', 'in_progress', 'reopened'].includes(task.status)) {
+      wrap.appendChild(make('완료', () => act('resolved', '처리 내용을 입력하세요. (선택)')))
+      wrap.appendChild(make('무시', () => act('ignored', task.severity === 'critical' ? 'critical 작업입니다. 무시 사유를 반드시 입력하세요.' : '무시 사유를 입력하세요. (권장)', task.severity === 'critical')))
+    } else {
+      wrap.appendChild(make('다시 열기', () => act('reopened', null)))
+    }
+    return wrap
+  }
+
+  function renderSeoDetail(data) {
+    const holder = document.getElementById('so-detail')
+    holder.innerHTML = ''
+    const box = el('div')
+    box.className = 'dash-edit-form'
+    const reload = () => { openSeoDetail(data.site); loadSeoOps(true) }
+
+    box.appendChild(el('h3', 'margin: 0;', `SEO Health — ${data.hospitalName} (${data.site})`))
+    const run = data.latestRun
+    const summary = el('p', 'margin: 0; font-size: 13px;')
+    summary.id = 'so-d-summary'
+    summary.textContent = run
+      ? `Health ${run.overallScore}점 (${data.labels.siteStatus?.[data.status] ?? data.status}) · 마지막 점검 ${String(run.completedAt ?? '').replace('T', ' ').slice(0, 16)} · ` +
+        `열린 작업 ${data.openCounts.open}개 (긴급 ${data.openCounts.critical}) · 마지막 성공 배포 ${data.lastSuccessDeploy ? String(data.lastSuccessDeploy.completedAt).slice(0, 10) : '없음'}`
+      : `아직 점검 이력이 없습니다. ${data.classification.checkable ? '[지금 점검]으로 시작하세요.' : data.classification.reason}`
+    box.appendChild(summary)
+    if (run) {
+      box.appendChild(el('p', 'margin: 0; font-size: 13px;', `영역 점수: Technical ${run.scores.technical}/30 · Content ${run.scores.content}/25 · Entity ${run.scores.entity}/20 · Conversion ${run.scores.conversion}/15 · Operations ${run.scores.operations}/10`))
+    }
+
+    // 오늘의 할 일 (사이트)
+    box.appendChild(el('h4', 'margin: 10px 0 4px;', `오늘의 할 일 (${data.tasks.length})`))
+    const taskList = el('div', 'display: grid; gap: 4px; font-size: 13px;')
+    taskList.id = 'so-d-tasks'
+    if (data.tasks.length === 0) taskList.appendChild(el('p', 'margin: 0; color: var(--muted);', '열린 작업이 없습니다.'))
+    for (const task of data.tasks) {
+      const line = el('div', 'display: flex; gap: 8px; align-items: center; flex-wrap: wrap;')
+      line.appendChild(el('strong', `color: ${SO_SEV_COLORS[task.severity] ?? 'inherit'};`, data.labels.severity?.[task.severity] ?? task.severity))
+      line.appendChild(el('span', '', `${task.title} — ${task.recommendedAction.slice(0, 80)}${task.status === 'reopened' ? ' [다시 발견됨]' : ''}`))
+      line.appendChild(soTaskButtons(task, reload))
+      taskList.appendChild(line)
+    }
+    box.appendChild(taskList)
+
+    // 발견된 문제 / 콘텐츠 기회
+    const problems = data.findings.filter((finding) => !finding.isOpportunity && finding.status !== 'ignored')
+    const opportunities = data.findings.filter((finding) => finding.isOpportunity && finding.status !== 'ignored')
+    const ignored = data.findings.filter((finding) => finding.status === 'ignored')
+    box.appendChild(el('h4', 'margin: 10px 0 4px;', `발견된 문제 (${problems.length})`))
+    const probList = el('div', 'display: grid; gap: 4px; font-size: 12px;')
+    probList.id = 'so-d-findings'
+    if (problems.length === 0) probList.appendChild(el('p', 'margin: 0; color: var(--muted);', '열린 문제가 없습니다.'))
+    for (const finding of problems) {
+      const line = el('p', 'margin: 0;')
+      line.append(
+        el('strong', `color: ${SO_SEV_COLORS[finding.severity] ?? 'inherit'};`, `[${data.labels.severity?.[finding.severity] ?? finding.severity}] `),
+        document.createTextNode(`${finding.title} — ${finding.description.slice(0, 90)} · 최초 ${String(finding.firstDetectedAt).slice(0, 10)} · ${finding.status}`)
+      )
+      if (finding.affectedUrl) { line.appendChild(document.createTextNode(' ')); line.appendChild(impLink(finding.affectedUrl, 'URL')) }
+      probList.appendChild(line)
+    }
+    box.appendChild(probList)
+    box.appendChild(el('h4', 'margin: 10px 0 4px;', `콘텐츠 기회 (${opportunities.length}) — 내부 데이터 기준, 검색량 아님`))
+    const oppList = el('div', 'display: grid; gap: 4px; font-size: 12px;')
+    oppList.id = 'so-d-opps'
+    if (opportunities.length === 0) oppList.appendChild(el('p', 'margin: 0; color: var(--muted);', '발견된 기회가 없습니다.'))
+    for (const finding of opportunities) {
+      oppList.appendChild(el('p', 'margin: 0;', `${finding.title} — ${finding.description.slice(0, 110)}`))
+    }
+    box.appendChild(oppList)
+    if (ignored.length > 0) box.appendChild(el('p', 'margin: 6px 0 0; font-size: 11px; color: var(--muted);', `무시된 항목 ${ignored.length}건 (작업에서 [다시 열기]로 복원 가능)`))
+
+    // 점검 이력
+    box.appendChild(el('h4', 'margin: 10px 0 4px;', '점검 이력'))
+    const runList = el('div', 'font-size: 12px; color: var(--muted);')
+    runList.id = 'so-d-runs'
+    if (data.runs.length === 0) runList.appendChild(el('p', 'margin: 0;', '이력이 없습니다.'))
+    for (const item of data.runs.slice(0, 5)) {
+      runList.appendChild(el('p', 'margin: 0;', `${String(item.createdAt).replace('T', ' ').slice(0, 16)} · ${item.status} · ${item.overallScore}점 · 발견 ${item.findingsCount}건 · ${item.triggerType}`))
+    }
+    box.appendChild(runList)
+
+    // 설정
+    box.appendChild(el('h4', 'margin: 10px 0 4px;', '점검 설정'))
+    const settingLine = el('div', 'display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 13px;')
+    const enabledLabel = el('label', 'display: flex; gap: 6px; align-items: center; font-weight: 400;')
+    const enabledBox = document.createElement('input')
+    enabledBox.type = 'checkbox'
+    enabledBox.id = 'so-d-enabled'
+    enabledBox.checked = data.settings.checkEnabled !== false
+    enabledLabel.append(enabledBox, el('span', '', '정기 점검 대상에 포함'))
+    settingLine.appendChild(enabledLabel)
+    const saveBtn = document.createElement('button')
+    saveBtn.type = 'button'
+    saveBtn.className = 'dash-action-btn'
+    saveBtn.textContent = '설정 저장'
+    saveBtn.addEventListener('click', async () => {
+      const reason = enabledBox.checked ? '' : (window.prompt('점검을 중지하는 이유를 입력하세요. (선택)') ?? '')
+      try {
+        const response = await fetch(`/api/seo-operations/${encodeURIComponent(data.site)}`, {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ checkEnabled: enabledBox.checked, pausedReason: reason }),
+        })
+        const result = await response.json().catch(() => ({}))
+        if (response.ok && result.ok) { soMessage('점검 설정을 저장했습니다.'); reload() }
+        else soMessage(result.error ?? '설정 저장에 실패했습니다.', true)
+      } catch {
+        soMessage('서버에 연결하지 못했습니다.', true)
+      }
+    })
+    settingLine.appendChild(saveBtn)
+    const closeBtn = document.createElement('button')
+    closeBtn.type = 'button'
+    closeBtn.className = 'dash-action-btn'
+    closeBtn.textContent = '닫기'
+    closeBtn.addEventListener('click', () => { holder.hidden = true })
+    settingLine.appendChild(closeBtn)
+    box.appendChild(settingLine)
+
+    holder.appendChild(box)
+  }
 </script>

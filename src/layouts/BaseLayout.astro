@@ -13,7 +13,9 @@ import '../styles/global.css'
 // noindex: 관리자 페이지 등 검색 색인에서 제외할 페이지가 true로 전달 (기본 false — 기존 출력 불변)
 // titleOverride: 페이지 타이틀 전체를 교체 (SEO 설정용 — 미전달 시 기존 규칙 그대로)
 // keywords: meta keywords 배열 (있을 때만 출력 — 기존 사이트 출력 불변)
-const { title, description = hospital.description, ogType = 'website', jsonLd, noindex = false, titleOverride, keywords } = Astro.props
+// ogImage: og:image URL (Phase 13 — 유효한 http(s) URL일 때만 출력, 미전달 시 기존 출력 불변)
+const { title, description = hospital.description, ogType = 'website', jsonLd, noindex = false, titleOverride, keywords, ogImage } = Astro.props
+const ogImageUrl = typeof ogImage === 'string' && /^https?:\/\//.test(ogImage.trim()) ? ogImage.trim() : null
 const pageTitle = titleOverride ?? (title ? `${hospital.name} | ${title}` : hospital.name)
 const keywordList = Array.isArray(keywords) ? keywords.filter((k) => typeof k === 'string' && k.trim() !== '') : []
 const canonical = new URL(Astro.url.pathname, site.siteUrl)
@@ -50,6 +52,7 @@ const primaryColor = isValidColor(hospital.theme?.primary) ? hospital.theme.prim
     <meta property="og:url" content={canonical} />
     <meta property="og:site_name" content={hospital.name} />
     <meta property="og:locale" content="ko_KR" />
+    {ogImageUrl && <meta property="og:image" content={ogImageUrl} />}
 
     <!-- 구조화 데이터 (JSON-LD) -->
     <script type="application/ld+json" set:html={JSON.stringify(clinicSchema)} />

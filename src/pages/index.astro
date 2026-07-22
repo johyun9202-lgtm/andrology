@@ -7,6 +7,7 @@ import ContactBox from '../components/ContactBox.astro'
 import { siteData as hospital } from '../lib/site-data.js'
 import { buildFaqSchema, isReal, isValidHttpUrl } from '../lib/schema.js'
 import { getTemplate } from '../lib/templates.js'
+import { entityArrays } from '../lib/schema/entity-schema.js'
 
 const faqPreview = hospital.faq.slice(0, 3)
 const faqSchema = buildFaqSchema(hospital.faq)
@@ -46,6 +47,9 @@ const recentArticles = [...(Array.isArray(hospital.articles) ? hospital.articles
   .sort((a, b) => String(b.date ?? '').localeCompare(String(a.date ?? '')))
   .slice(0, 3)
 
+// 엔티티(진료과·의료진, Phase 13) — 데이터가 있을 때만 섹션 렌더링
+const { departments: entityDepartments, doctors: entityDoctors } = entityArrays(hospital)
+
 const hours = hospital.hours ?? {}
 const sundayValue = hours.sundayHoliday ?? hours.sunday
 const hasHours = [hours.weekday, hours.saturday, sundayValue].some(isReal)
@@ -75,6 +79,47 @@ const hasLocation = hasHours || isReal(hospital.address) || isReal(hospital.phon
       {hospital.services.map((service) => <ServiceCard service={service} />)}
     </div>
   </section>
+
+  {entityDepartments.length > 0 && (
+    <section class="section">
+      <h2>주요 진료과</h2>
+      <div class="card-grid">
+        {entityDepartments.slice(0, 6).map((dept) => (
+          <a href={`/departments/${dept.id}/`} class="article-item-link">
+            <article class="article-item">
+              <h3 style="margin: 0 0 4px;">{dept.name}</h3>
+              {isReal(dept.shortDescription) && <p style="margin: 0; font-size: 14px; color: var(--muted);">{dept.shortDescription}</p>}
+            </article>
+          </a>
+        ))}
+      </div>
+      <p><a href="/departments/">진료과 전체 보기 →</a></p>
+    </section>
+  )}
+
+  {entityDoctors.length > 0 && (
+    <section class="section">
+      <h2>의료진 소개</h2>
+      <div class="card-grid">
+        {entityDoctors.slice(0, 6).map((doc) => (
+          <a href={`/doctors/${doc.id}/`} class="article-item-link">
+            <article class="article-item" style="display: flex; gap: 14px; align-items: center;">
+              {isValidHttpUrl(doc.image) ? (
+                <img src={doc.image.trim()} alt={doc.imageAlt || `${doc.name} 사진`} loading="lazy" style="width: 60px; height: 60px; object-fit: cover; border-radius: 12px; flex-shrink: 0;" />
+              ) : (
+                <div aria-hidden="true" style="width: 60px; height: 60px; border-radius: 12px; flex-shrink: 0; background: var(--accent-bg, #eff6ff); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700;">{doc.name.slice(0, 1)}</div>
+              )}
+              <div>
+                <h3 style="margin: 0 0 4px;">{doc.name}</h3>
+                {isReal(doc.title) && <p style="margin: 0; font-size: 14px; color: var(--muted);">{doc.title}</p>}
+              </div>
+            </article>
+          </a>
+        ))}
+      </div>
+      <p><a href="/doctors/">의료진 전체 보기 →</a></p>
+    </section>
+  )}
 
   {doctorInfo && isReal(doctorInfo.name) && (
     <section class="section">
