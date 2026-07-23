@@ -240,7 +240,7 @@ function resolveSite(params) {
   return ALLOWED_SITES.includes(site) ? site : null
 }
 
-async function readHospitalFile(config, site) {
+export async function readHospitalFile(config, site) {
   const filePath = `${config.basePath}/${site}/hospital.json`
   const response = await githubFetch(
     config,

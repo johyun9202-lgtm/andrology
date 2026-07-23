@@ -1,0 +1,64 @@
+---
+// 진료과(/departments)·의료진(/doctors) 목록 페이지 (Phase 13)
+//
+// 동적 라우트로 구현되어 해당 데이터가 있을 때만 페이지가 생성됩니다.
+// → 데이터가 없는 사이트(비의료 포함)는 페이지·sitemap에 아무 흔적이 남지 않고,
+//   엔티티를 삭제하면 다음 빌드에서 자동으로 페이지·sitemap에서 제거됩니다.
+import BaseLayout from '../layouts/BaseLayout.astro'
+import PageTitle from '../components/PageTitle.astro'
+import { siteData as hospital } from '../lib/site-data.js'
+import { site } from '../config/site.js'
+import { isValidHttpUrl } from '../lib/schema.js'
+import { buildItemListSchema, entityArrays } from '../lib/schema/entity-schema.js'
+
+export function getStaticPaths() {
+  // 빌드 시점 데이터 기준 — 데이터가 없으면 페이지 자체가 생성되지 않음
+  const paths = []
+  const { departments, doctors } = entityArrays(hospital)
+  if (departments.length > 0) paths.push({ params: { entityList: 'departments' } })
+  if (doctors.length > 0) paths.push({ params: { entityList: 'doctors' } })
+  return paths
+}
+
+const { entityList } = Astro.params
+const { departments, doctors } = entityArrays(hospital)
+const isDepartments = entityList === 'departments'
+const pageTitle = isDepartments ? '진료과 안내' : '의료진 소개'
+const pageDescription = isDepartments
+  ? `${hospital.name}의 진료과와 각 진료과 소속 의료진을 안내합니다.`
+  : `${hospital.name}의 의료진과 전문 분야를 안내합니다.`
+
+const items = isDepartments
+  ? departments.map((d) => ({ name: d.name, path: `/departments/${d.id}/`, image: d.image, sub: d.shortDescription }))
+  : doctors.map((d) => ({ name: d.name, path: `/doctors/${d.id}/`, image: d.image, alt: d.imageAlt, sub: d.title }))
+
+const itemListSchema = buildItemListSchema(site.siteUrl, items)
+---
+
+<BaseLayout title={pageTitle} description={pageDescription} jsonLd={itemListSchema}>
+  <PageTitle title={pageTitle} />
+  <div class="card-grid">
+    {items.map((item) => (
+      <a href={item.path} class="article-item-link">
+        <article class="article-item" style="display: flex; gap: 14px; align-items: center;">
+          {isValidHttpUrl(item.image) ? (
+            <img
+              src={item.image.trim()}
+              alt={item.alt || `${item.name} ${isDepartments ? '대표 이미지' : '사진'}`}
+              loading="lazy"
+              style="width: 72px; height: 72px; object-fit: cover; border-radius: 12px; flex-shrink: 0;"
+            />
+          ) : (
+            <div aria-hidden="true" style="width: 72px; height: 72px; border-radius: 12px; flex-shrink: 0; background: var(--accent-bg, #eff6ff); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700;">
+              {item.name.slice(0, 1)}
+            </div>
+          )}
+          <div>
+            <h3 style="margin: 0 0 4px;">{item.name}</h3>
+            {item.sub && <p style="margin: 0; font-size: 14px; color: var(--muted);">{item.sub}</p>}
+          </div>
+        </article>
+      </a>
+    ))}
+  </div>
+</BaseLayout>
