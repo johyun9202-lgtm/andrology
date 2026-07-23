@@ -142,7 +142,24 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
       <button type="button" class="dash-action-btn" id="wizard-open">＋ 새 사이트 만들기</button>
       <button type="button" class="dash-action-btn dash-publish-btn" id="ai-gen-open">AI로 홈페이지 초안 만들기</button>
     </div>
-    <p class="dash-meta" id="site-list" style="margin: 0 0 12px; font-size: 13px; color: var(--muted);">사이트 목록을 불러오는 중...</p>
+    <div class="dash-table-wrap" style="margin-bottom: 12px;">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>병원명</th>
+            <th>siteId</th>
+            <th>진료과</th>
+            <th>지역</th>
+            <th>상태</th>
+            <th>작업</th>
+          </tr>
+        </thead>
+        <tbody id="site-cards">
+          <tr><td colspan="6" class="dash-empty">사이트 목록을 불러오는 중...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dash-meta" id="set-company-warning" hidden style="margin: 0 0 12px; padding: 8px 12px; border: 1px solid #f59e0b; background: #fffbeb; border-radius: 8px; color: #92400e; font-weight: 600;">⚠ 지금 선택된 사이트는 AI SEO Lab 회사 홈페이지(루트 /)입니다. 병원 정보를 입력할 곳이 아닙니다 — 병원 사이트는 위 목록에서 [설정 수정]으로 선택하세요.</p>
 
     <div id="site-wizard" class="dash-preview" hidden style="max-height: none; margin-bottom: 16px;">
       <h3 style="margin-top: 0;">새 사이트 만들기 — 클라이언트 온보딩</h3>
@@ -1568,11 +1585,32 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
   // ==================================================================
   // Phase 11 — 사이트 목록 + 새 사이트 만들기 마법사
   // ==================================================================
-  const siteListLine = document.getElementById('site-list')
+  const siteCardsBody = document.getElementById('site-cards')
   const wizard = document.getElementById('site-wizard')
   const wizStatus = document.getElementById('wiz-status')
   const wizTemplatesHolder = document.getElementById('wiz-templates')
   let wizardTemplates = []
+  let companySiteId = 'aiseolab' // 회사 홈페이지 사이트 (loadSites에서 서버 값으로 갱신)
+  const STAGE_BADGES = { onboarding: '온보딩', import: 'Import', domain: '도메인 연결', deploy: '배포 진행', operating: '운영 중', error: '오류', paused: '일시 중지' }
+
+  function siteCardsEmpty(message) {
+    if (!siteCardsBody) return
+    siteCardsBody.innerHTML = ''
+    const row = document.createElement('tr')
+    const td = document.createElement('td')
+    td.colSpan = 6
+    td.className = 'dash-empty'
+    td.textContent = message
+    row.appendChild(td)
+    siteCardsBody.appendChild(row)
+  }
+
+  // 회사 홈페이지 선택 시 설정 폼에 경고 배너 표시
+  function updateCompanyWarning() {
+    const warning = document.getElementById('set-company-warning')
+    if (warning) warning.hidden = (setSiteSelect?.value ?? '') !== companySiteId
+  }
+  setSiteSelect?.addEventListener('change', updateCompanyWarning)
 
   function wizStatusMessage(message, isError = false) {
     if (!wizStatus) return
@@ -1587,14 +1625,79 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
       if (response.status === 401) { location.href = '/login'; return }
       const data = await response.json().catch(() => ({}))
       if (!response.ok || !data.ok) {
-        if (siteListLine) siteListLine.textContent = data.error ?? '사이트 목록을 불러오지 못했습니다.'
+        siteCardsEmpty(data.error ?? '사이트 목록을 불러오지 못했습니다.')
         return
       }
       wizardTemplates = data.templates ?? []
       sitesData = data.sites ?? []
-      if (siteListLine) {
-        const parts = data.sites.map((s) => `${s.id} (${s.name}${s.id === data.defaultSite ? ' · 기본' : ''})`)
-        siteListLine.textContent = `사이트 ${data.sites.length}개: ${parts.join(' / ')}`
+      companySiteId = data.companySite ?? 'aiseolab'
+      updateCompanyWarning()
+      // 사이트 관리 테이블 (병원명·진료과·지역·상태 + 설정 수정/미리보기/배포)
+      if (siteCardsBody) {
+        siteCardsBody.innerHTML = ''
+        for (const siteInfo of sitesData) {
+          const row = document.createElement('tr')
+          const nameTd = document.createElement('td')
+          nameTd.style.fontWeight = '600'
+          nameTd.textContent = siteInfo.hospitalName || siteInfo.name
+          const idTd = document.createElement('td')
+          idTd.style.cssText = 'font-size: 12px; color: var(--muted);'
+          idTd.textContent = siteInfo.id
+          const typeTd = document.createElement('td')
+          typeTd.textContent = siteInfo.company ? '—' : (siteInfo.hospitalType || '-')
+          const regionTd = document.createElement('td')
+          regionTd.textContent = siteInfo.company ? '—' : (siteInfo.region || '-')
+          const stateTd = document.createElement('td')
+          if (siteInfo.company) {
+            const badge = document.createElement('span')
+            badge.style.cssText = 'font-weight: 700; color: #1d4ed8;'
+            badge.textContent = '회사 홈페이지 (루트 /)'
+            stateTd.appendChild(badge)
+          } else {
+            stateTd.textContent = STAGE_BADGES[siteInfo.stage] ?? (siteInfo.stage ?? '온보딩 전')
+          }
+          const actionTd = document.createElement('td')
+          actionTd.style.cssText = 'display: flex; gap: 6px; flex-wrap: wrap;'
+          const editBtn = document.createElement('button')
+          editBtn.type = 'button'
+          editBtn.className = 'dash-action-btn'
+          editBtn.textContent = '설정 수정'
+          editBtn.addEventListener('click', () => {
+            if (setSiteSelect) {
+              // 재배포 전 신규 사이트 등 select에 없는 사이트는 옵션을 추가해 선택
+              if (![...setSiteSelect.options].some((option) => option.value === siteInfo.id)) {
+                const option = document.createElement('option')
+                option.value = siteInfo.id
+                option.textContent = siteInfo.id
+                setSiteSelect.appendChild(option)
+              }
+              setSiteSelect.value = siteInfo.id
+              loadSettings()
+              updateCompanyWarning()
+              document.getElementById('settings-form')?.scrollIntoView({ behavior: 'smooth' })
+            }
+          })
+          const previewLink = document.createElement('a')
+          previewLink.className = 'dash-action-btn'
+          previewLink.textContent = '미리보기'
+          previewLink.href = siteInfo.previewPath ?? (siteInfo.company ? '/' : `/sites/${siteInfo.id}/`)
+          previewLink.target = '_blank'
+          previewLink.rel = 'noopener'
+          actionTd.append(editBtn, previewLink)
+          if (!siteInfo.company) {
+            const deployBtn = document.createElement('button')
+            deployBtn.type = 'button'
+            deployBtn.className = 'dash-action-btn'
+            deployBtn.textContent = '배포'
+            deployBtn.addEventListener('click', () => {
+              switchTab('onboarding')
+              openDeployPanel({ siteId: siteInfo.id, hospitalName: siteInfo.hospitalName || siteInfo.name })
+            })
+            actionTd.appendChild(deployBtn)
+          }
+          row.append(nameTd, idTd, typeTd, regionTd, stateTd, actionTd)
+          siteCardsBody.appendChild(row)
+        }
       }
       // 업종 라디오 구성
       if (wizTemplatesHolder) {
@@ -1614,7 +1717,7 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
         }
       }
     } catch {
-      if (siteListLine) siteListLine.textContent = '사이트 목록을 불러오지 못했습니다. (서버 연결 실패)'
+      siteCardsEmpty('사이트 목록을 불러오지 못했습니다. (서버 연결 실패)')
     }
   }
 
@@ -1973,7 +2076,12 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     const applyBtn = textEl('button', '현재 사이트 설정에 적용', 'dash-action-btn dash-publish-btn')
     applyBtn.type = 'button'
     applyBtn.addEventListener('click', async () => {
-      if (!window.confirm('검토를 마쳤으며, 현재 사이트 설정에 적용합니다. 기존 문구가 변경됩니다. 진행할까요?')) return
+      const targetSite = setSiteSelect?.value ?? 'aiseolab'
+      const isCompanySite = targetSite === companySiteId
+      const confirmMessage = isCompanySite
+        ? '⚠ 현재 대상은 AI SEO Lab 회사 홈페이지(루트 /)입니다. 적용하면 루트 홈페이지 문구가 변경됩니다. 병원 사이트를 수정하려면 취소 후 사이트 목록에서 해당 병원을 선택하세요.\n\n검토를 마쳤으며, 회사 홈페이지에 적용합니다. 진행할까요?'
+        : '검토를 마쳤으며, 현재 사이트 설정에 적용합니다. 기존 문구가 변경됩니다. 진행할까요?'
+      if (!window.confirm(confirmMessage)) return
       if (applyBtn.disabled) return
       applyBtn.disabled = true
       aiStatusMessage('적용 중... (GitHub 커밋 생성)')
@@ -2007,7 +2115,7 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
         const response = await fetch('/api/site-settings', {
           method: 'PUT',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ site: setSiteSelect?.value ?? 'aiseolab', sha: settingsSha, settings }),
+          body: JSON.stringify({ site: targetSite, sha: settingsSha, settings, companyConfirmed: isCompanySite }),
         })
         if (response.status === 401) { location.href = '/login'; return }
         const data = await response.json().catch(() => ({}))
@@ -2319,13 +2427,21 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
       const [titleInput, summaryInput] = row.querySelectorAll('input')
       return { title: titleInput?.value ?? '', summary: summaryInput?.value ?? '' }
     })
+    // (분리 가드) 회사 홈페이지(루트 /) 설정 저장은 명시적 확인을 거칩니다.
+    // 병원 사이트 저장은 각자의 config 파일만 수정되어 루트에 반영되지 않습니다.
+    const targetSite = setSiteSelect?.value ?? 'aiseolab'
+    let companyConfirmed = false
+    if (targetSite === companySiteId) {
+      if (!window.confirm('⚠ 지금 저장하면 AI SEO Lab 회사 홈페이지(루트 /)가 변경됩니다.\n병원 사이트를 수정하려면 취소 후 사이트 목록에서 해당 병원을 선택하세요.\n\n회사 홈페이지를 정말 수정할까요?')) return
+      companyConfirmed = true
+    }
     saveBtn.disabled = true
     setStatusMessage('저장 중... (GitHub 커밋 생성)')
     try {
       const response = await fetch('/api/site-settings', {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ site: setSiteSelect?.value ?? 'aiseolab', sha: settingsSha, settings }),
+        body: JSON.stringify({ site: targetSite, sha: settingsSha, settings, companyConfirmed }),
       })
       if (response.status === 401) { location.href = '/login'; return }
       const data = await response.json().catch(() => ({}))

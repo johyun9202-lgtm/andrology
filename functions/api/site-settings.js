@@ -293,6 +293,23 @@ export async function onRequestPut(context) {
   const site = typeof body.site === 'string' && ALLOWED_SITES.includes(body.site) ? body.site : null
   if (!site) return jsonResponse({ ok: false, error: '허용되지 않는 사이트입니다.' }, 400)
 
+  // (분리 가드) 회사 홈페이지(루트 /) 설정은 병원 설정 흐름에서 실수로 저장되지 않도록
+  // 명시적 확인(companyConfirmed)이 있어야만 저장됩니다. 병원 사이트 저장은 각자의
+  // sites/<siteId>/hospital.json 만 수정하므로 루트에 반영될 수 없습니다.
+  const companySite = typeof context.env?.COMPANY_SITE === 'string' && context.env.COMPANY_SITE.trim() !== ''
+    ? context.env.COMPANY_SITE.trim()
+    : 'aiseolab'
+  if (site === companySite && body.companyConfirmed !== true) {
+    return jsonResponse(
+      {
+        ok: false,
+        companySite: true,
+        error: `"${site}"은(는) AI SEO Lab 회사 홈페이지(루트 /) 설정입니다. 병원 사이트를 수정하려면 사이트 목록에서 해당 병원을 선택하세요. 회사 홈페이지를 정말 수정하려면 확인 후 다시 저장해 주세요.`,
+      },
+      400
+    )
+  }
+
   const validated = validateSettings(body.settings)
   if (validated.errors) {
     return jsonResponse({ ok: false, error: validated.errors.slice(0, 3).join(' ') }, 400)

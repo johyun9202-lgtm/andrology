@@ -11,6 +11,14 @@
 
 export const DEFAULT_SITE = 'aiseolab'
 
+// 회사(AI SEO Lab) 자체 홈페이지 사이트 — 루트(/)는 이 사이트로 고정되며,
+// 병원(고객) 사이트 미리보기는 /sites/<siteId>/ 경로에서만 렌더링됩니다.
+// (COMPANY_SITE 환경변수로 재정의 가능 — 기본 aiseolab)
+export const COMPANY_SITE =
+  typeof process !== 'undefined' && process.env && process.env.COMPANY_SITE
+    ? String(process.env.COMPANY_SITE).trim()
+    : 'aiseolab'
+
 // 영문 소문자·숫자·하이픈만 허용 (예: dental-example)
 // 경로 조작(../, 슬래시, 공백 등)은 형식 검사에서 전부 차단됩니다.
 const SITE_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/

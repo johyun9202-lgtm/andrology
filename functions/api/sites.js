@@ -17,7 +17,7 @@ import { SITE_DATA, TEMPLATES, SITE_SCAFFOLD } from '../_lib/site-data.generated
 import { resolveGitHubConfig, githubFetch, githubErrorMessage, utf8ToBase64 } from '../_lib/publisher.js'
 import { safeErrorMessage } from '../_lib/ai-writer.js'
 import { validateOnboardingInput } from '../_lib/onboarding.js'
-import { insertOnboarding } from '../_lib/onboarding-repository.js'
+import { insertOnboarding, getOnboarding } from '../_lib/onboarding-repository.js'
 import { getDb } from '../_lib/db.js'
 
 const SITE_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
@@ -25,22 +25,47 @@ const MAX_SITE_ID_LENGTH = 30
 const MAX_NAME_LENGTH = 60
 const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g
 
-// ---------- GET: 사이트 목록 + 템플릿 목록 (마법사 UI용) ----------
+// 회사(AI SEO Lab) 자체 홈페이지 사이트 — 루트(/)가 이 사이트로 렌더링됩니다.
+export function resolveCompanySite(env) {
+  const raw = typeof env?.COMPANY_SITE === 'string' ? env.COMPANY_SITE.trim() : ''
+  return raw !== '' ? raw : 'aiseolab'
+}
+
+// ---------- GET: 사이트 목록 + 템플릿 목록 (관리 카드·마법사 UI용) ----------
 export async function onRequestGet(context) {
   if (!(await isAuthenticated(context))) {
     return jsonResponse({ ok: false, error: '로그인이 필요합니다.' }, 401)
   }
-  const sites = ALLOWED_SITES.map((id) => {
+  const companySite = resolveCompanySite(context.env)
+  const db = getDb(context)
+  const sites = []
+  for (const id of ALLOWED_SITES) {
     const data = SITE_DATA[id] ?? {}
-    return {
+    let stage = null
+    let hospitalName = data.name ?? id
+    if (db) {
+      const onboarding = await getOnboarding(db, id).catch(() => null)
+      if (onboarding) {
+        stage = onboarding.stage
+        hospitalName = onboarding.hospitalName || hospitalName
+      }
+    }
+    sites.push({
       id,
       name: data.name ?? id,
+      hospitalName,
       template: data.template ?? 'medical',
+      hospitalType: typeof data.hospitalType === 'string' ? data.hospitalType : '',
+      region: typeof data.region === 'string' ? data.region : '',
       siteUrl: typeof data.site?.url === 'string' ? data.site.url : '',
-    }
-  })
+      stage,
+      company: id === companySite,
+      // 병원 사이트는 회사 도메인의 /sites/<id>/ 에서 미리보기 (회사 홈은 루트)
+      previewPath: id === companySite ? '/' : `/sites/${id}/`,
+    })
+  }
   const templates = Object.values(TEMPLATES).map(({ id, name, icon, description }) => ({ id, name, icon, description }))
-  return jsonResponse({ ok: true, sites, templates, defaultSite: 'aiseolab' })
+  return jsonResponse({ ok: true, sites, templates, defaultSite: companySite, companySite })
 }
 
 // ---------- POST: 새 사이트 생성 ----------

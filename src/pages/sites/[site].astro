@@ -1,0 +1,214 @@
+---
+// 병원(고객) 사이트 미리보기 — /sites/<siteId>/
+//
+// - 회사(AI SEO Lab) 빌드에서만 생성됩니다 (고객 사이트 빌드에는 이 경로가 없음)
+// - 각 페이지는 해당 siteId의 config(sites/<siteId>/hospital.json + articles)만 사용
+//   → 병원 A 설정 변경은 /sites/a 에만 반영되고 루트(/)와 다른 병원에 영향 없음
+// - 내부 검수·병원 전달용 미리보기이므로 noindex + sitemap 제외
+//   (실제 서비스는 병원 도메인의 독립 배포에서 제공 — 중복 콘텐츠 방지)
+import { readdirSync } from 'node:fs'
+import { join } from 'node:path'
+import { siteId as buildSiteId } from '../../lib/site-data.js'
+import { COMPANY_SITE } from '../../lib/site-id.js'
+import { loadHospital } from '../../lib/load-hospital.js'
+import { isReal, isValidColor, isValidHttpUrl } from '../../lib/schema.js'
+import { entityArrays } from '../../lib/schema/entity-schema.js'
+import '../../styles/global.css'
+
+export function getStaticPaths() {
+  // 회사 사이트 빌드가 아닐 때(고객 프로젝트 빌드)는 미리보기 페이지를 만들지 않음
+  const currentSite =
+    typeof process !== 'undefined' && process.env && process.env.SITE
+      ? String(process.env.SITE).trim()
+      : 'aiseolab'
+  const company =
+    typeof process !== 'undefined' && process.env && process.env.COMPANY_SITE
+      ? String(process.env.COMPANY_SITE).trim()
+      : 'aiseolab'
+  if (currentSite !== company) return []
+  return readdirSync(join(process.cwd(), 'sites'), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && entry.name !== company)
+    .map((entry) => ({ params: { site: entry.name } }))
+}
+
+const { site } = Astro.params
+const hospital = loadHospital(site)
+const primaryColor = isValidColor(hospital.theme?.primary) ? hospital.theme.primary.trim() : null
+const clientUrl = isValidHttpUrl(hospital.site?.url) ? hospital.site.url.trim().replace(/\/$/, '') : ''
+
+const home = hospital.home ?? {}
+const doctorInfo = hospital.doctor && typeof hospital.doctor === 'object' ? hospital.doctor : null
+const { departments: entityDepartments, doctors: entityDoctors } = entityArrays(hospital)
+const recentArticles = [...(Array.isArray(hospital.articles) ? hospital.articles : [])]
+  .filter((a) => a && typeof a.slug === 'string' && typeof a.title === 'string')
+  .sort((a, b) => String(b.date ?? '').localeCompare(String(a.date ?? '')))
+  .slice(0, 3)
+const faqPreview = (Array.isArray(hospital.faq) ? hospital.faq : []).slice(0, 3)
+const hours = hospital.hours ?? {}
+const sundayValue = hours.sundayHoliday ?? hours.sunday
+const hasHours = [hours.weekday, hours.saturday, sundayValue].some(isReal)
+const channels = hospital.channels ?? {}
+const naverMapUrl = isValidHttpUrl(channels.naverMap) ? channels.naverMap.trim() : null
+const bookingUrl = isValidHttpUrl(channels.naverBooking) ? channels.naverBooking.trim() : null
+---
+
+<!doctype html>
+<html lang="ko" style={primaryColor ? `--accent: ${primaryColor};` : undefined}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{hospital.name} 미리보기 | AI SEO Lab</title>
+    <meta name="description" content={hospital.description} />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <div class="preview-bar">
+      내부 미리보기 — <strong>{hospital.name}</strong> ({site})
+      {clientUrl && <a href={clientUrl} target="_blank" rel="noopener">운영 도메인 열기 →</a>}
+      <a href="/dashboard/">Dashboard로 돌아가기</a>
+    </div>
+
+    <main class="container" style="max-width: 960px; margin: 0 auto; padding: 0 20px;">
+      <section class="section" style="text-align: center; padding-top: 48px;">
+        <h1>{hospital.hero?.title ?? hospital.name}</h1>
+        {isReal(hospital.hero?.subtitle) && <p style="color: var(--muted, #6b7280);">{hospital.hero.subtitle}</p>}
+        <p style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+          {isReal(hospital.phone) && (
+            <a class="btn" href={`tel:${hospital.phone.trim().replace(/\s+/g, '')}`}>전화 상담 {hospital.phone}</a>
+          )}
+          {bookingUrl && <a class="btn" href={bookingUrl} target="_blank" rel="noopener">예약하기</a>}
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>{home.aboutTitle ?? '병원 소개'}</h2>
+        <p>{hospital.description}</p>
+      </section>
+
+      {Array.isArray(hospital.services) && hospital.services.length > 0 && (
+        <section class="section">
+          <h2>{home.servicesTitle ?? '진료과목'}</h2>
+          <div class="card-grid">
+            {hospital.services.map((service) => (
+              <article class="article-item">
+                <h3 style="margin: 0 0 4px;">{service.title}</h3>
+                {isReal(service.summary) && <p style="margin: 0; font-size: 14px;">{service.summary}</p>}
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {entityDepartments.length > 0 && (
+        <section class="section">
+          <h2>주요 진료과</h2>
+          <div class="card-grid">
+            {entityDepartments.slice(0, 6).map((dept) => (
+              <article class="article-item">
+                <h3 style="margin: 0 0 4px;">{dept.name}</h3>
+                {isReal(dept.shortDescription) && <p style="margin: 0; font-size: 14px;">{dept.shortDescription}</p>}
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {(entityDoctors.length > 0 || (doctorInfo && isReal(doctorInfo.name))) && (
+        <section class="section">
+          <h2>의료진</h2>
+          <div class="card-grid">
+            {entityDoctors.slice(0, 6).map((doc) => (
+              <article class="article-item" style="display: flex; gap: 12px; align-items: center;">
+                {isValidHttpUrl(doc.image) ? (
+                  <img src={doc.image.trim()} alt={doc.imageAlt || `${doc.name} 사진`} loading="lazy" style="width: 52px; height: 52px; object-fit: cover; border-radius: 10px;" />
+                ) : (
+                  <div aria-hidden="true" style="width: 52px; height: 52px; border-radius: 10px; background: #eff6ff; color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700;">{doc.name.slice(0, 1)}</div>
+                )}
+                <div>
+                  <h3 style="margin: 0;">{doc.name}</h3>
+                  {isReal(doc.title) && <p style="margin: 0; font-size: 13px; color: var(--muted, #6b7280);">{doc.title}</p>}
+                </div>
+              </article>
+            ))}
+            {entityDoctors.length === 0 && doctorInfo && isReal(doctorInfo.name) && (
+              <article class="article-item">
+                <h3 style="margin: 0;">{doctorInfo.name} <span style="font-weight: 400; font-size: 13px;">{doctorInfo.title ?? '대표원장'}</span></h3>
+                {isReal(doctorInfo.bio) && <p style="margin: 4px 0 0; font-size: 14px;">{doctorInfo.bio}</p>}
+              </article>
+            )}
+          </div>
+        </section>
+      )}
+
+      {recentArticles.length > 0 && (
+        <section class="section">
+          <h2>{home.articlesTitle ?? '최근 칼럼'}</h2>
+          <div class="article-list">
+            {recentArticles.map((article) => (
+              <article class="article-item">
+                {clientUrl ? (
+                  <h3 style="margin: 0 0 4px;"><a href={`${clientUrl}/articles/${article.slug}/`} target="_blank" rel="noopener">{article.title}</a></h3>
+                ) : (
+                  <h3 style="margin: 0 0 4px;">{article.title}</h3>
+                )}
+                {isReal(article.summary) && <p style="margin: 0; font-size: 14px;">{article.summary}</p>}
+                <p class="meta" style="font-size: 12px; color: var(--muted, #6b7280);">{article.date}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {(hasHours || isReal(hospital.address) || isReal(hospital.phone)) && (
+        <section class="section">
+          <h2>진료 시간 및 위치</h2>
+          <div class="article-item">
+            {hasHours && (
+              <p style="margin: 0 0 8px;">
+                {isReal(hours.weekday) && <>평일 {hours.weekday}<br /></>}
+                {isReal(hours.saturday) && <>토요일 {hours.saturday}<br /></>}
+                {isReal(sundayValue) && <>일요일·공휴일 {sundayValue}</>}
+              </p>
+            )}
+            {isReal(hospital.address) && <p style="margin: 0 0 8px;">주소: {hospital.address}</p>}
+            {isReal(hospital.phone) && <p style="margin: 0 0 8px;">전화: {hospital.phone}</p>}
+            {naverMapUrl && <p style="margin: 0;"><a href={naverMapUrl} target="_blank" rel="noopener">네이버 지도에서 보기 →</a></p>}
+          </div>
+        </section>
+      )}
+
+      {faqPreview.length > 0 && (
+        <section class="section">
+          <h2>자주 묻는 질문</h2>
+          {faqPreview.map((item) => (
+            <details class="article-item" style="margin-bottom: 8px;">
+              <summary style="cursor: pointer; font-weight: 600;">{item.question}</summary>
+              <p style="margin: 8px 0 0;">{item.answer}</p>
+            </details>
+          ))}
+        </section>
+      )}
+
+      <footer class="section" style="text-align: center; font-size: 12px; color: var(--muted, #6b7280); border-top: 1px solid var(--border, #e5e7eb);">
+        이 페이지는 AI SEO Lab 내부 미리보기입니다. 실제 서비스는 병원 도메인의 독립 배포에서 제공되며, 검색엔진에 노출되지 않습니다(noindex).
+      </footer>
+    </main>
+  </body>
+</html>
+
+<style>
+  .preview-bar {
+    background: #111827;
+    color: #f9fafb;
+    font-size: 13px;
+    padding: 8px 16px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .preview-bar a {
+    color: #93c5fd;
+  }
+</style>
