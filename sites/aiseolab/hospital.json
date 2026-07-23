@@ -27,16 +27,16 @@
   },
   "doctor": "미정",
   "hero": {
-    "title": "AI SEO 자동화 플랫폼",
-    "subtitle": "AI가 콘텐츠를 생성하고, SEO를 자동 검증하며, 여러 사이트를 하나의 엔진으로 운영합니다.",
+    "title": "AI SEO Lab",
+    "subtitle": "AI 기반 병원 SEO 자동화 운영 플랫폼",
     "buttons": [
       {
-        "label": "데모 보기",
-        "href": "/services"
+        "label": "Dashboard 시작하기",
+        "href": "/dashboard"
       },
       {
-        "label": "문의하기",
-        "href": "/contact"
+        "label": "기능 보기",
+        "href": "#features"
       }
     ]
   },
@@ -46,34 +46,24 @@
   },
   "services": [
     {
+      "slug": "hospital-site",
+      "title": "병원 홈페이지 생성",
+      "summary": "병원 정보를 입력하면 SEO에 최적화된 홈페이지를 자동으로 생성합니다."
+    },
+    {
       "slug": "ai-content",
       "title": "AI 콘텐츠 생성",
-      "summary": "검증 파이프라인을 거친 AI 기반 SEO 콘텐츠 자동 생성"
+      "summary": "검증 파이프라인을 거친 AI 기반 SEO 콘텐츠를 자동으로 생성합니다."
     },
     {
-      "slug": "seo-validation",
-      "title": "SEO 자동 검증",
-      "summary": "빌드 전 필수 SEO 항목을 자동 검사해 잘못된 배포를 차단"
+      "slug": "seo-automation",
+      "title": "SEO 자동화",
+      "summary": "빌드 전 필수 SEO 항목을 자동 검사하고 구조화 데이터를 자동으로 생성합니다."
     },
     {
-      "slug": "multi-site",
-      "title": "멀티사이트 운영",
-      "summary": "하나의 엔진으로 여러 사이트를 생성·운영하는 자동화 구조"
-    },
-    {
-      "slug": "schema-auto",
-      "title": "Schema 자동 생성",
-      "summary": "구조화 데이터(JSON-LD)를 사이트 데이터 기반으로 자동 생성"
-    },
-    {
-      "slug": "sitemap-auto",
-      "title": "Sitemap 자동 생성",
-      "summary": "페이지 추가 시 사이트맵을 빌드 단계에서 자동 갱신"
-    },
-    {
-      "slug": "canonical-auto",
-      "title": "Canonical 자동 관리",
-      "summary": "모든 페이지의 정본 주소를 도메인 설정 한 곳에서 자동 관리"
+      "slug": "auto-deploy",
+      "title": "자동 배포",
+      "summary": "콘텐츠 승인부터 실제 사이트 배포까지 자동화된 파이프라인으로 처리합니다."
     }
   ],
   "faq": [
@@ -135,7 +125,47 @@
     "goalText": "AI를 활용하여 SEO 운영 비용을 줄이고 검색 노출을 자동화하는 것이 목표입니다.",
     "servicesTitle": "핵심 기능",
     "contactTitle": "문의",
-    "contactComingSoon": true
+    "contactComingSoon": true,
+    "workflowTitle": "어떻게 동작하나요?",
+    "workflow": [
+      {
+        "title": "병원 정보 입력",
+        "description": "병원명, 진료과목, 연락처 등 기본 정보를 입력합니다."
+      },
+      {
+        "title": "AI 콘텐츠 자동 생성",
+        "description": "AI가 SEO에 최적화된 홈페이지와 콘텐츠 초안을 자동으로 생성합니다."
+      },
+      {
+        "title": "자동 SEO 검증",
+        "description": "구조화 데이터, 메타 정보 등 필수 SEO 항목을 빌드 단계에서 자동으로 검사합니다."
+      },
+      {
+        "title": "자동 배포",
+        "description": "검증을 통과한 콘텐츠만 실제 사이트에 자동으로 배포됩니다."
+      }
+    ],
+    "whyTitle": "Why AI SEO Lab",
+    "why": [
+      {
+        "title": "완전 자동화 파이프라인",
+        "description": "콘텐츠 생성부터 SEO 검증, 배포까지 하나의 엔진으로 처리합니다."
+      },
+      {
+        "title": "멀티사이트 운영",
+        "description": "여러 병원 사이트를 하나의 Dashboard에서 함께 관리합니다."
+      },
+      {
+        "title": "안전한 배포",
+        "description": "필수 SEO 항목을 통과하지 못한 콘텐츠는 배포되지 않습니다."
+      },
+      {
+        "title": "운영자 검토 기반 게시",
+        "description": "AI가 생성한 콘텐츠는 운영자가 검토·승인한 뒤에만 게시됩니다."
+      }
+    ],
+    "ctaTitle": "지금 Dashboard에서 시작해보세요",
+    "ctaText": "AI SEO Lab Dashboard에 로그인하면 병원 사이트 생성부터 콘텐츠 발행까지 바로 시작할 수 있습니다."
   },
   "footer": {
     "tagline": "AI SEO Automation Platform"

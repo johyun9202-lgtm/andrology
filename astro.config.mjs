@@ -11,8 +11,8 @@ export default defineConfig({
   trailingSlash: 'ignore',
   integrations: [
     sitemap({
-      // 관리자용 페이지는 사이트맵에서 제외 (검색 노출 대상 아님)
-      filter: (page) => !page.includes('/dashboard') && !page.includes('/login'),
+      // 관리자용 페이지·병원 미리보기(/sites/)는 사이트맵에서 제외 (검색 노출 대상 아님)
+      filter: (page) => !page.includes('/dashboard') && !page.includes('/login') && !page.includes('/sites/'),
     }),
   ],
   build: {

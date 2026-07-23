@@ -4,15 +4,21 @@ import Hero from '../components/Hero.astro'
 import ServiceCard from '../components/ServiceCard.astro'
 import FaqList from '../components/FaqList.astro'
 import ContactBox from '../components/ContactBox.astro'
-import { siteData as hospital } from '../lib/site-data.js'
+import { siteData as hospital, siteId } from '../lib/site-data.js'
 import { buildFaqSchema, isReal, isValidHttpUrl } from '../lib/schema.js'
 import { getTemplate } from '../lib/templates.js'
+import { entityArrays } from '../lib/schema/entity-schema.js'
+import { COMPANY_SITE } from '../lib/site-id.js'
 
 const faqPreview = hospital.faq.slice(0, 3)
 const faqSchema = buildFaqSchema(hospital.faq)
 
 // 사이트 데이터의 home 설정으로 홈 섹션 제목·구성을 바꿀 수 있습니다. (없으면 기존 그대로)
 const home = hospital.home ?? {}
+
+// 회사(AI SEO Lab) 자체 홈페이지인지 여부 — 병원 전용 섹션(진료과·의료진·진료시간 등)은
+// 회사 홈페이지에서는 데이터 유무와 무관하게 항상 숨깁니다. (병원 사이트는 기존 동작 그대로)
+const isCompanySite = siteId === COMPANY_SITE
 
 // ---------- 업종 템플릿 (Phase 10) ----------
 // 로더가 결정한 template(없으면 'medical')을 Registry에서 읽어옵니다.
@@ -46,14 +52,114 @@ const recentArticles = [...(Array.isArray(hospital.articles) ? hospital.articles
   .sort((a, b) => String(b.date ?? '').localeCompare(String(a.date ?? '')))
   .slice(0, 3)
 
+// 엔티티(진료과·의료진, Phase 13) — 데이터가 있을 때만 섹션 렌더링
+const { departments: entityDepartments, doctors: entityDoctors } = entityArrays(hospital)
+
 const hours = hospital.hours ?? {}
 const sundayValue = hours.sundayHoliday ?? hours.sunday
 const hasHours = [hours.weekday, hours.saturday, sundayValue].some(isReal)
 const naverMapUrl = isValidHttpUrl(hospital.channels?.naverMap) ? hospital.channels.naverMap.trim() : null
 const hasLocation = hasHours || isReal(hospital.address) || isReal(hospital.phone) || !!naverMapUrl
+
+// ---------- 회사(AI SEO Lab) 랜딩페이지 전용 데이터 (Phase 17) ----------
+// 병원 사이트에는 전혀 영향을 주지 않는, isCompanySite 분기 안에서만 쓰이는 값입니다.
+// home.workflow / home.why / home.ctaTitle / home.ctaText가 없으면 안전한 기본값을 사용합니다.
+const heroButtons = Array.isArray(hospital.hero?.buttons) ? hospital.hero.buttons : []
+const heroPrimaryButton = heroButtons[0] ?? { label: 'Dashboard 시작하기', href: '/dashboard' }
+const platformTagline = isReal(hospital.footer?.tagline) ? hospital.footer.tagline : 'AI SEO Automation Platform'
+const featureIcons = { 'hospital-site': '🏥', 'ai-content': '✍️', 'seo-automation': '🔍', 'auto-deploy': '🚀' }
+const workflowSteps = Array.isArray(home.workflow) && home.workflow.length > 0 ? home.workflow : []
+const whyPoints = Array.isArray(home.why) && home.why.length > 0 ? home.why : []
 ---
 
-<BaseLayout description={seoDescription} jsonLd={faqSchema} titleOverride={titleOverride} keywords={seoKeywords}>
+<BaseLayout
+  description={seoDescription}
+  jsonLd={isCompanySite ? undefined : faqSchema}
+  titleOverride={titleOverride}
+  keywords={seoKeywords}
+>
+{isCompanySite ? (
+  <>
+    {/* ===================== Hero ===================== */}
+    <section style="text-align: center; padding: 64px 16px 56px; margin: 0 0 8px; background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%); border-radius: 16px;">
+      <p style="display: inline-block; padding: 6px 14px; border-radius: 999px; background: #dbeafe; color: var(--accent); font-weight: 600; font-size: 13px; margin: 0 0 18px;">{platformTagline}</p>
+      <h1 style="font-size: clamp(32px, 6vw, 48px); margin: 0 0 14px;">{hospital.hero.title}</h1>
+      <p style="font-size: 19px; color: var(--text-strong); font-weight: 600; max-width: 620px; margin: 0 auto 14px;">{hospital.hero.subtitle}</p>
+      <p style="font-size: 16px; color: var(--muted); max-width: 560px; margin: 0 auto 32px;">{hospital.description}</p>
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        {heroButtons.map((button, index) => (
+          <a
+            href={button.href}
+            style={index === 0
+              ? 'display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 12px 28px; border-radius: 10px; font-weight: 700; font-size: 16px; background: var(--accent); color: #fff;'
+              : 'display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 12px 28px; border-radius: 10px; font-weight: 700; font-size: 16px; border: 1px solid var(--border); color: var(--text-strong); background: #fff;'}
+          >
+            {button.label}
+          </a>
+        ))}
+      </div>
+    </section>
+
+    {/* ===================== Features ===================== */}
+    <section id="features" class="section" style="padding-top: 8px;">
+      <h2 style="text-align: center; font-size: 28px; margin: 0 0 8px;">{home.servicesTitle ?? '핵심 기능'}</h2>
+      <p style="text-align: center; color: var(--muted); margin: 0 0 32px;">병원 홈페이지 제작부터 콘텐츠, SEO, 배포까지 하나의 플랫폼에서 자동화합니다.</p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px;">
+        {hospital.services.map((service) => (
+          <article style="border: 1px solid var(--border); border-radius: 12px; padding: 24px; background: #fff;">
+            <div style="font-size: 28px; margin: 0 0 12px;" aria-hidden="true">{featureIcons[service.slug] ?? '⚙️'}</div>
+            <h3 style="margin: 0 0 8px; font-size: 17px;">{service.title}</h3>
+            <p style="margin: 0; font-size: 14px; color: var(--muted);">{service.summary}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    {/* ===================== Workflow ===================== */}
+    {workflowSteps.length > 0 && (
+      <section class="section" style="background: #f9fafb; border-radius: 16px; padding: 48px 24px;">
+        <h2 style="text-align: center; font-size: 28px; margin: 0 0 32px;">{home.workflowTitle ?? '어떻게 동작하나요?'}</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; max-width: 960px; margin: 0 auto;">
+          {workflowSteps.map((step, index) => (
+            <div style="text-align: center;">
+              <div style="width: 40px; height: 40px; border-radius: 999px; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 auto 12px;">{index + 1}</div>
+              <h3 style="margin: 0 0 6px; font-size: 16px;">{step.title}</h3>
+              <p style="margin: 0; font-size: 14px; color: var(--muted);">{step.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    )}
+
+    {/* ===================== Why AI SEO Lab ===================== */}
+    {whyPoints.length > 0 && (
+      <section class="section">
+        <h2 style="text-align: center; font-size: 28px; margin: 0 0 32px;">{home.whyTitle ?? 'Why AI SEO Lab'}</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; max-width: 900px; margin: 0 auto;">
+          {whyPoints.map((point) => (
+            <div style="display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
+              <span aria-hidden="true" style="flex-shrink: 0; width: 24px; height: 24px; border-radius: 999px; background: #dcfce7; color: #16a34a; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;">✓</span>
+              <div>
+                <h3 style="margin: 0 0 4px; font-size: 16px;">{point.title}</h3>
+                <p style="margin: 0; font-size: 14px; color: var(--muted);">{point.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    )}
+
+    {/* ===================== CTA ===================== */}
+    <section class="section" style="text-align: center; background: var(--accent); color: #fff; border-radius: 16px; padding: 56px 24px;">
+      <h2 style="color: #fff; font-size: 26px; margin: 0 0 12px;">{home.ctaTitle ?? '지금 Dashboard에서 시작해보세요'}</h2>
+      <p style="color: #dbeafe; max-width: 480px; margin: 0 auto 28px;">{home.ctaText ?? 'AI SEO Lab Dashboard에 로그인하면 병원 사이트 생성부터 콘텐츠 발행까지 바로 시작할 수 있습니다.'}</p>
+      <a href={heroPrimaryButton.href} style="display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 12px 32px; border-radius: 10px; font-weight: 700; font-size: 16px; background: #fff; color: var(--accent);">
+        {heroPrimaryButton.label}
+      </a>
+    </section>
+  </>
+) : (
+  <>
   <Hero />
 
   <section class="section">
@@ -76,7 +182,48 @@ const hasLocation = hasHours || isReal(hospital.address) || isReal(hospital.phon
     </div>
   </section>
 
-  {doctorInfo && isReal(doctorInfo.name) && (
+  {entityDepartments.length > 0 && (
+    <section class="section">
+      <h2>주요 진료과</h2>
+      <div class="card-grid">
+        {entityDepartments.slice(0, 6).map((dept) => (
+          <a href={`/departments/${dept.id}/`} class="article-item-link">
+            <article class="article-item">
+              <h3 style="margin: 0 0 4px;">{dept.name}</h3>
+              {isReal(dept.shortDescription) && <p style="margin: 0; font-size: 14px; color: var(--muted);">{dept.shortDescription}</p>}
+            </article>
+          </a>
+        ))}
+      </div>
+      <p><a href="/departments/">진료과 전체 보기 →</a></p>
+    </section>
+  )}
+
+  {!isCompanySite && entityDoctors.length > 0 && (
+    <section class="section">
+      <h2>의료진 소개</h2>
+      <div class="card-grid">
+        {entityDoctors.slice(0, 6).map((doc) => (
+          <a href={`/doctors/${doc.id}/`} class="article-item-link">
+            <article class="article-item" style="display: flex; gap: 14px; align-items: center;">
+              {isValidHttpUrl(doc.image) ? (
+                <img src={doc.image.trim()} alt={doc.imageAlt || `${doc.name} 사진`} loading="lazy" style="width: 60px; height: 60px; object-fit: cover; border-radius: 12px; flex-shrink: 0;" />
+              ) : (
+                <div aria-hidden="true" style="width: 60px; height: 60px; border-radius: 12px; flex-shrink: 0; background: var(--accent-bg, #eff6ff); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700;">{doc.name.slice(0, 1)}</div>
+              )}
+              <div>
+                <h3 style="margin: 0 0 4px;">{doc.name}</h3>
+                {isReal(doc.title) && <p style="margin: 0; font-size: 14px; color: var(--muted);">{doc.title}</p>}
+              </div>
+            </article>
+          </a>
+        ))}
+      </div>
+      <p><a href="/doctors/">의료진 전체 보기 →</a></p>
+    </section>
+  )}
+
+  {!isCompanySite && doctorInfo && isReal(doctorInfo.name) && (
     <section class="section">
       <h2>의료진 소개</h2>
       <div class="article-item" style="display: flex; gap: 16px; align-items: flex-start;">
@@ -117,7 +264,7 @@ const hasLocation = hasHours || isReal(hospital.address) || isReal(hospital.phon
     </section>
   )}
 
-  {hasLocation && (
+  {!isCompanySite && hasLocation && (
     <section class="section">
       <h2>진료 시간 및 위치</h2>
       <div class="article-item">
@@ -152,4 +299,6 @@ const hasLocation = hasHours || isReal(hospital.address) || isReal(hospital.phon
   <section class="section">
     <ContactBox />
   </section>
+  </>
+)}
 </BaseLayout>
