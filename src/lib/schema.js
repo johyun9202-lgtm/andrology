@@ -85,6 +85,23 @@ export function buildChannels(hospital) {
   return result
 }
 
+// JSON-LD를 <script type="application/ld+json"> 안에 안전하게 삽입하기 위한 직렬화.
+//
+// 배경: Astro의 set:html은 이스케이프를 하지 않고, JSON.stringify도 "</script>"
+// 시퀀스를 이스케이프하지 않습니다. 저장된 값(예: 의료진 소개, 진료과 설명)에
+// "</script><script>...")가 포함되면 태그가 그대로 끊기고 뒤의 내용이 별도
+// 스크립트로 실행되는 저장형 XSS가 발생할 수 있습니다.
+// 해결: JSON 문자열 안의 <, >, & 를 유니코드 이스케이프(< 등)로 바꿔
+// "</script"라는 리터럴 시퀀스 자체가 출력에 나타나지 않도록 합니다.
+// JSON 파서(및 검색엔진의 schema.org 파서)는 <를 다시 "<"로 정상 해석하므로
+// 실제 데이터 의미는 전혀 바뀌지 않습니다.
+export function safeJsonLdString(value) {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+}
+
 // 사이트 대표 구조화 데이터는 Schema Engine으로 이동했습니다.
 // → src/lib/schema/generate-schema.js (schema.type 기반 타입 선택)
 

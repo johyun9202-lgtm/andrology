@@ -3,7 +3,7 @@ import { site } from '../config/site.js'
 import { siteData as hospital } from '../lib/site-data.js'
 import Header from '../components/Header.astro'
 import Footer from '../components/Footer.astro'
-import { isValidColor } from '../lib/schema.js'
+import { isValidColor, safeJsonLdString } from '../lib/schema.js'
 import { generateSiteSchema } from '../lib/schema/generate-schema.js'
 import '../styles/global.css'
 
@@ -55,9 +55,10 @@ const primaryColor = isValidColor(hospital.theme?.primary) ? hospital.theme.prim
     {ogImageUrl && <meta property="og:image" content={ogImageUrl} />}
 
     <!-- 구조화 데이터 (JSON-LD) -->
-    <script type="application/ld+json" set:html={JSON.stringify(clinicSchema)} />
+    <!-- safeJsonLdString: </script> 시퀀스를 이스케이프해 저장형 XSS를 차단합니다 (src/lib/schema.js 참고) -->
+    <script type="application/ld+json" set:html={safeJsonLdString(clinicSchema)} />
     {extraSchemas.map((schema) => (
-      <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+      <script type="application/ld+json" set:html={safeJsonLdString(schema)} />
     ))}
   </head>
   <body>

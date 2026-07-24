@@ -39,11 +39,18 @@ export const LIMITS = {
 const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g
 const clean = (v) => String(v ?? '').replace(CONTROL_CHARS, '').trim()
 
+// (보안 참고) 이전에는 여기서 /<script|javascript:|onerror=.../i 같은 블랙리스트로
+// 문자열을 거부했습니다. 이 방식은 두 가지 문제가 있었습니다.
+//   1) 우회 가능 — onload=, </script> 등 목록에 없는 패턴은 그대로 통과됨
+//   2) 정상 의료 정보 오탐 위험 — 괄호/슬래시/&/따옴표 등을 쓰는 정상 문구가
+//      우연히 패턴에 걸리면 저장 자체가 막힘
+// 실제 저장형 XSS 방지는 "입력을 막는 것"이 아니라 "출력할 때 안전하게 이스케이프하는 것"이
+// 원칙이므로, 이 필드들이 JSON-LD로 출력되는 지점(src/layouts/BaseLayout.astro)에서
+// safeJsonLdString()으로 이스케이프합니다. 여기서는 타입/길이만 검증합니다.
 function text(errors, value, label, { max, required = false } = {}) {
   const cleaned = clean(value)
   if (required && cleaned === '') errors.push(`${label}은(는) 비워둘 수 없습니다.`)
   if (max && cleaned.length > max) errors.push(`${label}은(는) ${max}자 이내여야 합니다.`)
-  if (/<script|javascript:|onerror=|onclick=|<iframe/i.test(cleaned)) errors.push(`${label}에 허용되지 않는 스크립트 패턴이 있습니다.`)
   return cleaned
 }
 
