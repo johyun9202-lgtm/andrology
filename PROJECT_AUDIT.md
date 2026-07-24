@@ -1,9 +1,41 @@
-# AI SEO Lab — 프로젝트 감사 보고서 (읽기 전용)
+# AI SEO Lab — 프로젝트 감사 보고서
 
-- 작성일: 2026-07-23
-- 조사 방법: 코드 정적 분석(Read/Grep/Glob) + 읽기 전용 git 명령만 사용. **이 보고서 작성 과정에서 코드/데이터를 수정하거나 git commit/push를 실행하지 않았습니다.**
+- 최초 작성일: 2026-07-23 (읽기 전용 조사)
+- **갱신일: 2026-07-24 — §0(작업 이력·Git 상태), §9(보안 항목 해결), §11/§12(결정 필요 사항 갱신), 요약표를 이번 세션 작업 반영해 업데이트. 나머지 섹션은 최초 작성 시점 조사 내용을 그대로 유지합니다.**
+- 조사 방법: 코드 정적 분석(Read/Grep/Glob) + git 명령. 최초 작성은 100% 읽기 전용으로 진행했고, 이후 갱신분(§0/§9/§11/§12/요약표)은 실제로 완료된 코드 변경·커밋·병합 이력을 반영한 것입니다.
 - 대상 저장소: `andrology` (Astro 7 + Cloudflare Pages Functions + Cloudflare D1 + GitHub Contents API 기반)
 - 확인된 사실과 추정을 구분해 표기했습니다. 근거 없는 추측은 "추정"이라고 명시했고, 코드를 직접 읽고 확인한 내용만 "확인됨"으로 적었습니다.
+
+---
+
+## 0. 2026-07-23~24 작업 이력 및 현재 Git 상태 (신규)
+
+이 감사 문서가 처음 작성된 시점 이후, §9에서 지적된 보안 위험 2건을 실제로 수정하고, 당시 76개 파일에 걸쳐 미커밋 상태였던 작업 전체를 기능 단위로 정리해 커밋했습니다. 그 과정에서 **이 세션과 무관한 다른 경로로 origin/main에 이미 반영된 커밋 3개**를 발견해 병합까지 완료했습니다. 아래는 그 경과와 현재 상태입니다.
+
+**1) 미커밋 작업 정리 (13개 커밋)**
+
+| 커밋 | 내용 |
+|---|---|
+| `cfc13ea` | 엔티티 SEO(진료과·의료진 CRUD + 공개 페이지) |
+| `5b579e2` | 병원 온보딩 워크플로우 |
+| `5ef4608` | 회사 홈페이지/병원 사이트 분리(`COMPANY_SITE`) + SaaS 랜딩페이지 재설계 |
+| `4636815` | 병원 사이트 내부 미리보기 라우트(`/sites/<id>/`) |
+| `f84f389` | Dashboard 7탭 개편 |
+| `5dbd083` | Open Graph 이미지 메타 지원 |
+| `bc535f0` | 이 감사 문서(PROJECT_AUDIT.md) 최초 버전 커밋 |
+| `fc0c2d7`/`a7518fd`/`4cd8888`/`f06e5d1` | 병원 정보 임포트 / 도메인 연결 / 배포 엔진 / SEO 운영센터 |
+| `2f03eee` | **§9-1 저장형 XSS 방어**(아래 상세) |
+| `30fe5d0` | **§9-2 로그인 브루트포스 방어**(아래 상세) |
+
+**2) origin/main 분기 발견 및 병합**
+
+fetch 결과 origin/main에는 이 세션과 무관하게 이미 push된 커밋 3개(`062c300` Phase13-16 완성분, `a822081` aiseolab 설정 변경, `972238f` 회사/병원 분리 — Dashboard의 실제 운영 화면을 통해 저장된 것으로 추정)가 있었습니다. 대표님 확인 결과 `a822081`이 담고 있던 aiseolab(회사) 사이트의 전화번호("062-123-1234")·주소·원장명·"남성 전문 비뇨기과" 문구는 **테스트용 더미 데이터**였습니다.
+
+두 이력을 전수 비교한 결과 70개 공통 변경 파일 중 65개는 완전히 동일했고, 실제로 내용이 다른 파일은 5개(`sites/aiseolab/hospital.json`, `src/pages/index.astro`, `functions/_lib/entities.js`, `src/layouts/BaseLayout.astro`, `src/pages/dashboard.astro`)뿐이었습니다. `git merge origin/main`(force push 없이, 양쪽 이력 보존)으로 병합했고, 대표님 지시에 따라 5개 파일 모두 **로컬 버전(SaaS 랜딩페이지 + 보안 수정 + Dashboard 개편)을 채택**했습니다(병합 커밋 `637df2c`). 병합 직후 두 사이트 빌드와 보안 회귀 테스트 24개를 재실행해 이상 없음을 확인했습니다. 이 병합 과정에서 사용한 백업 브랜치 `backup/pre-merge-local-main-20260724-0056`은 그대로 보존되어 있습니다.
+
+**3) 현재 Git 상태 — 중요: 아직 GitHub에 반영되지 않음**
+
+로컬 `main`은 `origin/main`보다 14개 커밋(위 13개 + 병합 커밋) 앞서 있으나, **이 작업 환경(클라우드 샌드박스)에 GitHub 쓰기 인증 수단이 구성되어 있지 않아 `git push`가 실패한 상태**입니다(SSH 클라이언트 미설치, HTTPS 자격증명 헬퍼 미구성). 즉 **아래 §9의 보안 수정을 포함해 이번에 정리된 모든 작업은 아직 실제 배포(Cloudflare Pages)에 반영되지 않았습니다.** push 인증 문제를 해결하고 push를 완료하기 전까지는 운영 중인 실제 사이트가 이 문서의 "해결됨" 표시와 다른(구버전) 상태일 수 있다는 점에 유의해야 합니다.
 
 ---
 
@@ -49,12 +81,12 @@
 
 | 메서드+경로 | 목적 | 파일 경로 | 데이터/외부 API | 비고 |
 |---|---|---|---|---|
-| POST `/api/auth/login` | 로그인, 세션 발급 | `auth/login.js` | ADMIN_PASSWORD/SESSION_SECRET | timing-safe 비교. **브루트포스 잠금 없음(§9)** |
+| POST `/api/auth/login` | 로그인, 세션 발급 | `auth/login.js` | ADMIN_PASSWORD/SESSION_SECRET | timing-safe 비교. D1 기반 브루트포스 방어(고정 윈도우 레이트리밋, §9-2) 구현됨 — **단, 아직 push되지 않아 실제 배포에는 미반영(§0-3)** |
 | POST `/api/auth/logout` | 세션 만료 | `auth/logout.js` | 없음 | — |
 | GET `/api/auth/session` | 로그인 여부 확인 | `auth/session.js` | 세션 쿠키 | — |
 | GET/POST `/api/sites` | 사이트 목록 조회 / 새 병원 생성 | `sites.js` | D1 + GitHub 커밋 | 생성은 GitHub sha-없는 PUT으로 동시생성 충돌 자동 차단 |
 | GET/PUT `/api/site-settings` | 병원(회사) 설정 조회/저장 | `site-settings.js` | GitHub Contents API | sha 낙관적 잠금, 저장 전 SEO 검사 필수(422), 회사 사이트는 `companyConfirmed` 별도 확인 |
-| GET/PUT `/api/entities` | 진료과·의료진 조회/저장 | `entities.js` | GitHub Contents API | medical 템플릿만. **블랙리스트 검증 우회 가능(§9 XSS)** |
+| GET/PUT `/api/entities` | 진료과·의료진 조회/저장 | `entities.js` | GitHub Contents API | medical 템플릿만. 입력 블랙리스트를 제거하고 출력 단계(JSON-LD `safeJsonLdString()`)에서 이스케이프하는 방식으로 저장형 XSS 방어(§9-1) — **단, 아직 push되지 않아 실제 배포에는 미반영(§0-3)** |
 | GET `/api/onboarding` | 전체 온보딩 목록 | `onboarding.js` | D1 | — |
 | GET/PUT `/api/onboarding/:site` | 개별 온보딩 조회/저장 | `onboarding/[site].js` | D1 + GitHub(존재 확인) | allowlist 미등록 신규 사이트도 저장소 실존 시 허용 |
 | GET/POST `/api/import` | Import 이력 조회 / 크롤링 실행 | `import.js` | D1 + 외부 URL 크롤링 | medical만. 관리자 인증 필요하지만 서버가 임의 외부 URL을 fetch하는 구조 |
@@ -156,7 +188,7 @@
 | `sites/<id>/articles/<slug>.json` | GitHub 저장소(개별 게시 아티클, Phase 7.5 신규 방식) | `load-hospital.js`가 hospital.json의 `articles[]`와 병합(결정적 순서, slug 중복 시 빌드 실패) |
 | entity(진료과 `departments[]`/의료진 `doctors[]`) | `hospital.json` 최상위 필드(현재 두 사이트 모두 비어있음) | `/api/entities`, `entity-schema.js`(JSON-LD), `/departments`·`/doctors` 페이지 |
 | 업종 템플릿 | `templates/<id>/template.json` (6종: medical/academy/lawyer/restaurant/shopping + 스캐폴드용 hospital) | `src/lib/templates.js`, 현재 전 템플릿이 동일 medical 렌더링 공유(업종별 UI는 미구현) |
-| Cloudflare D1 (9개 마이그레이션, 10개 테이블) | 내부 운영 데이터 전용(공개 콘텐츠 아님) | 아래 표 |
+| Cloudflare D1 (10개 마이그레이션, 11개 테이블) | 내부 운영 데이터 전용(공개 콘텐츠 아님) | 아래 표 |
 | GitHub 커밋 | `functions/_lib/publisher.js` (Contents API, sha 낙관적 잠금) | site-settings/entities/sites/jobs-article/import-apply 등 모든 콘텐츠 쓰기 경로 |
 
 **D1 테이블**:
@@ -169,6 +201,7 @@
 | `domain_connections` | 0007 | 도메인 연결 상태, DNS 기대/실제 레코드, `deploy_ready` |
 | `deploy_jobs`, `site_deploy_config` | 0008 | 배포 이력(사전검사/결과/검증 JSON), 사이트별 배포 설정 |
 | `seo_check_runs`, `seo_findings`, `seo_tasks`, `site_seo_settings` | 0009 | SEO 점검 이력, 발견사항, 작업, 사이트별 점검 설정 |
+| `login_rate_limit` | 0010 | 로그인 반복 시도 방어(IP별 고정 윈도우 카운터, §9-2) |
 
 시크릿(GITHUB_TOKEN, ANTHROPIC_API_KEY 등)은 D1에 저장되지 않습니다(코드 확인됨).
 
@@ -214,9 +247,9 @@
 
 ## 9. 중복 기능이나 구조적으로 위험한 부분
 
-**높음 — 저장형 XSS 가능성(확인됨)**: `functions/_lib/entities.js:46`의 입력 검증이 `/<script|javascript:|onerror=|onclick=|<iframe/i` 블랙리스트 방식인데, `onload=`나 `</script>` 같은 패턴은 걸러내지 못합니다. 이 값은 `entity-schema.js`의 `buildPersonSchema`/`buildDepartmentSchema`를 거쳐 `/doctors/[slug]`, `/departments/[slug]` 공개 페이지의 `BaseLayout.astro:58,60` — `<script type="application/ld+json" set:html={JSON.stringify(schema)}>`로 이스케이프 없이 그대로 출력됩니다(직접 확인함: `set:html`은 Astro에서 HTML 이스케이프를 하지 않는 API). 의료진/진료과 이름에 `</script><script>...</script>` 형태의 값을 넣으면 JSON-LD `<script>` 태그가 조기 종료되고 뒤의 스크립트가 실제로 실행됩니다. **PUT /api/entities는 인증(로그인)이 필요**하므로 공격 조건은 "관리자 계정 탈취 또는 내부자"로 제한되지만, 신뢰된 입력이라도 공개 페이지에 그대로 꽂히는 구조 자체가 위험합니다.
+**✅ 해결됨(2026-07-24, 커밋 `2f03eee`) — 저장형 XSS**: 원인은 `functions/_lib/entities.js:46`의 블랙리스트 검증이 아니라 `src/layouts/BaseLayout.astro`가 `<script type="application/ld+json" set:html={JSON.stringify(schema)}>`로 JSON-LD를 이스케이프 없이 출력하던 부분이었습니다. `src/lib/schema.js`에 `safeJsonLdString()`(`<`,`>`,`&`를 `\uXXXX`로 이스케이프)을 추가해 이 출력 지점에 적용했고, 우회 가능하면서 정상적인 의료 문구(괄호·슬래시·`&`·따옴표)를 오탐할 위험이 있던 블랙리스트 정규식은 제거했습니다(구조/타입/길이 검증은 유지). 실제 Chromium 렌더링까지 포함한 회귀 테스트 24개로 검증했습니다. **단, §0-3에서 밝힌 대로 이 수정은 아직 push되지 않아 실제 배포에는 반영되지 않았습니다.**
 
-**중간 — 로그인 브루트포스 방어 부재(확인됨)**: `functions/api/auth/login.js`에 시도 횟수 제한/지연/잠금 로직이 없습니다. timing-safe 비교로 타이밍 공격은 막지만, 무제한 대입 시도 자체를 막는 애플리케이션 레벨 장치는 없습니다(Cloudflare 플랫폼 레벨 방어가 있는지는 이 코드만으로 알 수 없음).
+**✅ 해결됨(2026-07-24, 커밋 `30fe5d0`) — 로그인 브루트포스 방어**: `functions/api/auth/login.js`에 D1 기반 고정 윈도우 레이트리밋(`functions/_lib/login-rate-limit.js`, `migrations/0010_create_login_rate_limit.sql`)을 추가했습니다. `CF-Connecting-IP` 기준 15분당 8회 제한, 원자적 `INSERT...ON CONFLICT DO UPDATE...RETURNING`으로 동시 요청 레이스 컨디션을 방지, 초과 시 비밀번호 비교 자체를 생략하고 429+`Retry-After` 반환, 실패/차단 메시지는 기존과 동일해 계정 존재 여부 비노출 유지, D1 장애 시에는 로그인 자체를 막지 않는 가용성 우선 설계입니다. **역시 아직 push되지 않아 실제 배포에는 반영되지 않았습니다.**
 
 **중간 — 코드 중복(확인됨)**: `siteId` 검증 정규식(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)이 `sites.js`, `seo-operations/[site].js`, `domains/[site].js`, `onboarding/[site].js`, `deployments/[site].js` 5개 파일에 각각 복붙되어 있습니다. 향후 규칙이 바뀌면 5곳을 전부 수정해야 하는 유지보수 리스크입니다. 도메인 형식 검증도 `onboarding.js`(단순 폼 검증)와 `domain-validate.js`(SSRF 방지 포함 엄격 검증) 두 곳에 책임이 분산되어 있습니다.
 
@@ -226,35 +259,40 @@
 
 ## 10. 삭제하거나 정리해야 할 테스트 데이터와 죽은 코드
 
-- **`/tmp/test-debug-ai.mjs`, `/tmp/test-diag.mjs`**: `functions/api/debug/ai.js`, `functions/api/debug/env.js`를 import하지만 이 파일들은 이미 삭제되어 존재하지 않습니다(`/tmp/test-cleanup.mjs`가 이 삭제 자체를 검증하는 테스트로, 정리 작업 이후 시점의 죽은 테스트로 확인됨). **삭제 대상.**
+- **`/tmp/test-debug-ai.mjs`, `/tmp/test-diag.mjs`**: `functions/api/debug/ai.js`, `functions/api/debug/env.js`를 import하지만 이 파일들은 이미 삭제되어 존재하지 않습니다. **2026-07-24 재확인: 두 파일 모두 `git ls-files`에 잡히지 않는, 저장소에 커밋된 적 없는 세션 임시 스크립트였습니다.** 저장소 안에는 삭제할 대상이 없어 조치 불필요로 종결했습니다. (참고로 이 세션 동안 이 저장소에는 `test` npm 스크립트도, 커밋된 테스트 스위트도 없다는 점도 함께 확인했습니다 — 검증은 전부 애드혹 스크립트로 이뤄지고 있어, 향후 최소한의 테스트를 저장소에 커밋해 두는 것을 권장합니다. **아래 "요약 표"의 "Playwright 검증됨"·"유닛 테스트 검증됨" 표기들도 전부 이와 같은 방식 — 검증 시점에 임시로 작성해 실행하고 저장소에는 커밋하지 않은 애드혹 스크립트 — 을 가리키는 것이며, 저장소에 실제로 존재하는 재실행 가능한 테스트 스위트를 의미하지 않습니다.**)
 - **`sites/andrology/hospital.json`의 플레이스홀더 값**: `name: "○○비뇨의학과"`, `description`/`hero.title`/`hero.subtitle`/`services[0..2]`/`faq[0..3]`가 전부 "예시입니다" 형태의 스캐폴드 문구이며, `phone`/`address`/`hours`/`doctor`는 전부 "미정"입니다. `articles` 배열에는 실제 콘텐츠(`erectile-dysfunction-causes`)와 함께 **순수 예시 아티클 2건(`article-1`, `article-2` — "이 글은 예시 본문입니다")이 실제 게시물과 섞여 있어 정리가 필요합니다.**
 - 그 외 `functions/_lib/**`의 죽은(미참조) 헬퍼 모듈, 참조 깨진 죽은 테스트, `sites/` 안의 잔여 테스트 사이트는 전수 조사 결과 발견되지 않았습니다(Playwright 테스트의 `bright-dental`/`doremi-urology` 등은 실제 저장소가 아니라 테스트 파일 안의 mock 데이터일 뿐입니다).
 - (참고, 이미 처리됨) `sites/aiseolab/articles/`의 병원 주제(전립선) 오염 아티클은 지난 작업에서 이미 삭제되었고 이번 조사에서도 재확인되지 않았습니다.
 
 ## 11. 지금 당장 개발을 재개하기 전에 결정해야 할 사항
 
-1. **`sites/andrology/hospital.json`을 실제 운영 데이터로 교체할지, 계속 데모/스캐폴드로 둘지** — 이 사이트를 기준으로 두 번째 실제 병원을 검증할 계획이라면 예시 아티클 2건과 플레이스홀더 필드부터 정리해야 합니다.
-2. **`/doctors`, `/departments` 공개 페이지의 XSS 가능성(§9)을 지금 막을지, 다음 기능 개발 전에 우선 처리할지** — 실제 공개 페이지에 영향이 있는 항목이라 우선순위 판단이 필요합니다.
+0. **(신규, 최우선) GitHub push 인증 수단 확보** — §0-3 참고. 이 문제가 해결되어 push가 완료되기 전까지는 아래 "해결됨" 항목들을 포함한 이번 세션의 모든 작업이 실제 배포에 반영되지 않습니다.
+1. **`sites/andrology/hospital.json`을 실제 운영 데이터로 교체할지, 계속 데모/스캐폴드로 둘지** — 이 사이트를 기준으로 두 번째 실제 병원을 검증할 계획이라면 예시 아티클 2건과 플레이스홀더 필드부터 정리해야 합니다. (이번 세션에서 대표님이 "다음 작업"으로 남겨두기로 확인하신 항목 — 아직 미착수)
+2. ~~`/doctors`, `/departments` 공개 페이지의 XSS 가능성(§9)을 지금 막을지~~ → **2026-07-24 해결됨**(§9, §0-1 참고)
 3. **SEO 정기 점검을 자동화할지(Cloudflare Cron 등 도입) 아니면 당분간 수동 운영으로 갈지** — 병원 수가 늘어나면 수동 운영의 한계가 빠르게 옵니다.
 4. **멀티테넌트 배포 전략(`isolated` vs `shared`)을 언제 실제로 구현할지** — 지금 구조로 두 번째 실제 병원을 배포할 수 있는지(도메인 공유 문제 없는지) 먼저 검증이 필요합니다.
-5. **로그인 브루트포스 방어를 애플리케이션 레벨에서 추가할지, Cloudflare 설정(WAF/Rate Limiting)으로 충분한지** — 관리자 계정이 뚫리면 GitHub 저장소 쓰기 권한까지 이어지는 구조라 우선순위가 낮지 않습니다.
+5. ~~로그인 브루트포스 방어를 애플리케이션 레벨에서 추가할지~~ → **2026-07-24 해결됨**(§9, §0-1 참고)
 6. **`/privacy` 페이지의 법적 문구를 언제 채워 넣을지** — 실제 서비스를 오픈한다면 필수입니다.
-7. **Dashboard(4,684줄 단일 파일)를 지금 분리/리팩터링할지, 기능 추가를 계속 쌓을지** — 파일이 커질수록 향후 수정 난이도와 리스크가 커집니다.
+7. **Dashboard(4,683줄 단일 파일)를 지금 분리/리팩터링할지, 기능 추가를 계속 쌓을지** — 파일이 커질수록 향후 수정 난이도와 리스크가 커집니다. (7탭 구조 개편은 완료되었으나 파일 분리 자체는 미착수)
 
 ## 12. 추천 개발 순서
 
 이 감사는 우선순위를 "정하는" 문서가 아니라 "판단에 필요한 사실을 정리하는" 문서이므로, 아래는 발견된 사실에 기반한 참고용 제안입니다. 최종 순서는 §11의 결정 사항에 달려 있습니다.
 
-1. (즉시, 낮은 비용) `test-debug-ai.mjs`/`test-diag.mjs` 삭제, `sites/andrology/hospital.json`의 예시 아티클 2건과 플레이스홀더 필드 정리
-2. (보안, 영향 범위 명확) `entities.js`의 입력 검증을 블랙리스트에서 화이트리스트/이스케이프 기반으로 전환하거나, `BaseLayout.astro`의 JSON-LD 출력 시 `</script>` 이스케이프 추가
-3. (운영 준비) `/privacy` 실제 문구 작성, 로그인 브루트포스 방어(레이트리밋) 여부 결정 및 필요 시 추가
-4. (실사용 검증) 두 번째 실제 병원 사이트로 등록→온보딩→배포까지 전체 흐름을 실제로 한 번 완주해 보며 "사이트 생성 직후 지연", "미리보기 비실시간" 등이 실제 운영에 걸림돌인지 확인
-5. (확장) 정기 SEO 점검 자동화(Cron), 멀티 프로젝트 배포 전략 구현은 병원 수가 늘어나는 시점에 맞춰 진행
-6. (유지보수) `siteId` 검증 정규식 공용 유틸화, Dashboard 파일 분리는 다른 기능 개발과 충돌하지 않는 시점에 별도로 진행
+1. ~~`test-debug-ai.mjs`/`test-diag.mjs` 삭제~~ → 확인 결과 저장소에 없는 파일(제 세션 임시 스크립트)이라 해당 없음으로 종결
+2. ~~보안: `entities.js` 입력 검증 방식 전환, `BaseLayout.astro` JSON-LD 이스케이프~~ → **완료**(§9). ~~로그인 브루트포스 방어~~ → **완료**(§9)
+3. **(최우선, 신규) GitHub push 인증 확보 후 push** — 완료된 보안 수정을 실제 배포에 반영하는 것이 다음 조치의 전제 조건입니다.
+4. `sites/andrology/hospital.json`의 예시 아티클 2건과 플레이스홀더 필드 정리 — 실제 값 확보 또는 명시적 TODO/비공개 처리 방식 결정 필요(임의 생성 금지 원칙)
+5. (운영 준비) `/privacy` 실제 문구 작성
+6. (실사용 검증) 두 번째 실제 병원 사이트로 등록→온보딩→배포까지 전체 흐름을 실제로 한 번 완주해 보며 "사이트 생성 직후 지연", "미리보기 비실시간" 등이 실제 운영에 걸림돌인지 확인
+7. (확장) 정기 SEO 점검 자동화(Cron), 멀티 프로젝트 배포 전략 구현은 병원 수가 늘어나는 시점에 맞춰 진행
+8. (유지보수) `siteId` 검증 정규식 공용 유틸화, Dashboard 파일 분리는 다른 기능 개발과 충돌하지 않는 시점에 별도로 진행
 
 ---
 
 ## 요약 표
+
+**표기 안내**: 아래 "Playwright 검증됨"·"유닛 테스트 검증됨"은 모두 각 기능을 만들 때(이전 세션 포함, 이번 세션의 보안 수정 포함) **임시로 작성해 그 자리에서 실행한 애드혹 스크립트**(`/tmp/*.mjs` 등)를 통한 검증입니다. §10에서 확인한 대로 이 저장소에는 `test` npm 스크립트도, 커밋된 공식 테스트 스위트도 없습니다 — 즉 아래 표기는 "저장소에 재실행 가능한 테스트가 존재한다"는 뜻이 아니라 "그 시점에 실제로 동작을 확인했다"는 뜻입니다.
 
 | 기능 | 구현 상태 | 실제 검증 여부 | 위험도 | 다음 조치 |
 |---|---|---|---|---|
@@ -262,7 +300,7 @@
 | 병원 사이트 생성 마법사 | 완료 | Playwright 검증됨 | 낮음 | 없음 |
 | 온보딩 관리 | 완료 | Playwright 검증됨 | 낮음 | 없음 |
 | 설정/엔티티 편집(GitHub 커밋) | 완료 | Playwright + 유닛 테스트 검증됨 | 낮음 | 없음 |
-| 진료과·의료진(엔티티) 공개 렌더링 | 완료 | 데이터 유무만 검증, XSS 방어는 미검증 | **높음(XSS)** | §9/§12-2 조치 |
+| 진료과·의료진(엔티티) 공개 렌더링 | 완료 | 데이터 유무 + XSS 회귀 테스트(실제 Chromium 렌더링 포함) 검증됨 | **해결됨**(단, 미push — §0-3) | push 후 배포 반영 확인 |
 | Import(기존 홈페이지 수집) | 완료 | Playwright 검증됨 | 중간(서버 임의 URL fetch) | SSRF 가드 범위 재확인 권장 |
 | 도메인 연결 | 완료 | Playwright 검증됨 | 낮음 | 해제 API 부재만 참고 |
 | 배포 엔진(Preview/Production/Replace/Rollback) | 완료 | Playwright 검증됨 | 낮음 | 없음 |
@@ -271,12 +309,13 @@
 | 게시된 글 탭(필터/수정/삭제/배포확인) | 완료(코드상) | **UI 상호작용 테스트 없음** | 중간(미검증) | Playwright 테스트 추가 |
 | SEO 운영센터(수동 점검) | 완료 | Playwright 검증됨 | 낮음 | 없음 |
 | SEO 정기 자동 점검(스케줄러) | **미구현** | 해당 없음 | 중간(운영 부담) | Cron/Actions 도입 결정 |
-| 로그인 브루트포스 방어 | **미구현** | 해당 없음 | 중간 | 레이트리밋 추가 여부 결정 |
+| 로그인 브루트포스 방어 | 완료(D1 레이트리밋 + 원자적 카운터) | 회귀 테스트 8건 검증됨(동시요청 레이스 컨디션 포함) | **해결됨**(단, 미push — §0-3) | push 후 배포 반영 확인 |
 | `/privacy` 법적 문구 | **미구현(스텁)** | 해당 없음 | 낮음(법적 리스크는 별도 판단 필요) | 문구 작성 |
 | 멀티 프로젝트(isolated) 배포 | **미구현** | 해당 없음 | 중간(확장 시 필요) | 두 번째 병원 검증 후 결정 |
-| `sites/andrology` 예시 데이터 | 정리 필요 | — | 낮음 | 실데이터 교체 또는 삭제 |
-| `test-debug-ai.mjs`/`test-diag.mjs` | 죽은 코드 | — | 낮음 | 삭제 |
+| `sites/andrology` 예시 데이터 | 정리 필요 | — | 낮음 | 실데이터 교체 또는 삭제(§11-1, 아직 미착수) |
+| `test-debug-ai.mjs`/`test-diag.mjs` | 저장소에 없는 파일로 확인 | — | 없음 | 조치 불필요(종결) |
+| **GitHub push (14개 커밋)** | **로컬 완료, push 실패** | 이 세션에서 직접 확인 | **중간(운영 반영 지연)** | push 인증 수단 확보 후 즉시 push |
 
 ---
 
-*이 문서는 100% 읽기 전용 조사로 작성되었으며, 작성 과정에서 어떤 소스 코드/데이터 파일도 수정하지 않았고 git commit/push도 수행하지 않았습니다.*
+*이 문서는 2026-07-23 100% 읽기 전용 조사로 최초 작성되었습니다. 2026-07-24 갱신분(§0, §9 해결 표시, §11/§12 일부, 요약표 일부)은 실제로 완료된 코드 수정·git 커밋·병합 내역을 반영한 것이며, 상세 근거는 §0에 기록했습니다.*
