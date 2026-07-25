@@ -793,6 +793,14 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     margin-top: 8px;
   }
 
+  /* (버그 수정) hidden 속성이 붙은 요소는 위 display:grid보다 우선해서 숨겨져야 합니다.
+     이게 없으면 새 병원 사이트 만들기 마법사의 모든 단계(1~6단계)가 한 번에 다 보여서
+     "다음"을 눌러도 화면상 아무 변화가 없는 것처럼 보입니다(실제로는 hidden 상태 자체는
+     정상적으로 바뀌고 있었음 — 이 CSS 우선순위 문제로 화면에만 반영이 안 됐던 것). */
+  .dash-edit-form[hidden] {
+    display: none;
+  }
+
   .dash-edit-form label {
     display: grid;
     gap: 4px;
