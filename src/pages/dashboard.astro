@@ -83,6 +83,9 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
         <div class="dash-edit-form" id="wizard-step-2" hidden>
           <p style="margin: 0; font-weight: 600; font-size: 13px;">2단계 — 업종 · siteId</p>
           <div id="wiz-templates" role="radiogroup" aria-label="업종 선택"></div>
+          <label>병원 유형 (예: 비뇨의학과, 성형외과)<input type="text" id="wiz-hospitalType" maxlength="30" placeholder="예: 비뇨의학과" /></label>
+          <label>지역 (예: 광주광역시)<input type="text" id="wiz-region" maxlength="50" placeholder="예: 광주광역시" /></label>
+          <p class="dash-meta" style="margin: 0;">지역·진료과 정보는 "신경외과", "광주 비뇨기과"처럼 지역+진료과 조합 검색 노출에 쓰이는 핵심 정보입니다. 지금 몰라도 나중에 설정 탭에서 채울 수 있습니다.</p>
           <label>siteId (영문 소문자·숫자·하이픈, 2~30자) <span class="required">*</span><input type="text" id="wiz-siteid" maxlength="30" placeholder="예: bright-dental" /></label>
           <div class="dash-edit-actions">
             <button type="button" class="dash-action-btn" id="wiz-back-2">← 이전</button>
@@ -2156,10 +2159,13 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     wizStatus.hidden = true
     const templateName = wizardTemplates.find((t) => t.id === wizTemplate())?.name ?? wizTemplate()
     const domainText = wizDomainUndecided?.checked ? '미정' : wizValue('wiz-domain')
+    const hospitalTypeText = wizValue('wiz-hospitalType') || '미입력'
+    const regionText = wizValue('wiz-region') || '미입력'
     const summary = document.getElementById('wiz-summary')
     if (summary) {
       summary.textContent =
-        `병원명: ${wizValue('wiz-name')} · 업종: ${templateName} · siteId: ${wizValue('wiz-siteid')} · ` +
+        `병원명: ${wizValue('wiz-name')} · 업종: ${templateName} · 진료과: ${hospitalTypeText} · 지역: ${regionText} · ` +
+        `siteId: ${wizValue('wiz-siteid')} · ` +
         `운영방식: ${OB_MODES[wizMode()] ?? wizMode()} · 도메인: ${domainText} — ` +
         `저장소에 sites/${wizValue('wiz-siteid')}/ 폴더가 생성되고 온보딩 정보가 저장됩니다.`
     }
@@ -2181,6 +2187,8 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
           name: wizValue('wiz-name'),
           template: wizTemplate(),
           siteId: wizValue('wiz-siteid'),
+          hospitalType: wizValue('wiz-hospitalType'),
+          region: wizValue('wiz-region'),
           onboarding: {
             managerName: wizValue('wiz-manager'),
             managerPhone: wizValue('wiz-manager-phone'),

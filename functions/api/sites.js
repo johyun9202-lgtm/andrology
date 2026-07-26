@@ -87,6 +87,23 @@ export async function onRequestPost(context) {
     return jsonResponse({ ok: false, error: '사이트 이름에 < > 문자는 사용할 수 없습니다.' }, 400)
   }
 
+  // (지역·진료과는 지역+진료과 조합 검색 노출의 핵심 데이터라 생성 시점에 함께 받습니다.
+  //  둘 다 선택 입력 — 비어 있으면 설정 탭에서 나중에 채울 수 있습니다.)
+  const hospitalType = String(body.hospitalType ?? '').replace(CONTROL_CHARS, '').trim()
+  if (hospitalType.length > 30) {
+    return jsonResponse({ ok: false, error: '병원 유형은 30자 이내여야 합니다.' }, 400)
+  }
+  if (/[<>]/.test(hospitalType)) {
+    return jsonResponse({ ok: false, error: '병원 유형에 < > 문자는 사용할 수 없습니다.' }, 400)
+  }
+  const region = String(body.region ?? '').replace(CONTROL_CHARS, '').trim()
+  if (region.length > 50) {
+    return jsonResponse({ ok: false, error: '지역은 50자 이내여야 합니다.' }, 400)
+  }
+  if (/[<>]/.test(region)) {
+    return jsonResponse({ ok: false, error: '지역에 < > 문자는 사용할 수 없습니다.' }, 400)
+  }
+
   const siteId = String(body.siteId ?? '').trim()
   if (!SITE_ID_PATTERN.test(siteId) || siteId.length < 2 || siteId.length > MAX_SITE_ID_LENGTH) {
     return jsonResponse(
@@ -135,7 +152,7 @@ export async function onRequestPost(context) {
     }
 
     // 3) 템플릿 기반 hospital.json 구성 (스캐폴드 복사 + 최소 커스터마이즈)
-    const hospital = buildInitialHospital(name, template)
+    const hospital = buildInitialHospital(name, template, hospitalType, region)
     if (onboardingValue) applyConversionInfo(hospital, onboardingValue)
 
     // 4) 생성 전용 PUT 2회 — sha 없음 = 새 파일만 가능 (동시 생성 충돌은 409/422)
@@ -222,9 +239,11 @@ function applyConversionInfo(hospital, value) {
 }
 
 // 스캐폴드 복사 + 이름/템플릿 반영. 비의료 업종은 병원 전용 예시 문구를 중립 문구로 교체.
-function buildInitialHospital(name, template) {
+function buildInitialHospital(name, template, hospitalType = '', region = '') {
   const hospital = JSON.parse(JSON.stringify(SITE_SCAFFOLD))
   hospital.name = name
+  if (hospitalType) hospital.hospitalType = hospitalType
+  if (region) hospital.region = region
   if (template.id !== 'medical') {
     hospital.template = template.id
     hospital.schema = { type: 'LocalBusiness' }
