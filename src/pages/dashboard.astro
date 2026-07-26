@@ -83,10 +83,11 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
         <div class="dash-edit-form" id="wizard-step-2" hidden>
           <p style="margin: 0; font-weight: 600; font-size: 13px;">2단계 — 업종 · siteId</p>
           <div id="wiz-templates" role="radiogroup" aria-label="업종 선택"></div>
-          <label>병원 유형 (예: 비뇨의학과, 성형외과)<input type="text" id="wiz-hospitalType" maxlength="30" placeholder="예: 비뇨의학과" /></label>
+          <label><span id="wiz-hospitalType-label">병원 유형 (예: 비뇨의학과, 성형외과)</span><input type="text" id="wiz-hospitalType" maxlength="30" placeholder="예: 비뇨의학과" /></label>
           <label>지역 (예: 광주광역시)<input type="text" id="wiz-region" maxlength="50" placeholder="예: 광주광역시" /></label>
           <p class="dash-meta" style="margin: 0;">지역·진료과 정보는 "신경외과", "광주 비뇨기과"처럼 지역+진료과 조합 검색 노출에 쓰이는 핵심 정보입니다. 지금 몰라도 나중에 설정 탭에서 채울 수 있습니다.</p>
-          <label>siteId (영문 소문자·숫자·하이픈, 2~30자) <span class="required">*</span><input type="text" id="wiz-siteid" maxlength="30" placeholder="예: bright-dental" /></label>
+          <label>siteId (사이트 주소 — 자동으로 채워집니다) <span class="required">*</span><input type="text" id="wiz-siteid" maxlength="30" placeholder="예: bright-dental" /></label>
+          <p class="dash-meta" style="margin: 0;" id="wiz-siteid-hint">병원명을 입력하면 자동으로 채워집니다. 직접 수정하셔도 됩니다.</p>
           <div class="dash-edit-actions">
             <button type="button" class="dash-action-btn" id="wiz-back-2">← 이전</button>
             <button type="button" class="dash-action-btn" id="wiz-next-2">다음 →</button>
@@ -2041,6 +2042,50 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     }
   }
 
+  // (마법사 사용성 개선) "병원 유형" 라벨은 병원 전용 문구라 다른 업종(음식점·법률사무소 등)을
+  // 고르면 헷갈리는 질문이 됩니다 — 선택한 업종에 맞춰 라벨·placeholder를 바꿔줍니다.
+  const WIZ_TYPE_LABELS = {
+    medical: { label: '병원 유형 (예: 비뇨의학과, 성형외과)', placeholder: '예: 비뇨의학과' },
+    restaurant: { label: '대표 메뉴·분야 (예: 한식, 카페)', placeholder: '예: 한식' },
+    lawyer: { label: '전문 분야 (예: 이혼전문, 형사전문)', placeholder: '예: 이혼전문' },
+    academy: { label: '과정 분야 (예: 입시, 예체능)', placeholder: '예: 입시' },
+    shopping: { label: '취급 상품군 (예: 여성의류, 유아용품)', placeholder: '예: 여성의류' },
+  }
+  function syncWizTypeLabel() {
+    const info = WIZ_TYPE_LABELS[wizTemplate()] ?? WIZ_TYPE_LABELS.medical
+    const labelEl = document.getElementById('wiz-hospitalType-label')
+    const inputEl = document.getElementById('wiz-hospitalType')
+    if (labelEl) labelEl.textContent = info.label
+    if (inputEl) inputEl.placeholder = info.placeholder
+  }
+  wizTemplatesHolder?.addEventListener('change', (e) => {
+    if (e.target && e.target.name === 'wiz-template') syncWizTypeLabel()
+  })
+
+  // (마법사 사용성 개선) siteId는 "영문 소문자·숫자·하이픈" 규칙을 몰라도 되도록
+  // 병원명 입력에 맞춰 자동으로 채워줍니다. 한글만 있어 영문으로 바꿀 게 없으면
+  // 무작위 짧은 값으로 대체합니다(이후 실제 도메인을 연결하면 siteId는 내부용이라
+  // 굳이 병원명을 알아볼 필요가 없어집니다). 사용자가 siteId 칸을 직접 건드리면
+  // 그 뒤로는 자동 갱신을 멈춰서, 애써 고친 값을 덮어쓰지 않습니다.
+  function slugifyForSiteId(input) {
+    const base = String(input ?? '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .replace(/-{2,}/g, '-')
+    if (base.length >= 2) return base.slice(0, 30)
+    const rand = Math.random().toString(36).slice(2, 8)
+    return `site-${rand}`
+  }
+  let wizSiteIdEdited = false
+  const wizNameInputEl = document.getElementById('wiz-name')
+  const wizSiteIdInputEl = document.getElementById('wiz-siteid')
+  wizNameInputEl?.addEventListener('input', () => {
+    if (wizSiteIdEdited) return
+    if (wizSiteIdInputEl) wizSiteIdInputEl.value = slugifyForSiteId(wizNameInputEl.value)
+  })
+  wizSiteIdInputEl?.addEventListener('input', () => { wizSiteIdEdited = true })
+
   // (Phase 14A) 운영방식·작업 체크 라벨 — 검증 기준은 서버(functions/_lib/onboarding.js)
   const OB_MODES = { independent: '독립 SEO 홍보사이트', replace: '기존 홈페이지 교체', subdomain: '서브도메인 운영' }
   const OB_CHECKLIST = [
@@ -2104,7 +2149,12 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
 
   document.getElementById('wizard-open')?.addEventListener('click', () => {
     wizard.hidden = !wizard.hidden
-    if (!wizard.hidden) { wizStep(1); wizStatus.hidden = true }
+    if (!wizard.hidden) {
+      wizStep(1)
+      wizStatus.hidden = true
+      wizSiteIdEdited = false
+      syncWizTypeLabel()
+    }
   })
   document.getElementById('wiz-cancel')?.addEventListener('click', () => { wizard.hidden = true })
   document.getElementById('wiz-next-1')?.addEventListener('click', () => {
@@ -2207,7 +2257,10 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
       if (response.status === 401) { location.href = '/login'; return }
       const data = await response.json().catch(() => ({}))
       if (response.ok && data.ok) {
-        wizStatusMessage(`생성 완료 — 커밋 ${String(data.commitSha ?? '').slice(0, 7)} · ${data.note ?? ''}`)
+        // (마법사 사용성 개선) "커밋 xxxxx" 같은 개발 용어는 화면에서 빼고, 필요하면
+        // 콘솔에서만 확인할 수 있게 남겨둡니다(비개발자 사용자를 위한 문구 단순화).
+        console.log(`[사이트 생성] commit=${data.commitSha ?? ''}`)
+        wizStatusMessage(`✅ ${data.note ?? '생성이 완료됐습니다.'}`)
         loadSites()
       } else {
         wizStatusMessage(data.error ?? '생성에 실패했습니다.', true)
