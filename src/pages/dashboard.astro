@@ -4053,7 +4053,15 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
       linkLine.appendChild(impLink(data.lastSuccess.productionUrl, '운영 사이트 열기 →'))
       linkLine.appendChild(document.createTextNode('  '))
     }
-    if (data.previewHost) linkLine.appendChild(impLink(`https://${data.previewHost}`, 'Preview(pages.dev) 열기 →'))
+    // (버그 수정) previewHost는 "프로젝트명.pages.dev"로 추측한 값이라 실제와 다를 수 있습니다
+    // (Cloudflare가 이름 충돌 시 임의 접미사를 붙이는 경우 등). Cloudflare API가 실제로 응답한
+    // 배포별 URL(previewUrl)을 우선 사용하고, 그마저 없을 때만 추정값을 "(추정)" 표시로 보여줍니다.
+    const realPreviewUrl = data.activeDeploy?.previewUrl || latest?.previewUrl || ''
+    if (realPreviewUrl) {
+      linkLine.appendChild(impLink(realPreviewUrl, 'Preview 열기 →'))
+    } else if (data.previewHost) {
+      linkLine.appendChild(impLink(`https://${data.previewHost}`, 'Preview(pages.dev) 열기 (추정 주소) →'))
+    }
     box.appendChild(linkLine)
     if (data.config.deploymentStrategy === 'shared') {
       box.appendChild(el('p', 'margin: 0; font-size: 12px; color: #b45309;', '주의: 공유 저장소·브랜치 구조입니다. 빌드는 같은 브랜치를 쓰는 다른 사이트 프로젝트에도 함께 반영됩니다.'))
