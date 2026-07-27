@@ -183,7 +183,7 @@
     }
   ],
   "site": {
-    "url": "https://andrology.co.kr"
+    "url": "https://example.com"
   },
   "schema": {
     "type": "MedicalClinic"
