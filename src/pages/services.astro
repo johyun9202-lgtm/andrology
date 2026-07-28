@@ -2,15 +2,21 @@
 import BaseLayout from '../layouts/BaseLayout.astro'
 import PageTitle from '../components/PageTitle.astro'
 import ServiceCard from '../components/ServiceCard.astro'
-import { siteData as hospital } from '../lib/site-data.js'
+import { siteData as hospital, siteId } from '../lib/site-data.js'
+import { COMPANY_SITE } from '../lib/site-id.js'
 
 // home.servicesTitle이 있으면 페이지 제목·설명에 반영 (없으면 기존 그대로)
 const servicesTitle = hospital.home?.servicesTitle
+
+// AI SEO Lab 회사 홈페이지는 내부 도구라 이 페이지가 nav에 없습니다 — 검색엔진에는 노출하지 않습니다.
+// (병원 사이트는 실제 서비스 소개 페이지이므로 영향 없음)
+const isCompanySite = siteId === COMPANY_SITE
 ---
 
 <BaseLayout
   title={servicesTitle ?? '진료안내'}
   description={servicesTitle ? `${hospital.name} ${servicesTitle} 안내` : `${hospital.name} 진료과목 안내`}
+  noindex={isCompanySite}
 >
   <PageTitle title={servicesTitle ?? '진료안내'} />
   <div class="card-grid">

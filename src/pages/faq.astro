@@ -2,13 +2,17 @@
 import BaseLayout from '../layouts/BaseLayout.astro'
 import PageTitle from '../components/PageTitle.astro'
 import FaqList from '../components/FaqList.astro'
-import { siteData as hospital } from '../lib/site-data.js'
+import { siteData as hospital, siteId } from '../lib/site-data.js'
 import { buildFaqSchema } from '../lib/schema.js'
+import { COMPANY_SITE } from '../lib/site-id.js'
 
 const faqSchema = buildFaqSchema(hospital.faq)
+
+// AI SEO Lab 회사 홈페이지는 내부 도구라 이 페이지가 nav에 없습니다 — 검색엔진에는 노출하지 않습니다.
+const isCompanySite = siteId === COMPANY_SITE
 ---
 
-<BaseLayout title="FAQ" description={`${hospital.name} 자주 묻는 질문`} jsonLd={faqSchema}>
+<BaseLayout title="FAQ" description={`${hospital.name} 자주 묻는 질문`} jsonLd={faqSchema} noindex={isCompanySite}>
   <PageTitle title="자주 묻는 질문" />
   <FaqList />
 </BaseLayout>

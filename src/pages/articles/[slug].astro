@@ -1,8 +1,12 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import FaqList from '../../components/FaqList.astro'
-import { siteData as hospital } from '../../lib/site-data.js'
+import { siteData as hospital, siteId } from '../../lib/site-data.js'
 import { buildFaqSchema } from '../../lib/schema.js'
+import { COMPANY_SITE } from '../../lib/site-id.js'
+
+// AI SEO Lab 회사 홈페이지는 내부 도구라 아티클 목록이 nav에 없습니다 — 검색엔진에는 노출하지 않습니다.
+const isCompanySite = siteId === COMPANY_SITE
 
 // articles 배열의 각 글마다 /articles/{slug} 페이지를 정적 생성합니다.
 export function getStaticPaths() {
@@ -30,7 +34,7 @@ const related = Array.isArray(article.relatedArticles)
 const faqSchema = faq ? buildFaqSchema(faq) : undefined
 ---
 
-<BaseLayout title={article.title} description={article.summary} ogType="article" jsonLd={faqSchema}>
+<BaseLayout title={article.title} description={article.summary} ogType="article" jsonLd={faqSchema} noindex={isCompanySite}>
   <article class="article-detail">
     <h1>{article.title}</h1>
     <p class="meta">작성일: {article.date}{article.updatedAt && article.updatedAt !== article.date ? ` · 수정일: ${article.updatedAt}` : ''}</p>

@@ -1,10 +1,14 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro'
 import PageTitle from '../components/PageTitle.astro'
-import { siteData as hospital } from '../lib/site-data.js'
+import { siteData as hospital, siteId } from '../lib/site-data.js'
+import { COMPANY_SITE } from '../lib/site-id.js'
+
+// AI SEO Lab 회사 홈페이지는 내부 도구라 이 페이지가 nav에 없습니다 — 검색엔진에는 노출하지 않습니다.
+const isCompanySite = siteId === COMPANY_SITE
 ---
 
-<BaseLayout title="아티클" description={`${hospital.name} 아티클`}>
+<BaseLayout title="아티클" description={`${hospital.name} 아티클`} noindex={isCompanySite}>
   <PageTitle title="아티클" />
   <div class="article-list">
     {
