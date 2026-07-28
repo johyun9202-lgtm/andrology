@@ -7,7 +7,7 @@
 
 import { jsonResponse, methodNotAllowed, readJsonBody, isAuthenticated, ALLOWED_SITES } from '../../_lib/auth.js'
 import { getDb, dbUnavailableResponse } from '../../_lib/db.js'
-import { getOnboarding, insertOnboarding, updateOnboarding } from '../../_lib/onboarding-repository.js'
+import { getOnboarding, insertOnboarding, updateOnboarding, deleteOnboarding } from '../../_lib/onboarding-repository.js'
 import { validateOnboardingInput } from '../../_lib/onboarding.js'
 import { resolveGitHubConfig, githubFetch } from '../../_lib/publisher.js'
 
@@ -93,6 +93,40 @@ export async function onRequestPut(context) {
   } catch (e) {
     console.error(`[온보딩 저장] 실패 site=${siteId}: ${e?.message ?? e}`)
     return jsonResponse({ ok: false, error: '온보딩 정보를 저장하지 못했습니다.' }, 500)
+  }
+}
+
+// 온보딩 기록 삭제 — 저장소(GitHub)에 실제로 존재하는 사이트는 절대 삭제하지 않습니다.
+// (마법사 도중 취소되었거나, 테스트 후 sites/ 폴더만 삭제된 "고스트" 기록 정리용)
+export async function onRequestDelete(context) {
+  if (!(await isAuthenticated(context))) {
+    return jsonResponse({ ok: false, error: '로그인이 필요합니다.' }, 401)
+  }
+  const siteId = String(context.params?.site ?? '')
+  if (!SITE_ID_PATTERN.test(siteId) || siteId.length > 30) return invalidSiteResponse(siteId)
+
+  const db = getDb(context)
+  if (!db) return dbUnavailableResponse(context)
+
+  try {
+    const existing = await getOnboarding(db, siteId)
+    if (!existing) {
+      return jsonResponse({ ok: false, error: `온보딩 정보가 없습니다: "${siteId}"` }, 404)
+    }
+    if (ALLOWED_SITES.includes(siteId) || (await siteExistsInRepo(context.env, siteId))) {
+      return jsonResponse(
+        { ok: false, error: `"${siteId}"는 저장소에 실제로 존재하는 사이트라 온보딩 기록을 삭제할 수 없습니다.` },
+        409
+      )
+    }
+    const deleted = await deleteOnboarding(db, siteId)
+    if (!deleted) {
+      return jsonResponse({ ok: false, error: '온보딩 기록을 삭제하지 못했습니다.' }, 500)
+    }
+    return jsonResponse({ ok: true })
+  } catch (e) {
+    console.error(`[온보딩 삭제] 실패 site=${siteId}: ${e?.message ?? e}`)
+    return jsonResponse({ ok: false, error: '온보딩 기록을 삭제하지 못했습니다.' }, 500)
   }
 }
 

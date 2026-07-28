@@ -26,8 +26,7 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
   </div>
 
   <div class="dash-tabs" role="tablist">
-    <button type="button" class="dash-tab active" id="tab-btn-home">홈</button>
-    <button type="button" class="dash-tab" id="tab-btn-hospitals">병원 사이트 관리</button>
+    <button type="button" class="dash-tab active" id="tab-btn-hospitals">병원 사이트 관리</button>
     <button type="button" class="dash-tab" id="tab-btn-create">AI 콘텐츠 생성</button>
     <button type="button" class="dash-tab" id="tab-btn-published">게시된 글</button>
     <button type="button" class="dash-tab" id="tab-btn-seoops">SEO 운영센터</button>
@@ -48,21 +47,10 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     </span>
   </div>
 
-  <section class="section" id="tab-home">
-    <h2>운영 요약</h2>
-    <p class="dash-meta" id="home-summary" style="margin: 0 0 14px;">불러오는 중...</p>
-    <div id="home-stage-groups" style="display: grid; gap: 10px; margin-bottom: 16px;"></div>
-    <div class="dash-edit-actions">
-      <button type="button" class="dash-action-btn dash-publish-btn" id="home-go-hospitals">병원 사이트 관리 열기 →</button>
-      <button type="button" class="dash-action-btn" id="home-go-seoops">SEO 운영센터 열기 →</button>
-      <button type="button" class="dash-action-btn" id="home-go-onboarding">온보딩 열기 →</button>
-    </div>
-  </section>
-
-  <section class="section" id="tab-hospitals" hidden>
+  <section class="section" id="tab-hospitals">
     <div id="hosp-list-view">
       <h2>병원 사이트 관리</h2>
-      <p class="dash-meta" style="margin: 0 0 12px;">등록된 병원 사이트 목록입니다. 병원명을 클릭하거나 [설정]으로 들어가면 그 병원 전용 관리 화면으로 이동합니다.</p>
+      <p class="dash-meta" id="hosp-summary" style="margin: 0 0 12px;">불러오는 중...</p>
       <div class="dash-pub-filter">
         <button type="button" class="dash-action-btn" id="wizard-open">＋ 새 병원 사이트 만들기</button>
       </div>
@@ -1263,7 +1251,6 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
   // Phase 8 — 게시된 글 관리 탭
   // ==================================================================
   const TAB_PANELS = {
-    home: [document.getElementById('tab-home'), document.getElementById('tab-btn-home')],
     hospitals: [document.getElementById('tab-hospitals'), document.getElementById('tab-btn-hospitals')],
     create: [document.getElementById('tab-create'), document.getElementById('tab-btn-create')],
     published: [document.getElementById('tab-published'), document.getElementById('tab-btn-published')],
@@ -1336,7 +1323,6 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
       if (button) button.classList.toggle('active', key === name)
     }
     renderWorkspaceBanner()
-    if (name === 'home') loadHome()
     if (name === 'hospitals') loadSites()
     if (name === 'create') renderCreateTab()
     if (name === 'published') {
@@ -1375,7 +1361,6 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
       })
     }
   }
-  TAB_PANELS.home[1]?.addEventListener('click', () => switchTab('home'))
   TAB_PANELS.hospitals[1]?.addEventListener('click', () => switchTab('hospitals'))
   TAB_PANELS.create[1]?.addEventListener('click', () => switchTab('create'))
   TAB_PANELS.published[1]?.addEventListener('click', () => switchTab('published'))
@@ -1384,9 +1369,6 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
   TAB_PANELS.onboarding[1]?.addEventListener('click', () => switchTab('onboarding'))
   TAB_PANELS.seoops[1]?.addEventListener('click', () => switchTab('seoops'))
   document.getElementById('so-go-entities')?.addEventListener('click', () => switchTab('entities'))
-  document.getElementById('home-go-hospitals')?.addEventListener('click', () => switchTab('hospitals'))
-  document.getElementById('home-go-seoops')?.addEventListener('click', () => switchTab('seoops'))
-  document.getElementById('home-go-onboarding')?.addEventListener('click', () => switchTab('onboarding'))
   // 설정(회사) 탭 → AI 콘텐츠 생성 탭의 "AI로 홈페이지 초안 만들기"로 바로 이동(회사 홈페이지 대상 고정)
   document.getElementById('set-go-ai')?.addEventListener('click', () => {
     workspaceSite = companySiteId
@@ -1482,53 +1464,7 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
   // ==================================================================
   // 홈 탭 — 운영 요약
   // ==================================================================
-  async function loadHome() {
-    const summary = document.getElementById('home-summary')
-    const groups = document.getElementById('home-stage-groups')
-    if (summary) summary.textContent = '불러오는 중...'
-    if (groups) groups.innerHTML = ''
-    try {
-      const response = await fetch('/api/sites')
-      if (response.status === 401) { location.href = '/login'; return }
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok || !data.ok) { if (summary) summary.textContent = data.error ?? '요약을 불러오지 못했습니다.'; return }
-      sitesData = data.sites ?? []
-      companySiteId = data.companySite ?? 'aiseolab'
-      const hospitals = sitesData.filter((s) => !s.company)
-      if (summary) summary.textContent = `등록된 병원 사이트 ${hospitals.length}곳 · AI SEO Lab 회사 홈페이지(루트 /)는 정상 운영 중`
-      if (groups) {
-        const byStage = {}
-        for (const site of hospitals) {
-          const stage = site.stage ?? 'onboarding'
-          if (!byStage[stage]) byStage[stage] = []
-          byStage[stage].push(site)
-        }
-        const order = ['onboarding', 'import', 'domain', 'deploy', 'operating', 'error', 'paused']
-        const stages = Object.keys(byStage).sort((a, b) => order.indexOf(a) - order.indexOf(b))
-        if (stages.length === 0) {
-          groups.appendChild(textEl('p', '등록된 병원이 없습니다. "병원 사이트 관리"에서 새 병원 사이트를 만들어 보세요.', 'dash-meta'))
-        }
-        for (const stage of stages) {
-          const box = document.createElement('div')
-          box.style.cssText = 'padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;'
-          box.appendChild(textEl('h3', `${STAGE_BADGES[stage] ?? stage} (${byStage[stage].length})`, ''))
-          box.querySelector('h3').style.cssText = 'margin: 0 0 6px; font-size: 14px;'
-          for (const site of byStage[stage]) {
-            const row = document.createElement('p')
-            row.style.margin = '2px 0'
-            const link = textEl('button', `${site.hospitalName || site.name} (${site.id})`, 'dash-hosp-name-link')
-            link.type = 'button'
-            link.addEventListener('click', () => { enterWorkspace(site.id, site.hospitalName || site.name); switchTab('settings') })
-            row.appendChild(link)
-            box.appendChild(row)
-          }
-          groups.appendChild(box)
-        }
-      }
-    } catch {
-      if (summary) summary.textContent = '요약을 불러오지 못했습니다. (서버 연결 실패)'
-    }
-  }
+  // (구 "홈" 탭의 loadHome()은 병원 사이트 관리 탭의 요약 줄로 통합되었습니다 — loadSites() 참고)
 
   const pubBody = document.getElementById('pub-body')
   const pubFilter = document.getElementById('pub-filter')
@@ -1965,6 +1901,22 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
       sitesData = data.sites ?? []
       companySiteId = data.companySite ?? 'aiseolab'
       updateCompanyWarning()
+      // 상단 요약 한 줄 — 단계별(운영 중/온보딩 중 등) 병원 수를 함께 보여줍니다. (구 "홈" 탭 대체)
+      const hospSummary = document.getElementById('hosp-summary')
+      if (hospSummary) {
+        const hospitalsForSummary = sitesData.filter((s) => !s.company)
+        const byStage = {}
+        for (const site of hospitalsForSummary) {
+          const stage = site.stage ?? 'onboarding'
+          byStage[stage] = (byStage[stage] ?? 0) + 1
+        }
+        const order = ['onboarding', 'import', 'domain', 'deploy', 'operating', 'error', 'paused']
+        const stageParts = Object.keys(byStage)
+          .sort((a, b) => order.indexOf(a) - order.indexOf(b))
+          .map((stage) => `${STAGE_BADGES[stage] ?? stage} ${byStage[stage]}`)
+        const stageSummary = stageParts.length > 0 ? ` (${stageParts.join(' · ')})` : ''
+        hospSummary.textContent = `등록된 병원 사이트 ${hospitalsForSummary.length}곳${stageSummary} · 병원명을 클릭하거나 [설정]으로 들어가면 그 병원 전용 관리 화면으로 이동합니다.`
+      }
       // 병원 사이트 관리 테이블 — 회사(aiseolab) 홈페이지는 "설정" 탭에서 별도로 관리하므로 여기서는 병원만 표시
       if (siteCardsBody) {
         siteCardsBody.innerHTML = ''
@@ -2892,9 +2844,17 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
       }
       if (data.operationModes) obModes = data.operationModes
       if (Array.isArray(data.checklistItems) && data.checklistItems.length > 0) obChecklistItems = data.checklistItems
-      const records = data.records ?? []
+      const allRecords = data.records ?? []
+      // 이미 운영 중(operating)인 병원은 온보딩 작업이 끝난 상태이므로 목록에서 제외합니다.
+      // ("병원 사이트 관리" 탭에서 계속 관리) — 필요하면 아래 안내에서 숫자로 확인할 수 있습니다.
+      const operatingCount = allRecords.filter((r) => r.stage === 'operating').length
+      const records = allRecords.filter((r) => r.stage !== 'operating')
       if (records.length === 0) {
-        obEmpty('온보딩 중인 병원이 없습니다. "사이트 설정 → 새 사이트 만들기"로 시작해 주세요.')
+        obEmpty(
+          operatingCount > 0
+            ? `온보딩 중인 병원이 없습니다. (운영 중인 병원 ${operatingCount}곳은 "병원 사이트 관리" 탭에서 확인하세요)`
+            : '온보딩 중인 병원이 없습니다. "사이트 설정 → 새 사이트 만들기"로 시작해 주세요.'
+        )
         return
       }
       obBody.innerHTML = ''
@@ -2930,12 +2890,37 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
         deployBtn.className = 'dash-action-btn'
         deployBtn.textContent = '배포'
         deployBtn.addEventListener('click', () => openDeployPanel(record))
-        actionTd.append(manageBtn, importBtn, domainBtn, deployBtn)
+        const deleteBtn = document.createElement('button')
+        deleteBtn.type = 'button'
+        deleteBtn.className = 'dash-action-btn'
+        deleteBtn.textContent = '삭제'
+        deleteBtn.title = '저장소에 사이트가 없는 온보딩 기록만 삭제할 수 있습니다 (예: 생성 중 취소된 테스트 병원).'
+        deleteBtn.addEventListener('click', () => deleteOnboardingRecord(record))
+        actionTd.append(manageBtn, importBtn, domainBtn, deployBtn, deleteBtn)
         row.append(nameTd, siteTd, managerTd, modeTd, buildProgressCell(record.progress), actionTd)
         obBody.appendChild(row)
       }
     } catch {
       obEmpty('온보딩 목록을 불러오지 못했습니다. (서버 연결 실패)')
+    }
+  }
+
+  // 저장소(GitHub)에 실제 사이트가 없는 "고스트" 온보딩 기록만 삭제할 수 있습니다.
+  // (생성 마법사 도중 취소되었거나, 테스트 후 sites/ 폴더만 지운 경우 D1에 레코드가 남습니다)
+  async function deleteOnboardingRecord(record) {
+    if (!window.confirm(`"${record.hospitalName} (${record.siteId})" 온보딩 기록을 삭제합니다.\n실제 운영 중인 사이트는 삭제할 수 없으며, 저장소에 사이트가 없는 경우에만 삭제됩니다. 계속할까요?`)) return
+    try {
+      const response = await fetch(`/api/onboarding/${encodeURIComponent(record.siteId)}`, { method: 'DELETE' })
+      if (response.status === 401) { location.href = '/login'; return }
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data.ok) {
+        if (obStatus) { obStatus.textContent = data.error ?? '온보딩 기록을 삭제하지 못했습니다.'; obStatus.hidden = false }
+        return
+      }
+      if (obStatus) { obStatus.textContent = `"${record.hospitalName}" 온보딩 기록을 삭제했습니다.`; obStatus.hidden = false }
+      loadOnboarding(true)
+    } catch {
+      if (obStatus) { obStatus.textContent = '온보딩 기록을 삭제하지 못했습니다. (서버 연결 실패)'; obStatus.hidden = false }
     }
   }
 
@@ -4755,6 +4740,6 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     holder.appendChild(box)
   }
 
-  // ---------- 초기 화면: 홈 탭 ----------
-  switchTab('home')
+  // ---------- 초기 화면: 병원 사이트 관리 탭 (구 "홈" 탭 제거로 기본 진입 탭 변경) ----------
+  switchTab('hospitals')
 </script>

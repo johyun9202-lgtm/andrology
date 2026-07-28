@@ -117,6 +117,13 @@ export async function upgradeOnboardingChecklistItem(db, siteId, key) {
   return true
 }
 
+// 온보딩 기록 삭제 — 호출부(functions/api/onboarding/[site].js)에서 저장소에 실제
+// 사이트가 없는 경우("고스트" 기록)에만 호출하도록 제한합니다. 여기서는 삭제만 수행.
+export async function deleteOnboarding(db, siteId) {
+  const result = await db.prepare(`DELETE FROM site_onboarding WHERE site_id = ?`).bind(siteId).run()
+  return (result?.meta?.changes ?? result?.changes ?? 0) > 0
+}
+
 // (Phase 15) stage 전이 — Deploy Engine의 전이 규칙(nextStageForDeploy)을 통해서만 호출
 export async function setOnboardingStage(db, siteId, stage) {
   const now = new Date().toISOString()
