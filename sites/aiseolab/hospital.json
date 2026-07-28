@@ -33,10 +33,6 @@
       {
         "label": "Dashboard 시작하기",
         "href": "/dashboard"
-      },
-      {
-        "label": "기능 보기",
-        "href": "#features"
       }
     ]
   },
@@ -94,22 +90,6 @@
     }
   ],
   "nav": [
-    {
-      "href": "/#features",
-      "label": "기능"
-    },
-    {
-      "href": "/articles",
-      "label": "아티클"
-    },
-    {
-      "href": "/faq",
-      "label": "FAQ"
-    },
-    {
-      "href": "/contact",
-      "label": "문의"
-    },
     {
       "href": "/dashboard",
       "label": "Dashboard"
