@@ -101,6 +101,11 @@ a {
   color: var(--accent);
 }
 
+.site-header nav a.active {
+  color: var(--accent);
+  font-weight: 700;
+}
+
 /* 본문 */
 main {
   flex: 1;

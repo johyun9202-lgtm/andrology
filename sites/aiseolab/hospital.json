@@ -95,11 +95,7 @@
   ],
   "nav": [
     {
-      "href": "/",
-      "label": "홈"
-    },
-    {
-      "href": "/services",
+      "href": "/#features",
       "label": "기능"
     },
     {

@@ -5,6 +5,18 @@ import { isReal } from '../lib/schema.js'
 
 // images.logo가 유효하면 이미지 로고, 아니면 병원명 텍스트 로고를 표시합니다.
 const logoSrc = isReal(hospital.images?.logo) ? hospital.images.logo.trim() : null
+
+// 현재 보고 있는 메뉴를 강조 표시하기 위한 활성 상태 판정.
+// - #을 포함한 링크(같은 페이지 안의 특정 섹션으로 이동)는 별도 "페이지"가 아니므로
+//   항상 비활성으로 둡니다. (예: "/#features"는 홈페이지 안의 앵커일 뿐 별도 메뉴가 아님)
+// - "/"는 정확히 일치할 때만, 나머지는 해당 경로로 시작할 때(하위 페이지 포함) 활성으로 봅니다.
+const currentPath = Astro.url.pathname.replace(/\/+$/, '') || '/'
+function isActive(href) {
+  if (href.includes('#')) return false
+  const target = href.replace(/\/+$/, '') || '/'
+  if (target === '/') return currentPath === '/'
+  return currentPath === target || currentPath.startsWith(`${target}/`)
+}
 ---
 
 <header class="site-header">
@@ -13,7 +25,11 @@ const logoSrc = isReal(hospital.images?.logo) ? hospital.images.logo.trim() : nu
       {logoSrc ? <img src={logoSrc} alt={`${hospital.name} 로고`} class="logo-img" /> : hospital.name}
     </a>
     <nav>
-      {nav.map((item) => <a href={item.href}>{item.label}</a>)}
+      {nav.map((item) => (
+        <a href={item.href} class={isActive(item.href) ? 'active' : undefined} aria-current={isActive(item.href) ? 'page' : undefined}>
+          {item.label}
+        </a>
+      ))}
     </nav>
   </div>
 </header>
