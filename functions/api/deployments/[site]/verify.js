@@ -6,7 +6,7 @@
 
 import { jsonResponse, methodNotAllowed, readJsonBody, isAuthenticated } from '../../../_lib/auth.js'
 import { getDb, dbUnavailableResponse } from '../../../_lib/db.js'
-import { getDeployJob, transitionDeployJob, lastSuccessfulDeploy } from '../../../_lib/deploy-repository.js'
+import { getDeployJob, transitionDeployJob, lastSuccessfulDeploy, getDeployConfig, resolveDeployConfig } from '../../../_lib/deploy-repository.js'
 import { verifyDeployment } from '../../../_lib/deploy-verify.js'
 import { nextStageForDeploy, DEPLOY_ERROR_GUIDES } from '../../../_lib/deploy-status.js'
 import { setOnboardingStage } from '../../../_lib/onboarding-repository.js'
@@ -47,8 +47,17 @@ export async function onRequestPost(context) {
     }
 
     const expectedName = job.preflightResult?.plan?.hospitalName ?? resolved.onboarding?.hospitalName ?? ''
+
+    // 공유 저장소 구조(shared)에서는 루트(/)가 항상 회사(AI SEO Lab) 홈페이지로 고정되어
+    // 있어 병원 콘텐츠를 확인할 수 없습니다(src/lib/site-id.js 설계). Preview 배포는
+    // /sites/<siteId>/ 내부 미리보기 페이지를 대신 검사해야 실제로 맞는 페이지를 봅니다.
+    const storedConfig = await getDeployConfig(db, resolved.siteId)
+    const config = resolveDeployConfig(context.env, resolved.siteId, storedConfig)
+    const internalPreviewPage = isPreview && config.deploymentStrategy === 'shared'
+    const path = internalPreviewPage ? `/sites/${resolved.siteId}/` : '/'
+
     const result = await verifyDeployment(context.env, {
-      host, expectedName, expectedCanonicalHost: job.targetDomain, isPreview,
+      host, expectedName, expectedCanonicalHost: job.targetDomain, isPreview, path, internalPreviewPage,
     })
 
     const wrongSite = result.checks.some((check) => check.key === 'site-identity' && check.status === 'fail')

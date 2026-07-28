@@ -44,15 +44,23 @@ function finalHostOf(env, result) {
   }
 }
 
-// verifyDeployment(env, { host, expectedName, expectedCanonicalHost, isPreview })
+// verifyDeployment(env, { host, expectedName, expectedCanonicalHost, isPreview, path, internalPreviewPage })
+//
+// path: 검사할 경로. 기본값 '/'.
+//   공유 저장소 구조(deploymentStrategy: shared)의 Preview 배포는 루트(/)가 항상
+//   회사(AI SEO Lab) 홈페이지로 고정되어 있어("site-id.js" 설계), 병원 콘텐츠는
+//   /sites/<siteId>/ 에서만 확인할 수 있습니다. 이 경우 호출 측에서 path를
+//   `/sites/<siteId>/`로, internalPreviewPage를 true로 넘겨야 병원명 일치 검사가
+//   정확한 페이지를 보고, canonical·noindex처럼 "내부 미리보기 전용" 페이지에는
+//   애초에 해당하지 않는 항목이 오탐(false fail)으로 잡히지 않습니다.
 // 반환: { status: 'success'|'partial_success'|'failed', checks: [...], finalUrl }
-export async function verifyDeployment(env, { host, expectedName, expectedCanonicalHost, isPreview = false }) {
+export async function verifyDeployment(env, { host, expectedName, expectedCanonicalHost, isPreview = false, path = '/', internalPreviewPage = false }) {
   const timeoutMs = Number(env?.DEPLOY_VERIFY_TIMEOUT_MS) > 0 ? Number(env.DEPLOY_VERIFY_TIMEOUT_MS) : 10_000
   const checks = []
   const add = (key, label, status, detail) => checks.push({ key, label, status, detail })
 
-  // 1) 대표 페이지
-  const home = await fetchText(env, host, '/', timeoutMs)
+  // 1) 대표 페이지 (또는 공유 구조 Preview의 경우 /sites/<siteId>/ 내부 미리보기 페이지)
+  const home = await fetchText(env, host, path, timeoutMs)
   if (!home.ok) {
     add('home', '대표 페이지 응답', 'fail', `${home.error} — DNS·HTTPS·Pages 연결 상태를 확인해 주세요.`)
     return { status: 'failed', checks, finalUrl: home.finalUrl }
@@ -80,7 +88,9 @@ export async function verifyDeployment(env, { host, expectedName, expectedCanoni
 
   const canonicalMatch = html.match(/<link[^>]*rel\s*=\s*["']canonical["'][^>]*href\s*=\s*["']([^"']+)["']/i)
     ?? html.match(/<link[^>]*href\s*=\s*["']([^"']+)["'][^>]*rel\s*=\s*["']canonical["']/i)
-  if (!canonicalMatch) {
+  if (internalPreviewPage) {
+    add('canonical', 'canonical 검사 제외', 'skip', '내부 미리보기 페이지(/sites/<siteId>/)는 canonical을 넣지 않습니다 — 정상.')
+  } else if (!canonicalMatch) {
     add('canonical', 'canonical 존재', 'fail', 'canonical 태그가 없습니다.')
   } else if (isPreview) {
     add('canonical', 'canonical 존재', 'pass', `Preview 배포 — canonical은 운영 도메인(${canonicalMatch[1]})을 가리키는 것이 정상입니다.`)
@@ -99,8 +109,12 @@ export async function verifyDeployment(env, { host, expectedName, expectedCanoni
   const hasCta = /href\s*=\s*["']tel:/i.test(html) || /booking\.naver\.com|pf\.kakao\.com/i.test(html)
   add('cta', 'CTA 링크(전화·예약)', hasCta ? 'pass' : 'warning', hasCta ? '정상' : '전화·예약 링크가 보이지 않습니다.')
 
-  const noindex = /<meta[^>]*name\s*=\s*["']robots["'][^>]*noindex/i.test(html)
-  add('noindex', 'noindex 오설정 없음', noindex ? 'fail' : 'pass', noindex ? '홈페이지에 noindex가 설정되어 있습니다 — 검색 제외 상태!' : '정상')
+  if (internalPreviewPage) {
+    add('noindex', 'noindex 검사 제외', 'skip', '내부 미리보기 페이지(/sites/<siteId>/)는 항상 noindex입니다 — 정상(의도된 설계).')
+  } else {
+    const noindex = /<meta[^>]*name\s*=\s*["']robots["'][^>]*noindex/i.test(html)
+    add('noindex', 'noindex 오설정 없음', noindex ? 'fail' : 'pass', noindex ? '홈페이지에 noindex가 설정되어 있습니다 — 검색 제외 상태!' : '정상')
+  }
 
   // 3) robots.txt / sitemap.xml
   const robots = await fetchText(env, host, '/robots.txt', timeoutMs)
