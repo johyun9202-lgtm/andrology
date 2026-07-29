@@ -58,6 +58,7 @@ export async function onRequestGet(context) {
       hospitalType: typeof data.hospitalType === 'string' ? data.hospitalType : '',
       region: typeof data.region === 'string' ? data.region : '',
       siteUrl: typeof data.site?.url === 'string' ? data.site.url : '',
+      logoImage: typeof data.images?.logo === 'string' ? data.images.logo : '',
       stage,
       company: id === companySite,
       // 병원 사이트는 회사 도메인의 /sites/<id>/ 에서 미리보기 (회사 홈은 루트)

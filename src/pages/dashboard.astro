@@ -125,22 +125,8 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
         <p id="wiz-status" class="dash-meta" hidden style="margin: 8px 0 0;"></p>
       </div>
 
-      <div class="dash-table-wrap">
-        <table class="dash-table">
-          <thead>
-            <tr>
-              <th>병원명</th>
-              <th>siteId</th>
-              <th>진료과</th>
-              <th>지역</th>
-              <th>상태</th>
-              <th>작업</th>
-            </tr>
-          </thead>
-          <tbody id="site-cards">
-            <tr><td colspan="6" class="dash-empty">사이트 목록을 불러오는 중...</td></tr>
-          </tbody>
-        </table>
+      <div id="site-cards" class="hosp-card-grid">
+        <p class="dash-empty">사이트 목록을 불러오는 중...</p>
       </div>
     </div>
   </section>
@@ -537,6 +523,93 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
   .s-running { background: #eff6ff; color: #1d4ed8; }
   .s-done { background: #ecfdf5; color: #047857; }
   .s-fail { background: #fef2f2; color: #b91c1c; }
+
+  /* 병원 사이트 관리 — 카드형 목록 (구 표 목록 대체) */
+  .hosp-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+  }
+
+  .hosp-card-grid > .dash-empty {
+    grid-column: 1 / -1;
+    padding: 24px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .hosp-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg);
+  }
+
+  .hosp-card-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .hosp-card-thumb {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    object-fit: cover;
+    background: var(--accent-bg, #eff6ff);
+  }
+
+  .hosp-card-thumb-fallback {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-bg, #eff6ff);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 16px;
+  }
+
+  .hosp-card-heading {
+    min-width: 0;
+  }
+
+  .hosp-card-name {
+    font-weight: 700;
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .hosp-card-id {
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .hosp-card-meta {
+    font-size: 13px;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .hosp-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: auto;
+    padding-top: 4px;
+  }
 
   .dash-note {
     margin-top: 12px;
@@ -1861,17 +1934,45 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
   let wizardTemplates = []
   let companySiteId = 'aiseolab' // 회사 홈페이지 사이트 (loadSites에서 서버 값으로 갱신)
   const STAGE_BADGES = { onboarding: '온보딩', import: 'Import', domain: '도메인 연결', deploy: '배포 진행', operating: '운영 중', error: '오류', paused: '일시 중지' }
+  const STAGE_STATUS_CLASS = { onboarding: 's-queued', import: 's-queued', domain: 's-queued', deploy: 's-running', operating: 's-done', error: 's-fail', paused: 's-queued' }
 
   function siteCardsEmpty(message) {
     if (!siteCardsBody) return
     siteCardsBody.innerHTML = ''
-    const row = document.createElement('tr')
-    const td = document.createElement('td')
-    td.colSpan = 6
-    td.className = 'dash-empty'
-    td.textContent = message
-    row.appendChild(td)
-    siteCardsBody.appendChild(row)
+    const p = document.createElement('p')
+    p.className = 'dash-empty'
+    p.textContent = message
+    siteCardsBody.appendChild(p)
+  }
+
+  // http(s) URL 형식인지만 가볍게 확인합니다 (서버가 이미 검증한 값을 다시 표시만 하는 용도).
+  function isHttpUrl(value) {
+    return typeof value === 'string' && /^https?:\/\//.test(value.trim())
+  }
+
+  // 로고 이미지 URL이 유효하면 썸네일, 아니면 병원명 첫 글자로 이니셜 플레이스홀더를 만듭니다.
+  function hospThumb(siteInfo) {
+    const name = siteInfo.hospitalName || siteInfo.name || '?'
+    const logoUrl = isHttpUrl(siteInfo.logoImage) ? siteInfo.logoImage.trim() : null
+    if (logoUrl) {
+      const img = document.createElement('img')
+      img.className = 'hosp-card-thumb'
+      img.src = logoUrl
+      img.alt = `${name} 로고`
+      img.loading = 'lazy'
+      // 로고 URL이 깨져있으면(404 등) 이니셜 플레이스홀더로 자동 교체합니다.
+      img.addEventListener('error', () => { img.replaceWith(hospThumbFallback(name)) }, { once: true })
+      return img
+    }
+    return hospThumbFallback(name)
+  }
+
+  function hospThumbFallback(name) {
+    const div = document.createElement('div')
+    div.className = 'hosp-card-thumb-fallback'
+    div.setAttribute('aria-hidden', 'true')
+    div.textContent = name.slice(0, 1)
+    return div
   }
 
   // 회사 홈페이지 선택 시 설정 폼에 경고 배너 표시
@@ -1925,33 +2026,46 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
           siteCardsEmpty('등록된 병원 사이트가 없습니다. "＋ 새 병원 사이트 만들기"로 시작하세요.')
         }
         for (const siteInfo of hospitals) {
-          const row = document.createElement('tr')
-          const nameTd = document.createElement('td')
-          const nameBtn = textEl('button', siteInfo.hospitalName || siteInfo.name, 'dash-hosp-name-link')
+          const displayName = siteInfo.hospitalName || siteInfo.name
+          const card = document.createElement('div')
+          card.className = 'hosp-card'
+
+          const top = document.createElement('div')
+          top.className = 'hosp-card-top'
+          top.appendChild(hospThumb(siteInfo))
+
+          const heading = document.createElement('div')
+          heading.className = 'hosp-card-heading'
+          const nameBtn = textEl('button', displayName, 'hosp-card-name dash-hosp-name-link')
           nameBtn.type = 'button'
-          nameBtn.addEventListener('click', () => { enterWorkspace(siteInfo.id, siteInfo.hospitalName || siteInfo.name); switchTab('settings') })
-          nameTd.appendChild(nameBtn)
-          const idTd = document.createElement('td')
-          idTd.style.cssText = 'font-size: 12px; color: var(--muted);'
-          idTd.textContent = siteInfo.id
-          const typeTd = document.createElement('td')
-          typeTd.textContent = siteInfo.hospitalType || '-'
-          const regionTd = document.createElement('td')
-          regionTd.textContent = siteInfo.region || '-'
-          const stateTd = document.createElement('td')
-          stateTd.textContent = STAGE_BADGES[siteInfo.stage] ?? (siteInfo.stage ?? '온보딩 전')
-          const actionTd = document.createElement('td')
-          actionTd.style.cssText = 'display: flex; gap: 6px; flex-wrap: wrap;'
+          nameBtn.addEventListener('click', () => { enterWorkspace(siteInfo.id, displayName); switchTab('settings') })
+          heading.appendChild(nameBtn)
+          heading.appendChild(textEl('div', siteInfo.id, 'hosp-card-id'))
+          top.appendChild(heading)
+          card.appendChild(top)
+
+          const statusBadge = textEl(
+            'span',
+            STAGE_BADGES[siteInfo.stage] ?? (siteInfo.stage ?? '온보딩 전'),
+            `dash-status ${STAGE_STATUS_CLASS[siteInfo.stage] ?? 's-queued'}`
+          )
+          card.appendChild(statusBadge)
+
+          const metaText = [siteInfo.hospitalType || null, siteInfo.region || null].filter(Boolean).join(' · ')
+          card.appendChild(textEl('p', metaText || '진료과·지역 미입력', 'hosp-card-meta'))
+
+          const actions = document.createElement('div')
+          actions.className = 'hosp-card-actions'
           const settingsBtn = document.createElement('button')
           settingsBtn.type = 'button'
           settingsBtn.className = 'dash-action-btn'
           settingsBtn.textContent = '설정'
-          settingsBtn.addEventListener('click', () => { enterWorkspace(siteInfo.id, siteInfo.hospitalName || siteInfo.name); switchTab('settings') })
+          settingsBtn.addEventListener('click', () => { enterWorkspace(siteInfo.id, displayName); switchTab('settings') })
           const contentBtn = document.createElement('button')
           contentBtn.type = 'button'
           contentBtn.className = 'dash-action-btn'
           contentBtn.textContent = '콘텐츠'
-          contentBtn.addEventListener('click', () => { enterWorkspace(siteInfo.id, siteInfo.hospitalName || siteInfo.name); switchTab('create') })
+          contentBtn.addEventListener('click', () => { enterWorkspace(siteInfo.id, displayName); switchTab('create') })
           const previewLink = document.createElement('a')
           previewLink.className = 'dash-action-btn'
           previewLink.textContent = '미리보기'
@@ -1963,13 +2077,14 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
           deployBtn.className = 'dash-action-btn'
           deployBtn.textContent = '배포'
           deployBtn.addEventListener('click', () => {
-            enterWorkspace(siteInfo.id, siteInfo.hospitalName || siteInfo.name)
+            enterWorkspace(siteInfo.id, displayName)
             switchTab('onboarding')
-            openDeployPanel({ siteId: siteInfo.id, hospitalName: siteInfo.hospitalName || siteInfo.name })
+            openDeployPanel({ siteId: siteInfo.id, hospitalName: displayName })
           })
-          actionTd.append(settingsBtn, contentBtn, previewLink, deployBtn)
-          row.append(nameTd, idTd, typeTd, regionTd, stateTd, actionTd)
-          siteCardsBody.appendChild(row)
+          actions.append(settingsBtn, contentBtn, previewLink, deployBtn)
+          card.appendChild(actions)
+
+          siteCardsBody.appendChild(card)
         }
       }
       // 업종 라디오 구성
