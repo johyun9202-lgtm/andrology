@@ -82,6 +82,17 @@ export function buildChannels(hospital) {
     })
   }
 
+  // 검색 노출용 페이지에서 병원의 기존 실제 홈페이지로 안내하는 버튼 (있을 때만).
+  // 상담·예약 채널 뒤, 마지막 보조 채널로 둡니다.
+  if (isValidHttpUrl(channels.existingHomepage)) {
+    result.push({
+      type: 'existingHomepage',
+      label: '홈페이지 바로가기',
+      href: channels.existingHomepage.trim(),
+      external: true,
+    })
+  }
+
   return result
 }
 

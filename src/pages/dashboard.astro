@@ -299,11 +299,13 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
       <label>카카오 URL<input type="url" id="set-kakaoUrl" maxlength="300" /></label>
       <label>네이버 예약 URL<input type="url" id="set-naverBookingUrl" maxlength="300" /></label>
       <label>네이버 지도 URL<input type="url" id="set-naverMapUrl" maxlength="300" /></label>
+      <label>기존 홈페이지 URL (검색 노출 페이지에서 실제 홈페이지로 안내)<input type="url" id="set-existingHomepageUrl" maxlength="300" /></label>
 
       <h3 style="margin: 12px 0 0;">SEO</h3>
       <label>SEO 제목 (비우면 병원명·지역·유형으로 자동 구성)<input type="text" id="set-seoTitle" maxlength="70" /></label>
       <label>SEO 설명<textarea id="set-seoDescription" maxlength="200" style="min-height: 50px; white-space: normal; font-family: inherit;"></textarea></label>
       <label>SEO 키워드 (콤마로 구분, 최대 10개)<input type="text" id="set-seoKeywords" maxlength="300" /></label>
+      <label>네이버 사이트 소유확인 코드 (네이버 서치어드바이저에서 발급)<input type="text" id="set-naverVerification" maxlength="100" placeholder="예: a1b2c3d4e5f6..." /></label>
 
       <h3 style="margin: 12px 0 0;">이미지 (URL 방식)</h3>
       <label>로고 이미지 URL<input type="url" id="set-logoImage" maxlength="300" /></label>
@@ -1827,8 +1829,8 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     'name', 'hospitalType', 'region', 'address', 'phone', 'description',
     'heroTitle', 'heroSubtitle', 'doctorName', 'doctorTitle', 'doctorBio',
     'hoursWeekday', 'hoursSaturday', 'hoursSunday',
-    'consultUrl', 'kakaoUrl', 'naverBookingUrl', 'naverMapUrl',
-    'seoTitle', 'seoDescription', 'logoImage', 'heroImage', 'doctorImage',
+    'consultUrl', 'kakaoUrl', 'naverBookingUrl', 'naverMapUrl', 'existingHomepageUrl',
+    'seoTitle', 'seoDescription', 'naverVerification', 'logoImage', 'heroImage', 'doctorImage',
   ]
 
   function setStatusMessage(message, isError = false) {

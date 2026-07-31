@@ -53,6 +53,17 @@ function phoneField(errors, value) {
   return cleaned
 }
 
+// 네이버 서치어드바이저 등에서 발급하는 사이트 소유확인 코드 — 영문·숫자·하이픈·언더스코어만
+// 허용되는 짧은 토큰 형태입니다(URL도 문장도 아님). 값을 그대로 <meta> 태그에 노출하는 용도이므로
+// 특수문자를 엄격히 제한해 실수로 다른 마크업이 섞여 들어가는 것을 막습니다.
+function verificationCodeField(errors, value, label) {
+  const cleaned = strip(value)
+  if (cleaned === '') return ''
+  if (cleaned.length > 100) errors.push(`${label}은(는) 100자 이내여야 합니다.`)
+  if (!/^[A-Za-z0-9_-]+$/.test(cleaned)) errors.push(`${label}에는 영문/숫자/하이픈/언더스코어만 사용할 수 있습니다.`)
+  return cleaned
+}
+
 // 입력 → 검증된 "편집 필드" 객체. 오류가 있으면 { errors } 반환.
 export function validateSettings(input) {
   const errors = []
@@ -82,6 +93,8 @@ export function validateSettings(input) {
     logoImage: urlField(errors, s.logoImage, '로고 이미지 URL'),
     heroImage: urlField(errors, s.heroImage, '대표 이미지 URL'),
     doctorImage: urlField(errors, s.doctorImage, '원장 이미지 URL'),
+    existingHomepageUrl: urlField(errors, s.existingHomepageUrl, '기존 홈페이지 URL'),
+    naverVerification: verificationCodeField(errors, s.naverVerification, '네이버 사이트 소유확인 코드'),
   }
 
   // SEO 키워드: 배열 또는 콤마 구분 문자열 (최대 10개, 각 30자)
@@ -146,6 +159,8 @@ export function extractSettings(hospital) {
     kakaoUrl: channels.kakao ?? '',
     naverBookingUrl: channels.naverBooking ?? '',
     naverMapUrl: channels.naverMap ?? '',
+    existingHomepageUrl: channels.existingHomepage ?? '',
+    naverVerification: hospital.site?.naverVerification ?? '',
     seoTitle: seo.title ?? '',
     seoDescription: seo.description ?? '',
     seoKeywords: Array.isArray(seo.keywords) ? seo.keywords : [],
@@ -204,9 +219,15 @@ export function mergeSettings(hospital, s) {
     naverBooking: s.naverBookingUrl,
     consult: s.consultUrl,
     naverMap: s.naverMapUrl,
+    existingHomepage: s.existingHomepageUrl,
   }
 
   next.images = { ...(next.images ?? {}), logo: s.logoImage, hero: s.heroImage, doctor: s.doctorImage }
+
+  // 네이버 서치어드바이저 등 소유확인 코드 — site.url과 같은 위치(site)에 보관합니다.
+  next.site = { ...(next.site ?? {}) }
+  if (s.naverVerification) next.site.naverVerification = s.naverVerification
+  else delete next.site.naverVerification
 
   if (s.seoTitle || s.seoDescription || s.seoKeywords.length > 0) {
     next.seo = {}

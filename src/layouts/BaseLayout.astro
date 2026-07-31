@@ -30,6 +30,11 @@ const extraSchemas = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : []
 // 대표 색상: theme.primary가 유효한 색상 형식(#RGB/#RRGGBB)일 때만
 // CSS 변수 --accent를 덮어씁니다. 없거나 잘못된 값이면 기본색이 유지됩니다.
 const primaryColor = isValidColor(hospital.theme?.primary) ? hospital.theme.primary.trim() : null
+
+// 네이버 서치어드바이저 등 외부 검색 도구의 사이트 소유확인 코드 — 설정 탭에서 입력한
+// 값이 있을 때만 출력합니다(값 자체가 비밀이 아니라, 검색 도구가 공개적으로 확인하는 용도).
+const naverVerification =
+  typeof hospital.site?.naverVerification === 'string' ? hospital.site.naverVerification.trim() : ''
 ---
 
 <!doctype html>
@@ -41,9 +46,11 @@ const primaryColor = isValidColor(hospital.theme?.primary) ? hospital.theme.prim
     <meta name="description" content={description} />
     {keywordList.length > 0 && <meta name="keywords" content={keywordList.join(', ')} />}
     {noindex && <meta name="robots" content="noindex, nofollow" />}
+    {naverVerification !== '' && <meta name="naver-site-verification" content={naverVerification} />}
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="sitemap" href="/sitemap-index.xml" />
+    {!noindex && <link rel="alternate" type="application/rss+xml" title={`${hospital.name} RSS`} href="/rss.xml" />}
 
     <!-- Open Graph -->
     <meta property="og:title" content={pageTitle} />
