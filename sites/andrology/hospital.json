@@ -271,7 +271,8 @@
     }
   ],
   "site": {
-    "url": "https://andrology.aiseolab.kr"
+    "url": "https://andrology.aiseolab.kr",
+    "naverVerification": "6a2211e01578a766348e3d8a841ea92c6dff51e5"
   },
   "schema": {
     "type": "MedicalClinic"
