@@ -182,8 +182,96 @@
       ]
     }
   ],
+  "departments": [
+    {
+      "id": "erectile-dysfunction",
+      "name": "발기부전클리닉",
+      "shortDescription": "발기부전의 원인 검사부터 맞춤 치료까지 진행하는 진료과입니다. (예시 데이터)",
+      "description": "발기부전클리닉에서는 문진과 혈액검사, 필요 시 음경 혈류 검사 등을 통해 원인을 확인하고, 개인의 상태에 맞는 치료 방향을 상담합니다. 이 페이지는 구조화 데이터(진료과 목록) 노출 테스트를 위한 예시 콘텐츠입니다.",
+      "image": "https://andrology.co.kr/images/entities/erectile-dysfunction.jpg",
+      "doctorIds": ["doctor-1", "doctor-2"],
+      "seo": {
+        "title": "발기부전클리닉 안내 (예시)",
+        "description": "발기부전 원인 검사와 치료를 진행하는 발기부전클리닉 예시 페이지입니다.",
+        "keywords": ["발기부전", "발기부전클리닉", "비뇨의학과"]
+      }
+    },
+    {
+      "id": "prostate",
+      "name": "전립선클리닉",
+      "shortDescription": "전립선비대증·전립선염 등 전립선 질환을 진료합니다. (예시 데이터)",
+      "description": "전립선클리닉에서는 배뇨 증상과 관련된 전립선 질환을 검사하고 치료 방향을 상담합니다. 이 페이지는 구조화 데이터 노출 테스트를 위한 예시 콘텐츠입니다.",
+      "image": "https://andrology.co.kr/images/entities/prostate.jpg",
+      "doctorIds": ["doctor-2"],
+      "seo": {
+        "title": "전립선클리닉 안내 (예시)",
+        "description": "전립선비대증·전립선염 진료를 담당하는 전립선클리닉 예시 페이지입니다.",
+        "keywords": ["전립선비대증", "전립선염", "비뇨의학과"]
+      }
+    },
+    {
+      "id": "male-menopause",
+      "name": "남성갱년기클리닉",
+      "shortDescription": "남성호르몬 저하로 인한 갱년기 증상을 관리합니다. (예시 데이터)",
+      "description": "남성갱년기클리닉에서는 호르몬 검사를 통해 남성갱년기 여부를 확인하고 관리 방향을 상담합니다. 이 페이지는 구조화 데이터 노출 테스트를 위한 예시 콘텐츠입니다.",
+      "image": "https://andrology.co.kr/images/entities/male-menopause.jpg",
+      "doctorIds": ["doctor-3"],
+      "seo": {
+        "title": "남성갱년기클리닉 안내 (예시)",
+        "description": "남성호르몬 저하와 갱년기 증상을 관리하는 남성갱년기클리닉 예시 페이지입니다.",
+        "keywords": ["남성갱년기", "남성호르몬", "비뇨의학과"]
+      }
+    }
+  ],
+  "doctors": [
+    {
+      "id": "doctor-1",
+      "name": "김민준",
+      "title": "대표원장 · 비뇨의학과 전문의 (예시 프로필)",
+      "image": "https://andrology.co.kr/images/entities/doctor-1.jpg",
+      "imageAlt": "김민준 대표원장 예시 프로필 이미지",
+      "bio": "이 프로필은 구조화 데이터·검색 노출 테스트를 위해 작성된 예시 데이터입니다. 실제 병원 운영 시 실제 의료진 정보로 교체됩니다.",
+      "specialties": ["발기부전", "남성 성기능장애"],
+      "departmentIds": ["erectile-dysfunction"],
+      "seo": {
+        "title": "김민준 대표원장 소개 (예시)",
+        "description": "발기부전클리닉 김민준 대표원장 예시 프로필 페이지입니다.",
+        "keywords": ["발기부전", "비뇨의학과 전문의"]
+      }
+    },
+    {
+      "id": "doctor-2",
+      "name": "박서준",
+      "title": "비뇨의학과 전문의 (예시 프로필)",
+      "image": "https://andrology.co.kr/images/entities/doctor-2.jpg",
+      "imageAlt": "박서준 전문의 예시 프로필 이미지",
+      "bio": "이 프로필은 구조화 데이터·검색 노출 테스트를 위해 작성된 예시 데이터입니다. 실제 병원 운영 시 실제 의료진 정보로 교체됩니다.",
+      "specialties": ["전립선질환", "발기부전"],
+      "departmentIds": ["erectile-dysfunction", "prostate"],
+      "seo": {
+        "title": "박서준 전문의 소개 (예시)",
+        "description": "전립선클리닉·발기부전클리닉 박서준 전문의 예시 프로필 페이지입니다.",
+        "keywords": ["전립선비대증", "비뇨의학과 전문의"]
+      }
+    },
+    {
+      "id": "doctor-3",
+      "name": "이도현",
+      "title": "비뇨의학과 전문의 (예시 프로필)",
+      "image": "https://andrology.co.kr/images/entities/doctor-3.jpg",
+      "imageAlt": "이도현 전문의 예시 프로필 이미지",
+      "bio": "이 프로필은 구조화 데이터·검색 노출 테스트를 위해 작성된 예시 데이터입니다. 실제 병원 운영 시 실제 의료진 정보로 교체됩니다.",
+      "specialties": ["남성갱년기", "호르몬치료"],
+      "departmentIds": ["male-menopause"],
+      "seo": {
+        "title": "이도현 전문의 소개 (예시)",
+        "description": "남성갱년기클리닉 이도현 전문의 예시 프로필 페이지입니다.",
+        "keywords": ["남성갱년기", "비뇨의학과 전문의"]
+      }
+    }
+  ],
   "site": {
-    "url": "https://example.com"
+    "url": "https://andrology.co.kr"
   },
   "schema": {
     "type": "MedicalClinic"
