@@ -150,6 +150,13 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     <form id="draft-form" class="dash-form">
       <input type="hidden" name="site" id="draft-site" value={DEFAULT_DASHBOARD_SITE} />
       <label>
+        콘텐츠 유형 <span class="required">*</span>
+        <select name="type" id="draft-type">
+          <option value="article_draft">사이트 아티클 (이 사이트에 직접 게시)</option>
+          <option value="naver_blog_draft">네이버 블로그 원고 (복사해서 블로그에 붙여넣기)</option>
+        </select>
+      </label>
+      <label>
         키워드 <span class="required">*</span>
         <input type="text" name="keyword" placeholder="예: 전립선 비대증 원인" required />
       </label>
@@ -159,6 +166,7 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
       </label>
       <button type="submit" class="btn">AI 초안 생성</button>
     </form>
+    <p class="dash-meta" style="margin: 8px 0 0;">※ 네이버 블로그 원고는 사이트에 자동 게시되지 않습니다. 생성 후 내용을 검토·수정하고 "복사"해서 네이버 블로그 에디터에 직접 붙여넣어 주세요.</p>
     <p id="dash-toast" class="dash-toast" hidden></p>
   </section>
 
@@ -170,6 +178,7 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
           <tr>
             <th>시간</th>
             <th>사이트</th>
+            <th>유형</th>
             <th>키워드</th>
             <th>상태</th>
             <th>작업</th>
@@ -177,7 +186,7 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
         </thead>
         <tbody id="jobs-body">
           <tr id="jobs-empty">
-            <td colspan="5" class="dash-empty">작업 목록을 불러오는 중...</td>
+            <td colspan="6" class="dash-empty">작업 목록을 불러오는 중...</td>
           </tr>
         </tbody>
       </table>
@@ -989,6 +998,7 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
 
   const STATUS_LABEL = { queued: '대기 중', running: '진행 중', completed: '완료', failed: '실패' }
   const STATUS_CLASS = { queued: 's-queued', running: 's-running', completed: 's-done', failed: 's-fail' }
+  const JOB_TYPE_LABEL = { article_draft: '사이트 아티클', naver_blog_draft: '네이버 블로그' }
 
   // ---------- 글 생성 실행 (POST /api/jobs/:id/run) ----------
   // 서버가 상태를 다시 검증하므로(중복 실행 차단) 이 Set은 UX용 이중 안전장치입니다.
@@ -1077,6 +1087,62 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     return wrap
   }
 
+  // 네이버 블로그 원고를 "복사해서 그대로 붙여넣을 수 있는" 순수 텍스트로 조합
+  function naverBlogCopyText(draft) {
+    const parts = []
+    if (draft.title) parts.push(draft.title)
+    if (draft.hook) parts.push(draft.hook)
+    for (const p of Array.isArray(draft.paragraphs) ? draft.paragraphs : []) parts.push(String(p))
+    if (Array.isArray(draft.hashtags) && draft.hashtags.length) {
+      parts.push(draft.hashtags.map((h) => `#${h}`).join(' '))
+    }
+    return parts.join('\n\n')
+  }
+
+  // 네이버 블로그 원고(payload.naverBlog) 미리보기 — 사이트 아티클과 달리
+  // 게시 버튼 없이 "복사" 버튼만 제공합니다(자동 게시 API가 없음).
+  function naverBlogPreview(payload) {
+    const wrap = document.createElement('div')
+    wrap.className = 'dash-preview'
+    const draft = payload.naverBlog && typeof payload.naverBlog === 'object' ? payload.naverBlog : {}
+
+    wrap.appendChild(textEl('h3', draft.title ?? payload.title ?? '(제목 없음)'))
+    if (draft.hook) wrap.appendChild(textEl('p', draft.hook, 'dash-meta'))
+    for (const p of Array.isArray(draft.paragraphs) ? draft.paragraphs : []) {
+      wrap.appendChild(textEl('p', String(p)))
+    }
+
+    const photoGuide = Array.isArray(draft.photoGuide) ? draft.photoGuide : []
+    if (photoGuide.length) {
+      wrap.appendChild(textEl('h4', '사진 삽입 가이드 (참고용 — 원고에는 포함되지 않음)'))
+      appendItems(wrap, photoGuide)
+    }
+
+    const hashtags = Array.isArray(draft.hashtags) ? draft.hashtags : []
+    if (hashtags.length) {
+      wrap.appendChild(textEl('p', hashtags.map((h) => `#${h}`).join(' '), 'dash-meta'))
+    }
+
+    const copyBtn = textEl('button', '원고 복사하기', 'dash-action-btn dash-publish-btn')
+    copyBtn.type = 'button'
+    copyBtn.addEventListener('click', async () => {
+      const text = naverBlogCopyText(draft)
+      try {
+        await navigator.clipboard.writeText(text)
+        copyBtn.textContent = '복사됨 ✓'
+      } catch {
+        copyBtn.textContent = '복사 실패 — 직접 선택해 복사해 주세요'
+      }
+      setTimeout(() => { copyBtn.textContent = '원고 복사하기' }, 2500)
+    })
+    wrap.appendChild(copyBtn)
+    wrap.appendChild(textEl('p', '※ 사진 삽입 가이드는 복사 내용에 포함되지 않습니다. 위 안내를 참고해 네이버 블로그 에디터에서 사진을 직접 배치해 주세요. (제목·도입부·본문·해시태그는 복사 시 함께 포함됩니다)', 'dash-meta'))
+
+    const generated = payload.generatedAt ? formatTime(payload.generatedAt) : '-'
+    wrap.appendChild(textEl('p', `생성 모델: ${payload.model ?? '-'} · 생성 시각: ${generated}`, 'dash-gen-info'))
+    return wrap
+  }
+
   // ---------- 게시 승인 (POST /api/jobs/:id/publish) ----------
   // 서버가 상태를 다시 검증하므로(중복 게시 차단) 이 Set은 UX용 이중 안전장치입니다.
   const publishingIds = new Set()
@@ -1149,14 +1215,15 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     const row = document.createElement('tr')
     row.className = 'dash-detail'
     const td = document.createElement('td')
-    td.colSpan = 5
+    td.colSpan = 6
     td.className = 'dash-detail-cell'
 
     if (job.status === 'completed') {
       let payload = null
       try { payload = JSON.parse(job.result) } catch {}
       if (payload && typeof payload === 'object') {
-        td.appendChild(articlePreview(payload))
+        const isNaverBlog = job.type === 'naver_blog_draft'
+        td.appendChild(isNaverBlog ? naverBlogPreview(payload) : articlePreview(payload))
         // JSON 원문은 기본 숨김 — 버튼으로만 펼침
         const rawPre = document.createElement('pre')
         rawPre.className = 'dash-raw-json'
@@ -1169,8 +1236,8 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
           toggle.textContent = rawPre.hidden ? 'JSON 원문 보기' : 'JSON 원문 닫기'
         })
         td.append(toggle, rawPre)
-        // 게시 승인 영역 — 미리보기를 연(=검토한) 상태에서만 노출
-        td.appendChild(publishSection(job))
+        // 게시 승인 영역 — 네이버 블로그 원고는 자동 게시 대상이 아니므로 생략
+        if (!isNaverBlog) td.appendChild(publishSection(job))
       } else if (job.result) {
         // JSON 해석 불가 시 원문을 텍스트로만 표시
         td.appendChild(textEl('p', '결과 형식을 해석할 수 없어 원문을 표시합니다.', 'dash-meta'))
@@ -1226,7 +1293,7 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
 
   function jobRow(job) {
     const row = document.createElement('tr')
-    for (const text of [formatTime(job.createdAt), job.site, job.keyword]) {
+    for (const text of [formatTime(job.createdAt), job.site, JOB_TYPE_LABEL[job.type] ?? job.type, job.keyword]) {
       const td = document.createElement('td')
       td.textContent = text
       row.appendChild(td)
@@ -1246,7 +1313,7 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
     jobsBody.innerHTML = ''
     const row = document.createElement('tr')
     const td = document.createElement('td')
-    td.colSpan = 5
+    td.colSpan = 6
     td.className = 'dash-empty'
     td.textContent = message
     row.appendChild(td)
@@ -1300,6 +1367,7 @@ const DEFAULT_DASHBOARD_SITE = 'aiseolab'
           keyword,
           title: String(formData.get('title') ?? '').trim(),
           site: String(formData.get('site') ?? ''),
+          type: String(formData.get('type') ?? 'article_draft'),
         }),
       })
       if (response.status === 401) {

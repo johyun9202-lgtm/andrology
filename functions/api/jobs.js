@@ -13,6 +13,7 @@ import {
 } from '../_lib/auth.js'
 import { insertJob, listJobs } from '../_lib/job-repository.js'
 import { getDb, dbUnavailableResponse } from '../_lib/db.js'
+import { JOB_TYPES, DEFAULT_JOB_TYPE } from '../_lib/ai-writer.js'
 
 const MAX_KEYWORD_LENGTH = 200
 const MAX_TITLE_LENGTH = 200
@@ -50,10 +51,18 @@ export async function onRequestPost(context) {
     return jsonResponse({ ok: false, error: '허용되지 않는 사이트입니다.' }, 400)
   }
 
+  let type = DEFAULT_JOB_TYPE
+  if (body.type !== undefined && body.type !== null && body.type !== '') {
+    if (typeof body.type !== 'string' || !JOB_TYPES.includes(body.type)) {
+      return jsonResponse({ ok: false, error: '허용되지 않는 콘텐츠 유형입니다.' }, 400)
+    }
+    type = body.type
+  }
+
   try {
     const job = await insertJob(db, {
       id: `job_${crypto.randomUUID()}`,
-      type: 'article_draft',
+      type,
       site,
       keyword,
       title,

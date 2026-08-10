@@ -18,7 +18,7 @@ import {
 import {
   buildJobPrompt,
   callClaude,
-  parseGeneratedArticle,
+  parseJobResult,
   buildResultPayload,
   resolveModel,
   safeErrorMessage,
@@ -68,8 +68,8 @@ export async function onRequestPost(context) {
   try {
     const { prompt, slug } = buildJobPrompt(job)
     const text = await callClaude(context.env, prompt, model)
-    const article = parseGeneratedArticle(text, slug)
-    const updated = await markJobCompleted(db, id, buildResultPayload(job, article, model))
+    const parsed = parseJobResult(job, text, slug)
+    const updated = await markJobCompleted(db, id, buildResultPayload(job, parsed, model))
     return jsonResponse({ ok: true, job: updated })
   } catch (e) {
     const message = safeErrorMessage(e)

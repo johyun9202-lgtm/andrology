@@ -17,8 +17,9 @@
 //   (프롬프트·검증 로직은 공유하므로 규칙 중복은 없습니다)
 // ============================================================
 
-import { buildArticlePrompt, sanitize } from '../../scripts/lib/prompt-builder.mjs'
+import { buildArticlePrompt, buildNaverBlogPrompt, sanitize } from '../../scripts/lib/prompt-builder.mjs'
 import { validateArticle } from '../../scripts/lib/article-validator.mjs'
+import { validateNaverBlogDraft } from '../../scripts/lib/naver-blog-validator.mjs'
 // 사이트 정보 (functions는 배포 후 파일시스템에 접근할 수 없어 빌드 시점에 포함)
 // npm run build 가 sites/<siteId>/hospital.json에서 자동 생성하는 일반 JS 모듈입니다.
 // (JSON 직접 import는 번들러 버전에 따라 배포가 실패할 수 있어 사용하지 않습니다)
@@ -33,6 +34,11 @@ const TIMEOUT_MS = 90_000 // Cloudflare 단일 요청 안에서 처리해야 하
 const MAX_OUTPUT_TOKENS = 8192
 const MAX_ERROR_LENGTH = 500
 
+// Job.type으로 허용되는 값. jobs 테이블은 type을 자유 TEXT로 저장하므로
+// 이 배열이 실질적인 화이트리스트 역할을 합니다 (jobs.js POST에서 검증).
+export const JOB_TYPES = ['article_draft', 'naver_blog_draft']
+export const DEFAULT_JOB_TYPE = 'article_draft'
+
 export function resolveModel(env) {
   const custom = typeof env?.AI_WRITER_MODEL === 'string' ? env.AI_WRITER_MODEL.trim() : ''
   return custom || DEFAULT_MODEL
@@ -46,6 +52,7 @@ export function jobSlug(jobId) {
 }
 
 // Job → 프롬프트 (기존 prompt-builder 재사용, 키워드·제목은 sanitize로 무해화)
+// job.type === 'naver_blog_draft'면 네이버 블로그용 프롬프트로 분기합니다.
 export function buildJobPrompt(job) {
   const hospital = SITE_DATA[job.site]
   if (!hospital) {
@@ -54,6 +61,11 @@ export function buildJobPrompt(job) {
   const slug = jobSlug(job.id)
   const keyword = sanitize(String(job.keyword ?? ''))
   const title = sanitize(String(job.title ?? ''))
+
+  if (job.type === 'naver_blog_draft') {
+    return { prompt: buildNaverBlogPrompt(hospital, { keyword, title }), slug }
+  }
+
   const brief = {
     slug,
     mainKeyword: keyword,
@@ -184,9 +196,58 @@ export function parseGeneratedArticle(text, expectedSlug) {
   return article
 }
 
+// AI 응답 텍스트 → 검증된 네이버 블로그 원고 객체
+// (parseGeneratedArticle과 동일한 정리 절차, 검증 규칙만 naver-blog-validator로 교체)
+export function parseGeneratedNaverBlog(text) {
+  let cleaned = String(text).trim()
+  cleaned = cleaned.replace(/^```[a-zA-Z]*\s*/, '').replace(/\s*```$/, '').trim()
+  const first = cleaned.indexOf('{')
+  const last = cleaned.lastIndexOf('}')
+  if (first === -1 || last === -1 || last <= first) {
+    throw new Error('AI 응답이 JSON 형식이 아닙니다. "다시 실행"으로 재시도해 주세요.')
+  }
+  cleaned = cleaned.slice(first, last + 1)
+
+  let parsed
+  try {
+    parsed = JSON.parse(cleaned)
+  } catch {
+    throw new Error('AI 응답 JSON을 해석하지 못했습니다. "다시 실행"으로 재시도해 주세요.')
+  }
+
+  const { errors, draft } = validateNaverBlogDraft(parsed)
+  if (errors.length > 0 || !draft) {
+    const summary = errors.slice(0, 2).map((m) => sanitize(String(m))).join(' / ')
+    throw new Error(`AI 결과가 네이버 블로그 원고 형식 검증에 실패했습니다. (${summary || '구조 오류'})`)
+  }
+  return draft
+}
+
+// Job.type에 따라 AI 응답 텍스트를 파싱·검증합니다. run.js는 이 함수 하나만 호출하면 됩니다.
+export function parseJobResult(job, text, slug) {
+  if (job.type === 'naver_blog_draft') return parseGeneratedNaverBlog(text)
+  return parseGeneratedArticle(text, slug)
+}
+
 // D1의 result 컬럼에 저장할 구조화 JSON (문자열 반환)
-export function buildResultPayload(job, article, model) {
+// job.type에 따라 저장 형태가 다릅니다:
+// - article_draft: 사이트에 게시 가능한 Article Model v2 (publish.js가 그대로 사용)
+// - naver_blog_draft: 복사용 원고 (게시 파이프라인 없음 — 대시보드에서 "복사"만 제공)
+export function buildResultPayload(job, parsed, model) {
+  if (job.type === 'naver_blog_draft') {
+    return JSON.stringify({
+      type: 'naver_blog_draft',
+      title: parsed.title,
+      keyword: job.keyword,
+      generatedAt: new Date().toISOString(),
+      model,
+      naverBlog: parsed, // { title, hook, paragraphs, hashtags, photoGuide? }
+    })
+  }
+
+  const article = parsed
   return JSON.stringify({
+    type: 'article_draft',
     title: article.title,
     slug: article.slug,
     metaDescription: article.summary, // Article Model v2의 summary가 메타 설명 역할
