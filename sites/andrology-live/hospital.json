@@ -1,6 +1,7 @@
 {
   "site": {
-    "url": "https://andrology.kr"
+    "url": "https://andrology.kr",
+    "naverVerification": "501c6a185751b8b082fa0c065efdc3486edd5098"
   },
   "schema": {
     "type": "MedicalClinic"
